@@ -13,7 +13,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PlayTennis.it — Lithuanian Tennis",
+  title: "PlayTennis.lt — Lithuanian Tennis",
   description:
     "A smarter way to find tennis partners, organize matches, track results, and discover courts—all in one place.",
 };

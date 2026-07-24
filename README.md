@@ -1,4 +1,4 @@
-# PlayTennis.it
+# PlayTennis.lt
 
 A smarter way to find tennis partners, organize matches, track results, and discover courts—all in one place.
 
@@ -9,9 +9,21 @@ A smarter way to find tennis partners, organize matches, track results, and disc
 
 ## Tech stack
 
-- **Next.js 15** (App Router)
+- **Next.js 16** (App Router)
 - **TypeScript**
 - **Tailwind CSS**
+- **Supabase** (waitlist email storage)
+
+## Waitlist setup (Supabase)
+
+1. Create a project at [supabase.com](https://supabase.com)
+2. Run the SQL in [`supabase/waitlist.sql`](supabase/waitlist.sql) in the Supabase SQL Editor
+3. Copy `.env.example` to `.env.local` and fill in:
+   - `SUPABASE_URL` — Project Settings → API → Project URL
+   - `SUPABASE_SERVICE_ROLE_KEY` — Project Settings → API → service_role key (server only)
+4. Add the same variables in **Vercel → Project → Settings → Environment Variables**, then redeploy
+
+Signups appear in **Supabase → Table Editor → waitlist**.
 
 ## Getting started
 
@@ -50,5 +62,4 @@ The easiest way to deploy is with [Vercel](https://vercel.com):
 ## What's next
 
 - User authentication
-- Database (Prisma + PostgreSQL)
 - Find players, book courts, track scores
