@@ -23,8 +23,6 @@ export default function AnimatedStats() {
   const [counts, setCounts] = useState(() => stats.map(() => 0));
 
   useEffect(() => {
-    setCounts(stats.map(() => 0));
-
     const duration = 2200;
     const start = performance.now();
 

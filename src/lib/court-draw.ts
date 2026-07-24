@@ -213,7 +213,7 @@ function clampByte(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
 
-function getClayPattern(ctx: CanvasRenderingContext2D): CanvasPattern | null {
+function getClayPattern(): CanvasPattern | null {
   if (!clayPattern) {
     clayPattern = createClayPattern();
   }
@@ -243,7 +243,7 @@ export function drawClayTexture(
   ctx.fillStyle = grad;
   ctx.fillRect(x, y, w, h);
 
-  const pattern = getClayPattern(ctx);
+  const pattern = getClayPattern();
   if (pattern) {
     ctx.globalAlpha = intensity * 0.85;
     ctx.fillStyle = pattern;
