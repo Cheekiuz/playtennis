@@ -18,9 +18,11 @@ A smarter way to find tennis partners, organize matches, track results, and disc
 
 1. Create a project at [supabase.com](https://supabase.com)
 2. Run the SQL in [`supabase/waitlist.sql`](supabase/waitlist.sql) in the Supabase SQL Editor
-3. Copy `.env.example` to `.env.local` and fill in:
+3. For **local dev**, either:
+   - Run `npx vercel link` then `npx vercel env pull .env.local` (if using Vercel Supabase integration), or
+   - Copy `.env.example` to `.env.local` and fill in:
    - `SUPABASE_URL` — Project Settings → API → Project URL
-   - `SUPABASE_SERVICE_ROLE_KEY` — Project Settings → API → service_role key (server only)
+   - `SUPABASE_SECRET_KEY` — secret key from Supabase (or `SUPABASE_SERVICE_ROLE_KEY` for legacy keys)
 4. Add the same variables in **Vercel → Project → Settings → Environment Variables**, then redeploy
 
 Signups appear in **Supabase → Table Editor → waitlist**.
