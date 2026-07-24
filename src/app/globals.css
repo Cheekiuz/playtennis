@@ -1,25 +1,118 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050a14;
+  --foreground: #ffffff;
+  --accent: #c8ff00;
+  --muted: #94a3b8;
+  --card: rgba(15, 23, 42, 0.6);
+  --border: rgba(255, 255, 255, 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
   --font-sans: var(--font-inter);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-mono: var(--font-jetbrains);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-18px) rotate(8deg);
+  }
+}
+
+@keyframes launch {
+  0% {
+    opacity: 1;
+    transform: translate(var(--start-x), var(--start-y)) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--end-x), var(--end-y)) scale(0.6) rotate(720deg);
+  }
+}
+
+.tennis-ball {
+  background: radial-gradient(circle at 35% 35%, #e8ff4d 0%, #c8ff00 40%, #9ecc00 100%);
+  box-shadow:
+    0 0 40px rgba(200, 255, 0, 0.35),
+    inset -8px -8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.tennis-ball::before,
+.tennis-ball::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+}
+
+.tennis-ball::before {
+  transform: rotate(55deg) scaleX(0.45);
+}
+
+.tennis-ball::after {
+  transform: rotate(-55deg) scaleX(0.45);
+}
+
+.ball-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.ball-launch {
+  animation: launch 2.5s ease-out forwards;
+  pointer-events: none;
+}
+
+.center-glow {
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(200, 255, 0, 0.06) 0%, transparent 70%);
+}
+
+.stat-glow {
+  background: radial-gradient(circle, rgba(200, 255, 0, 0.12) 0%, transparent 70%);
+}
+
+.card-glow {
+  box-shadow:
+    0 0 80px rgba(200, 255, 0, 0.08),
+    0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.btn-glow {
+  box-shadow: 0 0 24px rgba(200, 255, 0, 0.35);
+}
+
+.btn-glow:hover {
+  box-shadow: 0 0 36px rgba(200, 255, 0, 0.5);
+}
+
+.center-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(100, 180, 255, 0.15) 20%,
+    rgba(100, 180, 255, 0.15) 80%,
+    transparent 100%
+  );
+  pointer-events: none;
 }

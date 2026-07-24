@@ -1,6 +1,6 @@
-# PlayTennis
+# PlayTennis.it
 
-Find your next tennis match — partners, courts, and scores in one place.
+A smarter way to find tennis partners, organize matches, track results, and discover courts—all in one place.
 
 ## Prerequisites
 
