@@ -36,7 +36,7 @@ export const CENTER_MARK_RATIO = CENTER_MARK_M / COURT_LENGTH_M;
 export const LINE_WIDTH_RATIO = LINE_WIDTH_M / COURT_WIDTH_M;
 
 /** Background blur applied to the court layer (balls stay sharp). */
-export const COURT_BLUR_PX = 4;
+export const COURT_BLUR_PX = 2;
 
 export interface CourtDimensions {
   courtW: number;

@@ -113,20 +113,6 @@ export default function LandingPage() {
             <TennisBallIcon size={16} />
             PlayTennis.lt
           </span>
-          <div className="flex items-center gap-6">
-            <a
-              href="mailto:hello@playtennis.lt"
-              className="text-xs text-muted transition-colors hover:text-foreground"
-            >
-              {m.footer.contact}
-            </a>
-            <a
-              href="#"
-              className="text-xs text-muted transition-colors hover:text-foreground"
-            >
-              {m.footer.privacy}
-            </a>
-          </div>
           <p className="text-xs text-muted">{m.footer.madeWith}</p>
         </div>
       </footer>

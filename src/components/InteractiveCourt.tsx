@@ -247,6 +247,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ballsRef = useRef<Ball[]>([]);
   const particlesRef = useRef<Particle[]>([]);
+  const cursorBallRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0, radius: 20 });
   const mouseRef = useRef({ x: 0, y: 0, down: false });
   const tiltRef = useRef({ x: 0, y: 0 });
   const tiltTargetRef = useRef({ x: 0, y: 0 });
@@ -290,6 +291,11 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       canvas.style.height = `${window.innerHeight}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+      cursorBallRef.current.x = window.innerWidth / 2;
+      cursorBallRef.current.y = window.innerHeight / 2;
+      cursorBallRef.current.targetX = cursorBallRef.current.x;
+      cursorBallRef.current.targetY = cursorBallRef.current.y;
+
       if (ballsRef.current.length === 0) {
         for (let i = 0; i < 4; i++) {
           ballsRef.current.push(
@@ -316,6 +322,8 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     const updatePointer = (clientX: number, clientY: number) => {
       mouseRef.current.x = clientX;
       mouseRef.current.y = clientY;
+      cursorBallRef.current.targetX = clientX;
+      cursorBallRef.current.targetY = clientY;
 
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
@@ -438,6 +446,10 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
         );
       }
 
+      const cursor = cursorBallRef.current;
+      cursor.x += (cursor.targetX - cursor.x) * (1 - Math.pow(0.001, dt));
+      cursor.y += (cursor.targetY - cursor.y) * (1 - Math.pow(0.001, dt));
+
       const tiltLerp = 1 - Math.pow(0.0001, dt);
       tiltRef.current.x += (tiltTargetRef.current.x - tiltRef.current.x) * tiltLerp;
       tiltRef.current.y += (tiltTargetRef.current.y - tiltRef.current.y) * tiltLerp;
@@ -539,6 +551,23 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
         ctx.fill();
       }
       ctx.globalAlpha = 1;
+
+      drawBall(ctx, {
+        id: -1,
+        x: cursor.x,
+        y: cursor.y,
+        vx: 0,
+        vy: 0,
+        radius: cursor.radius,
+        mass: 1,
+        expression: "normal",
+        floating: false,
+        floatPhase: 0,
+        opacity: 0.92,
+        blur: 0,
+        rotation: performance.now() * 0.002,
+        spin: 0,
+      });
 
       frameRef.current = requestAnimationFrame(tick);
     };
