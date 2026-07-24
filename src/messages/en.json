@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "title": "PlayTennis.lt — Lithuanian Tennis",
+    "description": "A smarter way to find tennis partners, organize matches, track results, and discover courts—all in one place."
+  },
+  "header": {
+    "joinWaitlist": "Join Waitlist"
+  },
+  "hero": {
+    "badge": "Launching Q4 2026",
+    "title": "Something exciting",
+    "titleAccent": "is coming...",
+    "subtitle": "A smarter way to find tennis partners, organize matches, track results, and discover courts—all in one place."
+  },
+  "messages": [
+    "Looking for someone who actually replies 'Let's play tomorrow.'",
+    "Teaching AI to call balls IN and OUT.",
+    "Stretching the virtual tennis net...",
+    "Warming up the servers...",
+    "Inflating tennis balls...",
+    "Waiting for perfect weather...",
+    "Finding doubles partners who never cancel..."
+  ],
+  "waitlist": {
+    "title": "Reserve your court position",
+    "subtitle": "Be among the first players invited to our exclusive beta launch.",
+    "placeholder": "Enter your email address",
+    "button": "Join the Waitlist",
+    "loading": "Joining...",
+    "disclaimer": "No spam. Just launch updates and early access.",
+    "successTitle": "You're officially on the team!",
+    "successNew": "We'll serve you launch updates at",
+    "successExisting": "You're already on the waitlist — we'll be in touch at",
+    "errors": {
+      "invalidEmail": "Please enter a valid email address",
+      "alreadyRegistered": "You're already on the list!",
+      "unavailable": "Waitlist is temporarily unavailable",
+      "generic": "Something went wrong. Please try again.",
+      "network": "Network error. Please check your connection and try again."
+    }
+  },
+  "stats": {
+    "players": "Players already waiting",
+    "courts": "Courts being indexed",
+    "cities": "Cities to be supported"
+  },
+  "tip": {
+    "press": "Press",
+    "ballStorm": "for a ball storm",
+    "clayMode": "Double-click the court for Clay Mode"
+  },
+  "footer": {
+    "contact": "Contact",
+    "privacy": "Privacy Policy",
+    "madeWith": "Made with ❤️ for tennis players."
+  },
+  "achievements": [
+    { "icon": "trophy", "text": "Net Navigator — You found the secret serve!" },
+    { "icon": "tennis", "text": "Ball Hog — Certified court explorer." },
+    { "icon": "crown", "text": "Rally Royalty — The backboard bows to you." }
+  ],
+  "lang": {
+    "en": "EN",
+    "lt": "LT"
+  },
+  "theme": {
+    "change": "Change theme",
+    "light": "Light",
+    "dark": "Dark"
+  }
+}

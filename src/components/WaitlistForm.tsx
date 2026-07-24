@@ -1,17 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import TennisBallIcon from "@/components/TennisBallIcon";
+import { useLocale } from "@/context/LocaleContext";
 
 interface WaitlistFormProps {
   onSuccess?: () => void;
 }
 
 export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
+  const { messages: m } = useLocale();
   const [submitted, setSubmitted] = useState(false);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [alreadyRegistered, setAlreadyRegistered] = useState(false);
+
+  const mapError = (status: number, apiError?: string) => {
+    if (status === 400) return m.waitlist.errors.invalidEmail;
+    if (status === 409) return m.waitlist.errors.alreadyRegistered;
+    if (apiError?.toLowerCase().includes("unavailable")) return m.waitlist.errors.unavailable;
+    return m.waitlist.errors.generic;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,9 +53,9 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
         return;
       }
 
-      setError(data.error ?? "Something went wrong. Please try again.");
+      setError(mapError(res.status, data.error));
     } catch {
-      setError("Network error. Please check your connection and try again.");
+      setError(m.waitlist.errors.network);
     } finally {
       setLoading(false);
     }
@@ -53,13 +63,13 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
 
   if (submitted) {
     return (
-      <div className="card-glow success-pop w-full max-w-lg rounded-2xl border border-accent/30 bg-slate-900/60 p-8 text-center backdrop-blur-md">
-        <div className="animate-bounce text-5xl">🎉</div>
-        <h2 className="mt-4 text-2xl font-bold text-white">You&apos;re officially on the team!</h2>
+      <div className="card-glow success-pop w-full max-w-lg rounded-2xl border border-accent/30 bg-card p-8 text-center backdrop-blur-md">
+        <div className="flex justify-center">
+          <TennisBallIcon size={48} className="animate-bounce" />
+        </div>
+        <h2 className="mt-4 text-2xl font-bold text-foreground">{m.waitlist.successTitle}</h2>
         <p className="mt-2 text-sm text-muted">
-          {alreadyRegistered
-            ? "You're already on the waitlist — we'll be in touch at "
-            : "We'll serve you launch updates at "}
+          {alreadyRegistered ? m.waitlist.successExisting : m.waitlist.successNew}{" "}
           <span className="text-accent">{email}</span>
         </p>
       </div>
@@ -68,13 +78,11 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
 
   return (
     <form
-      className="card-glow w-full max-w-lg rounded-2xl border border-white/10 bg-slate-900/50 p-8 backdrop-blur-md"
+      className="card-glow w-full max-w-lg rounded-2xl border border-border bg-card p-8 backdrop-blur-md"
       onSubmit={handleSubmit}
     >
-      <h2 className="text-xl font-semibold text-white">Reserve your court position</h2>
-      <p className="mt-2 text-sm leading-relaxed text-muted">
-        Be among the first players invited to our exclusive beta launch.
-      </p>
+      <h2 className="text-xl font-semibold text-foreground">{m.waitlist.title}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-muted">{m.waitlist.subtitle}</p>
 
       <div className="mt-6 space-y-3">
         <input
@@ -84,29 +92,29 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
             setEmail(e.target.value);
             if (error) setError(null);
           }}
-          placeholder="Enter your email address"
+          placeholder={m.waitlist.placeholder}
           disabled={loading}
-          className="w-full rounded-xl border border-white/10 bg-black/40 px-4 py-3.5 text-sm text-white placeholder:text-slate-500 outline-none transition-colors focus:border-accent/50 focus:ring-1 focus:ring-accent/30 disabled:opacity-60"
+          className="w-full rounded-xl border border-border bg-input-bg px-4 py-3.5 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:border-accent/50 focus:ring-1 focus:ring-accent/30 disabled:opacity-60"
           required
         />
         {error && (
-          <p className="text-sm text-red-400" role="alert">
+          <p className="text-sm text-red-500" role="alert">
             {error}
           </p>
         )}
         <button
           type="submit"
           disabled={loading}
-          className="btn-glow flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3.5 text-sm font-bold text-black transition-all hover:scale-[1.02] hover:bg-[#d4ff33] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
+          className="btn-glow btn-primary flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:scale-100"
         >
-          <span>🎾</span>
-          {loading ? "Joining..." : "Join the Waitlist"}
+          <TennisBallIcon size={24} variant="cta" />
+          {loading ? m.waitlist.loading : m.waitlist.button}
           {!loading && <span>→</span>}
         </button>
       </div>
 
-      <p className="mt-4 text-center text-[10px] font-medium tracking-widest text-slate-500 uppercase">
-        No spam. Just launch updates and early access.
+      <p className="mt-4 text-center text-[10px] font-medium tracking-widest text-muted uppercase">
+        {m.waitlist.disclaimer}
       </p>
     </form>
   );

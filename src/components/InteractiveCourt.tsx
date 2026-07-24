@@ -7,6 +7,15 @@ import {
   useRef,
 } from "react";
 import { playRacketSound } from "@/lib/court-sound";
+import {
+  CLAY_COURT,
+  COURT_BLUR_PX,
+  drawClayTexture,
+  drawRegulationCourtLines,
+  fitCourtDimensions,
+  HARD_COURT,
+} from "@/lib/court-draw";
+import { drawTennisBall, preloadTennisBallImage, type BallExpression } from "@/lib/tennis-ball-draw";
 
 export interface InteractiveCourtHandle {
   triggerRain: () => void;
@@ -21,7 +30,7 @@ interface Ball {
   vy: number;
   radius: number;
   mass: number;
-  expression: "normal" | "happy" | "wink";
+  expression: BallExpression;
   floating: boolean;
   floatPhase: number;
   opacity: number;
@@ -40,31 +49,25 @@ interface Particle {
   size: number;
 }
 
-interface CourtColors {
-  surface: string;
-  surfaceDark: string;
-  line: string;
-  outer: string;
-}
-
 const GRAVITY = 680;
 const BOUNCE = 0.72;
 const FRICTION = 0.992;
 const MAX_BALLS = 28;
-const HARD_COURT: CourtColors = {
-  surface: "#1a4d35",
-  surfaceDark: "#123526",
-  line: "rgba(255,255,255,0.85)",
-  outer: "#0d2818",
-};
-const CLAY_COURT: CourtColors = {
-  surface: "#8b4513",
-  surfaceDark: "#6b3410",
-  line: "rgba(255,240,220,0.9)",
-  outer: "#4a2508",
-};
 
 let nextBallId = 1;
+
+function readCssVar(name: string, fallback: string) {
+  if (typeof window === "undefined") return fallback;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return value || fallback;
+}
+
+function getCanvasColors() {
+  return {
+    bg: readCssVar("--canvas-bg", "#050a14"),
+    glow: readCssVar("--canvas-glow", "rgba(200,255,0,0.04)"),
+  };
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -77,7 +80,7 @@ function createBall(
   vy: number,
   opts: Partial<Ball> = {},
 ): Ball {
-  const radius = opts.radius ?? 10 + Math.random() * 6;
+  const radius = opts.radius ?? 14 + Math.random() * 8;
   return {
     id: nextBallId++,
     x,
@@ -143,69 +146,13 @@ function spawnParticles(particles: Particle[], x: number, y: number, count = 8) 
 }
 
 function drawBall(ctx: CanvasRenderingContext2D, ball: Ball) {
-  ctx.save();
-  ctx.globalAlpha = ball.opacity;
-  if (ball.blur > 0) {
-    ctx.filter = `blur(${ball.blur}px)`;
-  }
-
-  ctx.translate(ball.x, ball.y);
-  ctx.rotate(ball.rotation);
-
-  const gradient = ctx.createRadialGradient(
-    -ball.radius * 0.25,
-    -ball.radius * 0.25,
-    ball.radius * 0.1,
-    0,
-    0,
-    ball.radius,
-  );
-  gradient.addColorStop(0, "#e8ff4d");
-  gradient.addColorStop(0.45, "#c8ff00");
-  gradient.addColorStop(1, "#9ecc00");
-
-  ctx.beginPath();
-  ctx.arc(0, 0, ball.radius, 0, Math.PI * 2);
-  ctx.fillStyle = gradient;
-  ctx.fill();
-
-  ctx.strokeStyle = "rgba(255,255,255,0.55)";
-  ctx.lineWidth = Math.max(1.2, ball.radius * 0.12);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, ball.radius * 0.45, ball.radius, Math.PI / 3.2, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.ellipse(0, 0, ball.radius * 0.45, ball.radius, -Math.PI / 3.2, 0, Math.PI * 2);
-  ctx.stroke();
-
-  if (ball.expression !== "normal") {
-    ctx.filter = "none";
-    ctx.fillStyle = "#1a1a1a";
-    const eyeY = -ball.radius * 0.15;
-    const eyeX = ball.radius * 0.22;
-    if (ball.expression === "happy") {
-      ctx.beginPath();
-      ctx.arc(-eyeX, eyeY, ball.radius * 0.1, 0, Math.PI * 2);
-      ctx.arc(eyeX, eyeY, ball.radius * 0.1, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, ball.radius * 0.15, ball.radius * 0.25, 0.15, Math.PI - 0.15);
-      ctx.strokeStyle = "#1a1a1a";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    } else {
-      ctx.beginPath();
-      ctx.arc(-eyeX, eyeY, ball.radius * 0.1, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.lineWidth = 2;
-      ctx.moveTo(eyeX - ball.radius * 0.12, eyeY);
-      ctx.lineTo(eyeX + ball.radius * 0.12, eyeY);
-      ctx.stroke();
-    }
-  }
-
-  ctx.restore();
+  drawTennisBall(ctx, ball.x, ball.y, ball.radius, {
+    rotation: ball.rotation,
+    opacity: ball.opacity,
+    blur: ball.blur,
+    expression: ball.expression,
+    showShadow: !ball.floating && ball.opacity > 0.5,
+  });
 }
 
 function drawCourt(
@@ -225,30 +172,54 @@ function drawCourt(
     parseInt(hex.slice(5, 7), 16),
   ];
 
-  const mix = (hard: string, clay: string) => {
+  const mix = (hard: string, clay: string, t: number) => {
     const [hr, hg, hb] = parse(hard);
     const [cr, cg, cb] = parse(clay);
-    const t = clayBlend;
     return `rgb(${lerpColor(hr, cr, t)},${lerpColor(hg, cg, t)},${lerpColor(hb, cb, t)})`;
   };
 
-  const surface = mix(HARD_COURT.surface, CLAY_COURT.surface);
-  const surfaceDark = mix(HARD_COURT.surfaceDark, CLAY_COURT.surfaceDark);
-  const line =
-    clayBlend > 0.5 ? CLAY_COURT.line : HARD_COURT.line;
-  const outer = mix(HARD_COURT.outer, CLAY_COURT.outer);
+  const isFullClay = clayBlend >= 0.95;
+  const isFullHard = clayBlend <= 0.05;
+  const isClay = clayBlend > 0.35;
+
+  let surface: string;
+  let surfaceDark: string;
+  let outer: string;
+  let line: string;
+  let useChalk: boolean;
+
+  if (isFullClay) {
+    surface = CLAY_COURT.surface;
+    surfaceDark = CLAY_COURT.surfaceDark;
+    outer = CLAY_COURT.outer;
+    line = CLAY_COURT.line;
+    useChalk = true;
+  } else if (isFullHard) {
+    surface = HARD_COURT.surface;
+    surfaceDark = HARD_COURT.surfaceDark;
+    outer = HARD_COURT.outer;
+    line = HARD_COURT.line;
+    useChalk = false;
+  } else {
+    surface = mix(HARD_COURT.surface, CLAY_COURT.surface, clayBlend);
+    surfaceDark = mix(HARD_COURT.surfaceDark, CLAY_COURT.surfaceDark, clayBlend);
+    outer = mix(HARD_COURT.outer, CLAY_COURT.outer, clayBlend);
+    line = isClay ? CLAY_COURT.line : HARD_COURT.line;
+    useChalk = isClay;
+  }
 
   ctx.save();
-  ctx.translate(w / 2, h / 2 + h * 0.08);
+  ctx.filter = `blur(${COURT_BLUR_PX}px)`;
+  ctx.translate(w / 2, h / 2);
 
-  const courtW = Math.min(w * 0.88, 920);
-  const courtH = Math.min(h * 0.62, 520);
-  const perspective = 0.72 + tiltY * 0.08;
+  const { courtW, courtH } = fitCourtDimensions(w, h);
 
-  ctx.transform(1, tiltX * 0.35, tiltY * 0.12, perspective, 0, 0);
+  // Uniform skew only — no Y-scale so ITF proportions stay true
+  ctx.transform(1, tiltX * 0.04, tiltY * 0.02, 1, 0, 0);
 
+  const pad = Math.max(8, courtW * 0.015);
   ctx.fillStyle = outer;
-  ctx.fillRect(-courtW / 2 - 24, -courtH / 2 - 24, courtW + 48, courtH + 48);
+  ctx.fillRect(-courtW / 2 - pad, -courtH / 2 - pad, courtW + pad * 2, courtH + pad * 2);
 
   const surfaceGrad = ctx.createLinearGradient(0, -courtH / 2, 0, courtH / 2);
   surfaceGrad.addColorStop(0, surface);
@@ -256,26 +227,18 @@ function drawCourt(
   ctx.fillStyle = surfaceGrad;
   ctx.fillRect(-courtW / 2, -courtH / 2, courtW, courtH);
 
-  ctx.strokeStyle = line;
-  ctx.lineWidth = 2.5;
-  ctx.strokeRect(-courtW / 2, -courtH / 2, courtW, courtH);
+  if (!isFullHard && clayBlend > 0) {
+    drawClayTexture(
+      ctx,
+      -courtW / 2,
+      -courtH / 2,
+      courtW,
+      courtH,
+      isFullClay ? 1 : clayBlend,
+    );
+  }
 
-  ctx.beginPath();
-  ctx.moveTo(0, -courtH / 2);
-  ctx.lineTo(0, courtH / 2);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(-courtW / 2, 0);
-  ctx.lineTo(courtW / 2, 0);
-  ctx.stroke();
-
-  const serviceW = courtW * 0.32;
-  ctx.strokeRect(-serviceW / 2, -courtH / 2, serviceW, courtH / 2);
-  ctx.strokeRect(-serviceW / 2, 0, serviceW, courtH / 2);
-
-  ctx.fillStyle = "rgba(255,255,255,0.08)";
-  ctx.fillRect(-2, -courtH / 2 - 8, 4, courtH + 16);
+  drawRegulationCourtLines(ctx, courtW, courtH, { lineColor: line, chalk: useChalk });
 
   ctx.restore();
 }
@@ -284,10 +247,10 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ballsRef = useRef<Ball[]>([]);
   const particlesRef = useRef<Particle[]>([]);
-  const cursorBallRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0, radius: 14 });
   const mouseRef = useRef({ x: 0, y: 0, down: false });
   const tiltRef = useRef({ x: 0, y: 0 });
-  const clayRef = useRef({ active: 0, blend: 0 });
+  const tiltTargetRef = useRef({ x: 0, y: 0 });
+  const clayRef = useRef({ active: 0, blend: 1 });
   const autoTimerRef = useRef(0);
   const frameRef = useRef<number>(0);
   const burstRef = useRef<() => void>(() => {});
@@ -327,11 +290,6 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       canvas.style.height = `${window.innerHeight}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-      cursorBallRef.current.x = window.innerWidth / 2;
-      cursorBallRef.current.y = window.innerHeight / 2;
-      cursorBallRef.current.targetX = cursorBallRef.current.x;
-      cursorBallRef.current.targetY = cursorBallRef.current.y;
-
       if (ballsRef.current.length === 0) {
         for (let i = 0; i < 4; i++) {
           ballsRef.current.push(
@@ -358,13 +316,12 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     const updatePointer = (clientX: number, clientY: number) => {
       mouseRef.current.x = clientX;
       mouseRef.current.y = clientY;
-      cursorBallRef.current.targetX = clientX;
-      cursorBallRef.current.targetY = clientY;
 
       const cx = window.innerWidth / 2;
       const cy = window.innerHeight / 2;
-      tiltRef.current.x = clamp((clientX - cx) / cx, -1, 1);
-      tiltRef.current.y = clamp((clientY - cy) / cy, -1, 1);
+      const maxTilt = 0.5;
+      tiltTargetRef.current.x = clamp((clientX - cx) / cx, -maxTilt, maxTilt);
+      tiltTargetRef.current.y = clamp((clientY - cy) / cy, -maxTilt, maxTilt);
     };
 
     const burst = () => {
@@ -461,9 +418,9 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
 
       if (clayRef.current.active > 0) {
         clayRef.current.active -= dt;
-        clayRef.current.blend = Math.min(1, clayRef.current.blend + dt * 2.5);
+        clayRef.current.blend = Math.max(0, clayRef.current.blend - dt * 2.5);
       } else {
-        clayRef.current.blend = Math.max(0, clayRef.current.blend - dt * 1.2);
+        clayRef.current.blend = Math.min(1, clayRef.current.blend + dt * 1.2);
       }
 
       autoTimerRef.current -= dt;
@@ -481,9 +438,9 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
         );
       }
 
-      const cursor = cursorBallRef.current;
-      cursor.x += (cursor.targetX - cursor.x) * (1 - Math.pow(0.001, dt));
-      cursor.y += (cursor.targetY - cursor.y) * (1 - Math.pow(0.001, dt));
+      const tiltLerp = 1 - Math.pow(0.0001, dt);
+      tiltRef.current.x += (tiltTargetRef.current.x - tiltRef.current.x) * tiltLerp;
+      tiltRef.current.y += (tiltTargetRef.current.y - tiltRef.current.y) * tiltLerp;
 
       const balls = ballsRef.current;
       for (let i = balls.length - 1; i >= 0; i--) {
@@ -554,10 +511,11 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
 
       ctx.clearRect(0, 0, w, h);
 
+      const canvasColors = getCanvasColors();
       const bgGrad = ctx.createRadialGradient(w / 2, h * 0.2, 0, w / 2, h * 0.2, w * 0.8);
-      bgGrad.addColorStop(0, "rgba(200,255,0,0.04)");
-      bgGrad.addColorStop(1, "rgba(5,10,20,0)");
-      ctx.fillStyle = "#050a14";
+      bgGrad.addColorStop(0, canvasColors.glow);
+      bgGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = canvasColors.bg;
       ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, w, h);
@@ -573,34 +531,21 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
 
       for (const p of particles) {
         ctx.globalAlpha = p.life / p.maxLife;
-        ctx.fillStyle = clayRef.current.blend > 0.5 ? "rgba(230,180,120,0.7)" : "rgba(220,230,200,0.6)";
+        ctx.fillStyle = clayRef.current.blend > 0.5
+          ? "rgba(230,180,120,0.7)"
+          : "rgba(180,220,255,0.6)";
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      drawBall(ctx, {
-        id: -1,
-        x: cursor.x,
-        y: cursor.y,
-        vx: 0,
-        vy: 0,
-        radius: cursor.radius,
-        mass: 1,
-        expression: "normal",
-        floating: false,
-        floatPhase: 0,
-        opacity: 0.92,
-        blur: 0,
-        rotation: performance.now() * 0.002,
-        spin: 0,
-      });
-
       frameRef.current = requestAnimationFrame(tick);
     };
 
     frameRef.current = requestAnimationFrame(tick);
+
+    preloadTennisBallImage().catch(() => {});
 
     return () => {
       cancelAnimationFrame(frameRef.current);
@@ -617,7 +562,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
   return (
     <canvas
       ref={canvasRef}
-      className="fixed inset-0 z-0 cursor-none touch-none"
+      className="pointer-events-none fixed inset-0 z-0"
       aria-hidden="true"
     />
   );

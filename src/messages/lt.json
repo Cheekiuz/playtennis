@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "title": "PlayTennis.lt — Lietuvos tenisas",
+    "description": "Protingesnis būdas rasti teniso partnerius, organizuoti rungtynes, sekti rezultatus ir atrasti kortus — viskas vienoje vietoje."
+  },
+  "header": {
+    "joinWaitlist": "Prisijungti prie sąrašo"
+  },
+  "hero": {
+    "badge": "Startuojame 2026 m. IV ketvirtį",
+    "title": "Kažkas įdomaus",
+    "titleAccent": "artėja...",
+    "subtitle": "Protingesnis būdas rasti teniso partnerius, organizuoti rungtynes, sekti rezultatus ir atrasti kortus — viskas vienoje vietoje."
+  },
+  "messages": [
+    "Ieškome tų, kurie tikrai atsako „Rytoj žaisim.“",
+    "Mokome AI teisėjais skelbti IN ir OUT.",
+    "Tempiame virtualų teniso tinklą...",
+    "Apšildome serverius...",
+    "Pūčiame teniso kamuoliukus...",
+    "Laukiame idealaus oro...",
+    "Randame dvejetų partnerius, kurie niekada neatšaukia..."
+  ],
+  "waitlist": {
+    "title": "Rezervuokite savo vietą aikštelėje",
+    "subtitle": "Būkite tarp pirmųjų žaidėjų, pakviestų į išskirtinę beta versiją.",
+    "placeholder": "Įveskite el. pašto adresą",
+    "button": "Prisijungti prie sąrašo",
+    "loading": "Jungiama...",
+    "disclaimer": "Jokio spamo. Tik starto naujienos ir ankstyva prieiga.",
+    "successTitle": "Oficialiai esate komandoje!",
+    "successNew": "Starto naujienas siųsime adresu",
+    "successExisting": "Jau esate sąraše — susisieksime adresu",
+    "errors": {
+      "invalidEmail": "Įveskite galiojantį el. pašto adresą",
+      "alreadyRegistered": "Jau esate sąraše!",
+      "unavailable": "Laukimo sąrašas laikinai nepasiekiamas",
+      "generic": "Kažkas nepavyko. Bandykite dar kartą.",
+      "network": "Tinklo klaida. Patikrinkite ryšį ir bandykite dar kartą."
+    }
+  },
+  "stats": {
+    "players": "Laukiančių žaidėjų",
+    "courts": "Indeksuojamų kortų",
+    "cities": "Miestų, kuriuos aprėpsime"
+  },
+  "tip": {
+    "press": "Spauskite",
+    "ballStorm": "kamuoliukų lietui",
+    "clayMode": "Dukart spustelėkite kortą — molio režimas"
+  },
+  "footer": {
+    "contact": "Kontaktai",
+    "privacy": "Privatumo politika",
+    "madeWith": "Su ❤️ teniso žaidėjams."
+  },
+  "achievements": [
+    { "icon": "trophy", "text": "Tinklo navigatorius — radote slaptą servą!" },
+    { "icon": "tennis", "text": "Kamuoliukų kolekcionierius — sertifikuotas kortų tyrinėtojas." },
+    { "icon": "crown", "text": "Ralio karalius — atatampas jums nusilenkia." }
+  ],
+  "lang": {
+    "en": "EN",
+    "lt": "LT"
+  },
+  "theme": {
+    "change": "Keisti temą",
+    "light": "Šviesi",
+    "dark": "Tamsi"
+  }
+}

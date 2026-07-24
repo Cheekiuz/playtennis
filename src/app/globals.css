@@ -1,12 +1,48 @@
 @import "tailwindcss";
 
-:root {
+html.dark,
+html:not(.light):not(.dark),
+[data-theme="dark"] {
   --background: #050a14;
   --foreground: #ffffff;
   --accent: #c8ff00;
+  --accent-hover: #d4ff33;
   --muted: #94a3b8;
-  --card: rgba(15, 23, 42, 0.6);
+  --card: rgba(15, 23, 42, 0.72);
   --border: rgba(255, 255, 255, 0.08);
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.1);
+  --input-bg: rgba(0, 0, 0, 0.4);
+  --canvas-bg: #050a14;
+  --canvas-glow: rgba(200, 255, 0, 0.04);
+  --court-surface: #1a4d35;
+  --court-surface-dark: #123526;
+  --court-line: rgba(255, 255, 255, 0.85);
+  --court-outer: #0d2818;
+  --court-net: rgba(255, 255, 255, 0.08);
+  --ball-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+html.light,
+[data-theme="light"] {
+  --background: #f4f7fb;
+  --foreground: #0f172a;
+  --accent: #65a30d;
+  --accent-hover: #84cc16;
+  --muted: #64748b;
+  --card: #ffffff;
+  --border: rgba(15, 23, 42, 0.08);
+  --surface: rgba(15, 23, 42, 0.04);
+  --surface-hover: rgba(15, 23, 42, 0.07);
+  --input-bg: #ffffff;
+  --canvas-bg: #dce6f0;
+  --canvas-glow: rgba(101, 163, 13, 0.14);
+  --court-surface: #3d9970;
+  --court-surface-dark: #2f7d5c;
+  --court-line: rgba(255, 255, 255, 0.95);
+  --court-outer: #256b4a;
+  --court-net: rgba(255, 255, 255, 0.35);
+  --ball-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
 }
 
 @theme inline {
@@ -14,6 +50,11 @@
   --color-foreground: var(--foreground);
   --color-accent: var(--accent);
   --color-muted: var(--muted);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-input-bg: var(--input-bg);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
 }
@@ -22,6 +63,13 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-inter), system-ui, sans-serif;
+  transition:
+    background-color 0.25s ease,
+    color 0.25s ease;
+}
+
+[data-theme="light"] body {
+  background: linear-gradient(180deg, #f8fafc 0%, var(--background) 40%, #eef2f7 100%);
 }
 
 @keyframes float {
@@ -46,27 +94,24 @@ body {
 }
 
 .tennis-ball {
-  background: radial-gradient(circle at 35% 35%, #e8ff4d 0%, #c8ff00 40%, #9ecc00 100%);
-  box-shadow:
-    0 0 40px rgba(200, 255, 0, 0.35),
-    inset -8px -8px 20px rgba(0, 0, 0, 0.15);
+  background: url("/tennis-ball-sprite.png") center / contain no-repeat;
+  filter: drop-shadow(var(--ball-shadow));
 }
 
-.tennis-ball::before,
-.tennis-ball::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.55);
+.tennis-ball-icon {
+  flex-shrink: 0;
+  object-fit: contain;
+  vertical-align: middle;
+  filter: drop-shadow(var(--ball-shadow));
 }
 
-.tennis-ball::before {
-  transform: rotate(55deg) scaleX(0.45);
-}
-
-.tennis-ball::after {
-  transform: rotate(-55deg) scaleX(0.45);
+.tennis-ball-icon--cta,
+.btn-primary .tennis-ball-icon {
+  filter:
+    drop-shadow(0 0 0.75px rgba(0, 0, 0, 0.85))
+    drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45))
+    contrast(1.35)
+    saturate(1.2);
 }
 
 .ball-float {
@@ -82,8 +127,16 @@ body {
   background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(200, 255, 0, 0.06) 0%, transparent 70%);
 }
 
+[data-theme="light"] .center-glow {
+  background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(101, 163, 13, 0.1) 0%, transparent 70%);
+}
+
 .stat-glow {
   background: radial-gradient(circle, rgba(200, 255, 0, 0.12) 0%, transparent 70%);
+}
+
+[data-theme="light"] .stat-glow {
+  background: radial-gradient(circle, rgba(101, 163, 13, 0.16) 0%, transparent 70%);
 }
 
 .card-glow {
@@ -92,12 +145,43 @@ body {
     0 0 1px rgba(255, 255, 255, 0.1);
 }
 
+[data-theme="light"] .card-glow {
+  box-shadow:
+    0 4px 24px rgba(15, 23, 42, 0.06),
+    0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
 .btn-glow {
   box-shadow: 0 0 24px rgba(200, 255, 0, 0.35);
 }
 
 .btn-glow:hover {
   box-shadow: 0 0 36px rgba(200, 255, 0, 0.5);
+}
+
+[data-theme="light"] .btn-glow {
+  box-shadow: 0 4px 14px rgba(101, 163, 13, 0.3);
+}
+
+[data-theme="light"] .btn-glow:hover {
+  box-shadow: 0 6px 20px rgba(101, 163, 13, 0.38);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #0f172a;
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease,
+    box-shadow 0.2s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+[data-theme="dark"] .btn-primary {
+  color: #000000;
 }
 
 .center-line {
