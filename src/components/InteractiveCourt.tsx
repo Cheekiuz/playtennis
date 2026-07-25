@@ -15,7 +15,7 @@ import {
   fitCourtDimensions,
   HARD_COURT,
 } from "@/lib/court-draw";
-import { drawTennisBall, type BallExpression } from "@/lib/tennis-ball-draw";
+import { drawTennisBall, preloadTennisBallImage, type BallExpression } from "@/lib/tennis-ball-draw";
 
 export interface InteractiveCourtHandle {
   triggerRain: () => void;
@@ -528,6 +528,8 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     window.addEventListener("click", onClick);
     window.addEventListener("dblclick", onDblClick);
     window.addEventListener("keydown", onKeyDown);
+
+    preloadTennisBallImage().catch(() => {});
 
     const renderScene = (w: number, h: number, drawDynamic = true) => {
       ctx.clearRect(0, 0, w, h);
