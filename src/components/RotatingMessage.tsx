@@ -21,7 +21,7 @@ export default function RotatingMessage() {
 
   return (
     <p
-      className={`mt-8 min-h-[3rem] max-w-lg text-sm italic text-muted transition-all duration-400 ${
+      className={`mt-8 min-h-[3rem] max-w-lg text-sm italic text-foreground/90 [text-shadow:0_1px_10px_rgba(255,255,255,0.85)] dark:[text-shadow:0_1px_10px_rgba(0,0,0,0.55)] transition-all duration-400 ${
         visible ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
       }`}
     >

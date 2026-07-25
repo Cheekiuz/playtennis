@@ -417,8 +417,23 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     window.addEventListener("keydown", onKeyDown);
 
     let lastTime = performance.now();
+    let running = true;
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        running = false;
+        cancelAnimationFrame(frameRef.current);
+        return;
+      }
+      running = true;
+      lastTime = performance.now();
+      frameRef.current = requestAnimationFrame(tick);
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
 
     const tick = (now: number) => {
+      if (!running) return;
       const dt = Math.min((now - lastTime) / 1000, 0.033);
       lastTime = now;
       const w = window.innerWidth;
@@ -577,7 +592,9 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     preloadTennisBallImage().catch(() => {});
 
     return () => {
+      running = false;
       cancelAnimationFrame(frameRef.current);
+      document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("touchmove", onTouchMove);
