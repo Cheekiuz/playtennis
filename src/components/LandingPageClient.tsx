@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AchievementIcon, type Achievement } from "@/components/AchievementIcon";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import RotatingMessage from "@/components/RotatingMessage";
@@ -47,6 +47,28 @@ export default function LandingPageClient({
       setLogoClicks(0);
     }
   };
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.code !== "KeyT" && e.key.toLowerCase() !== "t") return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+
+      const active = document.activeElement;
+      if (
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        (active instanceof HTMLElement && active.isContentEditable)
+      ) {
+        return;
+      }
+
+      e.preventDefault();
+      courtRef.current?.triggerBurst();
+    };
+
+    document.addEventListener("keydown", onKeyDown, true);
+    return () => document.removeEventListener("keydown", onKeyDown, true);
+  }, []);
 
   return (
     <>

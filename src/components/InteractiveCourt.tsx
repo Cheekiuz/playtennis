@@ -461,74 +461,6 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     };
     burstRef.current = burst;
 
-    const onMove = (e: MouseEvent) => updatePointer(e.clientX, e.clientY);
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (e.touches[0]) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-    };
-
-    const onTouchStart = (e: TouchEvent) => {
-      if (e.touches[0]) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
-    };
-
-    const addBallAt = (x: number, y: number, catchOnly = false) => {
-      let caught = false;
-      for (const ball of ballsRef.current) {
-        if (ball.floating) continue;
-        const dist = Math.hypot(ball.x - x, ball.y - y);
-        if (dist < ball.radius + 18) {
-          ball.expression = Math.random() > 0.5 ? "happy" : "wink";
-          ball.vx *= 0.5;
-          ball.vy = -Math.abs(ball.vy) - 80;
-          caught = true;
-          playRacketSound(0.06);
-          break;
-        }
-      }
-      if (catchOnly || caught) return;
-
-      if (ballsRef.current.length >= MAX_BALLS) {
-        ballsRef.current.shift();
-      }
-      ballsRef.current.push(
-        createBall(
-          x,
-          y,
-          (Math.random() - 0.5) * 180,
-          -220 - Math.random() * 160,
-        ),
-      );
-      spawnParticles(particlesRef.current, x, y);
-      playRacketSound(0.07);
-    };
-
-    const onClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest("a, button, input, form, header, footer")) return;
-      addBallAt(e.clientX, e.clientY);
-    };
-
-    const onDblClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest("a, button, input, form, header, footer")) return;
-      clayRef.current.active = 3.5;
-      playRacketSound(0.04);
-    };
-
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== "t" || e.metaKey || e.ctrlKey || e.altKey) return;
-      const target = e.target as HTMLElement;
-      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
-      burst();
-    };
-
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("click", onClick);
-    window.addEventListener("dblclick", onDblClick);
-    window.addEventListener("keydown", onKeyDown);
-
     preloadTennisBallImage().catch(() => {});
 
     const renderScene = (w: number, h: number, drawDynamic = true) => {
@@ -591,6 +523,74 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       });
     };
 
+    const triggerBurst = () => {
+      burst();
+      if (reducedMotion) {
+        renderScene(window.innerWidth, window.innerHeight, true);
+      }
+    };
+    burstRef.current = triggerBurst;
+
+    const onMove = (e: MouseEvent) => updatePointer(e.clientX, e.clientY);
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches[0]) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches[0]) updatePointer(e.touches[0].clientX, e.touches[0].clientY);
+    };
+
+    const addBallAt = (x: number, y: number, catchOnly = false) => {
+      let caught = false;
+      for (const ball of ballsRef.current) {
+        if (ball.floating) continue;
+        const dist = Math.hypot(ball.x - x, ball.y - y);
+        if (dist < ball.radius + 18) {
+          ball.expression = Math.random() > 0.5 ? "happy" : "wink";
+          ball.vx *= 0.5;
+          ball.vy = -Math.abs(ball.vy) - 80;
+          caught = true;
+          playRacketSound(0.06);
+          break;
+        }
+      }
+      if (catchOnly || caught) return;
+
+      if (ballsRef.current.length >= MAX_BALLS) {
+        ballsRef.current.shift();
+      }
+      ballsRef.current.push(
+        createBall(
+          x,
+          y,
+          (Math.random() - 0.5) * 180,
+          -220 - Math.random() * 160,
+        ),
+      );
+      spawnParticles(particlesRef.current, x, y);
+      playRacketSound(0.07);
+    };
+
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("a, button, input, form, header, footer")) return;
+      addBallAt(e.clientX, e.clientY);
+    };
+
+    const onDblClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("a, button, input, form, header, footer")) return;
+      clayRef.current.active = 3.5;
+      playRacketSound(0.04);
+    };
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("click", onClick);
+    window.addEventListener("dblclick", onDblClick);
+
     if (reducedMotion) {
       renderScene(window.innerWidth, window.innerHeight, false);
       return () => {
@@ -602,7 +602,6 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
         window.removeEventListener("touchstart", onTouchStart);
         window.removeEventListener("click", onClick);
         window.removeEventListener("dblclick", onDblClick);
-        window.removeEventListener("keydown", onKeyDown);
       };
     }
 
@@ -744,7 +743,6 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("click", onClick);
       window.removeEventListener("dblclick", onDblClick);
-      window.removeEventListener("keydown", onKeyDown);
     };
   }, []);
 
