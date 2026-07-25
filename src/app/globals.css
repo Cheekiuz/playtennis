@@ -21,6 +21,7 @@ html:not(.light):not(.dark),
   --court-outer: #0d2818;
   --court-net: rgba(255, 255, 255, 0.08);
   --ball-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  --destructive: #f87171;
 }
 
 html.light,
@@ -43,6 +44,7 @@ html.light,
   --court-outer: #256b4a;
   --court-net: rgba(255, 255, 255, 0.35);
   --ball-shadow: 0 2px 8px rgba(15, 23, 42, 0.18);
+  --destructive: #dc2626;
 }
 
 @theme inline {
@@ -55,6 +57,7 @@ html.light,
   --color-surface: var(--surface);
   --color-surface-hover: var(--surface-hover);
   --color-input-bg: var(--input-bg);
+  --color-destructive: var(--destructive);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-jetbrains);
 }

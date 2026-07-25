@@ -1,12 +1,4 @@
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function normalizeEmail(email: string) {
-  return email.trim().toLowerCase();
-}
-
-function isValidEmail(email: string) {
-  return EMAIL_REGEX.test(email) && email.length <= 254;
-}
+import { isValidEmail, normalizeEmail } from "@/lib/email";
 
 export async function POST(request: Request) {
   let body: unknown;

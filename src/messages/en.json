@@ -32,6 +32,7 @@
     "successNew": "We'll serve you launch updates at",
     "successExisting": "You're already on the waitlist — we'll be in touch at",
     "errors": {
+      "required": "Please enter your email address",
       "invalidEmail": "Please enter a valid email address",
       "alreadyRegistered": "You're already on the list!",
       "unavailable": "Waitlist is temporarily unavailable",
@@ -40,9 +41,7 @@
     }
   },
   "stats": {
-    "players": "Players already waiting",
-    "courts": "Courts being indexed",
-    "cities": "Cities to be supported"
+    "tagline": "170+ courts. Less scrolling. More tennis."
   },
   "tip": {
     "press": "Press",

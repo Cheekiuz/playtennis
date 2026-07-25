@@ -32,6 +32,7 @@
     "successNew": "Starto naujienas siųsime adresu",
     "successExisting": "Jau esate sąraše — susisieksime adresu",
     "errors": {
+      "required": "Įveskite el. pašto adresą",
       "invalidEmail": "Įveskite galiojantį el. pašto adresą",
       "alreadyRegistered": "Jau esate sąraše!",
       "unavailable": "Laukimo sąrašas laikinai nepasiekiamas",
@@ -40,9 +41,7 @@
     }
   },
   "stats": {
-    "players": "Laukiančių žaidėjų",
-    "courts": "Indeksuojamų kortų",
-    "cities": "Miestų, kuriuos aprėpsime"
+    "tagline": "170+ kortų. Mažiau slinkimo. Daugiau teniso."
   },
   "tip": {
     "press": "Spauskite",

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import TennisBallIcon from "@/components/TennisBallIcon";
 import { useLocale } from "@/context/LocaleContext";
+import { isValidEmail, normalizeEmail } from "@/lib/email";
 
 interface WaitlistFormProps {
   onSuccess?: () => void;
@@ -25,7 +26,19 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || loading) return;
+    if (loading) return;
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setError(m.waitlist.errors.required);
+      return;
+    }
+
+    const normalizedEmail = normalizeEmail(trimmedEmail);
+    if (!isValidEmail(normalizedEmail)) {
+      setError(m.waitlist.errors.invalidEmail);
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -34,7 +47,7 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
       const res = await fetch("/api/waitlist", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: normalizedEmail }),
       });
 
       const data = (await res.json()) as { error?: string; alreadyRegistered?: boolean };
@@ -78,6 +91,7 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
 
   return (
     <form
+      noValidate
       className="card-glow w-full max-w-lg rounded-2xl border border-border bg-card p-8 backdrop-blur-md"
       onSubmit={handleSubmit}
     >
@@ -86,6 +100,7 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
 
       <div className="mt-6 space-y-3">
         <input
+          id="waitlist-email"
           type="email"
           value={email}
           onChange={(e) => {
@@ -94,11 +109,20 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
           }}
           placeholder={m.waitlist.placeholder}
           disabled={loading}
-          className="w-full rounded-xl border border-border bg-input-bg px-4 py-3.5 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:border-accent/50 focus:ring-1 focus:ring-accent/30 disabled:opacity-60"
-          required
+          aria-invalid={!!error}
+          aria-describedby={error ? "waitlist-email-error" : undefined}
+          className={`w-full rounded-xl border bg-input-bg px-4 py-3.5 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:ring-1 disabled:opacity-60 ${
+            error
+              ? "border-destructive/50 focus:border-destructive/50 focus:ring-destructive/30"
+              : "border-border focus:border-accent/50 focus:ring-accent/30"
+          }`}
         />
         {error && (
-          <p className="text-sm text-red-500" role="alert">
+          <p
+            id="waitlist-email-error"
+            className="rounded-lg bg-destructive/8 px-3 py-2 text-sm font-sans text-destructive"
+            role="alert"
+          >
             {error}
           </p>
         )}
