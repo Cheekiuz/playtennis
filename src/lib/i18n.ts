@@ -3,7 +3,7 @@ import lt from "@/messages/lt.json";
 
 export const locales = ["en", "lt"] as const;
 export type Locale = (typeof locales)[number];
-export const defaultLocale: Locale = "en";
+export const defaultLocale: Locale = "lt";
 
 export type Messages = typeof en;
 
@@ -18,8 +18,8 @@ export function getMessages(locale: Locale): Messages {
 }
 
 export function getLocaleFromPathname(pathname: string): Locale {
-  if (pathname === "/lt" || pathname.startsWith("/lt/")) {
-    return "lt";
+  if (pathname === "/en" || pathname.startsWith("/en/")) {
+    return "en";
   }
   return defaultLocale;
 }

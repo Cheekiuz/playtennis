@@ -3,10 +3,10 @@ import { LocaleProvider } from "@/context/LocaleContext";
 import { getMessages } from "@/lib/i18n";
 
 export default function HomePage() {
-  const messages = getMessages("en");
+  const messages = getMessages("lt");
 
   return (
-    <LocaleProvider key="en" locale="en" messages={messages}>
+    <LocaleProvider key="lt" locale="lt" messages={messages}>
       <LandingPage messages={messages} />
     </LocaleProvider>
   );

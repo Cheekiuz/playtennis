@@ -12,10 +12,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // /en is an alias — English lives at /
-  if (pathname === "/en" || pathname.startsWith("/en/")) {
+  // /lt is an alias — Lithuanian lives at /
+  if (pathname === "/lt" || pathname.startsWith("/lt/")) {
     const url = request.nextUrl.clone();
-    url.pathname = pathname.replace(/^\/en/, "") || "/";
+    url.pathname = pathname.replace(/^\/lt/, "") || "/";
     return NextResponse.redirect(url);
   }
 

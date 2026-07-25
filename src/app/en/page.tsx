@@ -2,11 +2,11 @@ import LandingPage from "@/components/LandingPage";
 import { LocaleProvider } from "@/context/LocaleContext";
 import { getMessages } from "@/lib/i18n";
 
-export default function LithuanianPage() {
-  const messages = getMessages("lt");
+export default function EnglishPage() {
+  const messages = getMessages("en");
 
   return (
-    <LocaleProvider key="lt" locale="lt" messages={messages}>
+    <LocaleProvider key="en" locale="en" messages={messages}>
       <LandingPage messages={messages} />
     </LocaleProvider>
   );
