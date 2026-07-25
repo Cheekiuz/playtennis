@@ -113,7 +113,9 @@ export default function LandingPage() {
             <TennisBallIcon size={16} />
             PlayTennis.lt
           </span>
-          <p className="text-xs text-muted">{m.footer.madeWith}</p>
+          <p className="text-xs text-foreground/90 [text-shadow:0_1px_10px_rgba(255,255,255,0.85)] dark:[text-shadow:0_1px_10px_rgba(0,0,0,0.55)]">
+            {m.footer.madeWith}
+          </p>
         </div>
       </footer>
     </div>

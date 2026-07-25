@@ -148,6 +148,50 @@ body {
     0 0 1px rgba(255, 255, 255, 0.1);
 }
 
+.waitlist-card {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 24%, transparent) 0%,
+    var(--card) 44%,
+    color-mix(in srgb, var(--accent) 16%, transparent) 100%
+  );
+  animation: waitlist-blink 2.8s ease-in-out infinite;
+}
+
+[data-theme="light"] .waitlist-card {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 14%, #ffffff) 0%,
+    var(--card) 46%,
+    color-mix(in srgb, var(--accent) 10%, #ffffff) 100%
+  );
+}
+
+@keyframes waitlist-blink {
+  0%,
+  100% {
+    box-shadow:
+      0 0 48px color-mix(in srgb, var(--accent) 16%, transparent),
+      0 0 1px rgba(255, 255, 255, 0.12);
+    border-color: color-mix(in srgb, var(--accent) 26%, var(--border));
+  }
+  50% {
+    box-shadow:
+      0 0 96px color-mix(in srgb, var(--accent) 36%, transparent),
+      0 0 1px rgba(255, 255, 255, 0.22);
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waitlist-card {
+    animation: none;
+    box-shadow:
+      0 0 64px color-mix(in srgb, var(--accent) 22%, transparent),
+      0 0 1px rgba(255, 255, 255, 0.14);
+  }
+}
+
 [data-theme="light"] .card-glow {
   box-shadow:
     0 4px 24px rgba(15, 23, 42, 0.06),

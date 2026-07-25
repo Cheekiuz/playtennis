@@ -92,7 +92,7 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
   return (
     <form
       noValidate
-      className="card-glow w-full max-w-lg rounded-2xl border border-border bg-card p-8 backdrop-blur-md"
+      className="waitlist-card w-full max-w-lg rounded-2xl border border-border p-8 backdrop-blur-md"
       onSubmit={handleSubmit}
     >
       <h2 className="text-xl font-semibold text-foreground">{m.waitlist.title}</h2>
