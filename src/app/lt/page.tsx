@@ -6,7 +6,7 @@ export default function LithuanianPage() {
   const messages = getMessages("lt");
 
   return (
-    <LocaleProvider locale="lt" messages={messages}>
+    <LocaleProvider key="lt" locale="lt" messages={messages}>
       <LandingPage messages={messages} />
     </LocaleProvider>
   );

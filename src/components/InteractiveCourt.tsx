@@ -6,6 +6,7 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
+import { registerCourtActions } from "@/lib/court-controls";
 import { playRacketSound } from "@/lib/court-sound";
 import {
   CLAY_COURT,
@@ -338,28 +339,17 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
   const autoTimerRef = useRef(0);
   const frameRef = useRef<number>(0);
   const burstRef = useRef<() => void>(() => {});
+  const actionsRef = useRef({ triggerBurst: () => {}, triggerRain: () => {} });
   const canvasColorsRef = useRef<CanvasColors>(readCanvasColors());
   const courtCacheRef = useRef<CourtCache>({ canvas: null, w: 0, h: 0, clayBlend: -1 });
   const dprRef = useRef(1);
 
   useImperativeHandle(ref, () => ({
     triggerRain() {
-      const w = window.innerWidth;
-      for (let i = 0; i < 35; i++) {
-        if (ballsRef.current.length >= MAX_BALLS) break;
-        ballsRef.current.push(
-          createBall(
-            Math.random() * w,
-            -20 - Math.random() * 200,
-            (Math.random() - 0.5) * 120,
-            200 + Math.random() * 180,
-          ),
-        );
-      }
-      playRacketSound(0.05);
+      actionsRef.current.triggerRain();
     },
     triggerBurst() {
-      burstRef.current();
+      actionsRef.current.triggerBurst();
     },
   }));
 
@@ -459,7 +449,6 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       }
       playRacketSound(0.1);
     };
-    burstRef.current = burst;
 
     preloadTennisBallImage().catch(() => {});
 
@@ -531,6 +520,25 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     };
     burstRef.current = triggerBurst;
 
+    const triggerRain = () => {
+      const w = window.innerWidth;
+      for (let i = 0; i < 35; i++) {
+        if (ballsRef.current.length >= MAX_BALLS) break;
+        ballsRef.current.push(
+          createBall(
+            Math.random() * w,
+            -20 - Math.random() * 200,
+            (Math.random() - 0.5) * 120,
+            200 + Math.random() * 180,
+          ),
+        );
+      }
+      playRacketSound(0.05);
+    };
+
+    actionsRef.current = { triggerBurst, triggerRain };
+    registerCourtActions(actionsRef.current);
+
     const onMove = (e: MouseEvent) => updatePointer(e.clientX, e.clientY);
 
     const onTouchMove = (e: TouchEvent) => {
@@ -595,6 +603,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       renderScene(window.innerWidth, window.innerHeight, false);
       return () => {
         themeObserver.disconnect();
+        registerCourtActions(null);
         clearTimeout(resizeTimer);
         window.removeEventListener("resize", onResize);
         window.removeEventListener("mousemove", onMove);
@@ -734,6 +743,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     return () => {
       running = false;
       cancelAnimationFrame(frameRef.current);
+      registerCourtActions(null);
       themeObserver.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       clearTimeout(resizeTimer);

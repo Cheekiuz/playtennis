@@ -9,6 +9,7 @@ import TennisBallIcon from "@/components/TennisBallIcon";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
 import WaitlistForm from "@/components/WaitlistForm";
 import type { InteractiveCourtHandle } from "@/components/InteractiveCourt";
+import { triggerCourtBurst, triggerCourtRain } from "@/lib/court-controls";
 import type { Messages } from "@/lib/i18n";
 
 const InteractiveCourt = dynamic(() => import("@/components/InteractiveCourt"), {
@@ -37,12 +38,24 @@ export default function LandingPageClient({
   const [logoClicks, setLogoClicks] = useState(0);
   const [achievement, setAchievement] = useState<Achievement | null>(null);
 
+  const fireBurst = () => {
+    if (!triggerCourtBurst()) {
+      courtRef.current?.triggerBurst();
+    }
+  };
+
+  const fireRain = () => {
+    if (!triggerCourtRain()) {
+      courtRef.current?.triggerRain();
+    }
+  };
+
   const handleLogoClick = () => {
     const next = logoClicks + 1;
     setLogoClicks(next);
     if (next === 5) {
       setAchievement(m.achievements[Math.floor(Math.random() * m.achievements.length)]);
-      courtRef.current?.triggerBurst();
+      fireBurst();
       setTimeout(() => setAchievement(null), 4000);
       setLogoClicks(0);
     }
@@ -63,7 +76,7 @@ export default function LandingPageClient({
       }
 
       e.preventDefault();
-      courtRef.current?.triggerBurst();
+      fireBurst();
     };
 
     document.addEventListener("keydown", onKeyDown, true);
@@ -81,7 +94,7 @@ export default function LandingPageClient({
         </div>
       )}
 
-      <header className="pointer-events-auto relative z-10 mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6">
+      <header className="pointer-events-auto relative z-30 mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6">
         <button
           type="button"
           onClick={handleLogoClick}
@@ -110,7 +123,7 @@ export default function LandingPageClient({
         </section>
 
         <section id="waitlist" className="relative z-20 mt-10 flex w-full justify-center sm:mt-14">
-          <WaitlistForm onSuccess={() => courtRef.current?.triggerRain()} />
+          <WaitlistForm onSuccess={fireRain} />
         </section>
 
         {stats}

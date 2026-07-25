@@ -6,7 +6,7 @@ export default function HomePage() {
   const messages = getMessages("en");
 
   return (
-    <LocaleProvider locale="en" messages={messages}>
+    <LocaleProvider key="en" locale="en" messages={messages}>
       <LandingPage messages={messages} />
     </LocaleProvider>
   );

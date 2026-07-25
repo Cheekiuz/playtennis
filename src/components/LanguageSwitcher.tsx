@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "@/context/LocaleContext";
 import { localePath, locales, type Locale } from "@/lib/i18n";
@@ -32,6 +32,8 @@ function GlobeIcon() {
 
 export default function LanguageSwitcher() {
   const { locale } = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -56,8 +58,16 @@ export default function LanguageSwitcher() {
     };
   }, [open]);
 
+  const switchLocale = (code: Locale) => {
+    const href = localePath(code);
+    setOpen(false);
+    if (pathname === href) return;
+    router.push(href);
+    router.refresh();
+  };
+
   return (
-    <div ref={rootRef} className="relative z-30">
+    <div ref={rootRef} className="relative">
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -73,17 +83,16 @@ export default function LanguageSwitcher() {
         <ul
           role="listbox"
           aria-label="Languages"
-          className="absolute right-0 top-full mt-2 min-w-[9rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-xl backdrop-blur-md"
+          className="absolute right-0 top-full z-50 mt-2 min-w-[9rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-xl"
         >
           {locales.map((code) => {
             const active = locale === code;
             return (
               <li key={code} role="option" aria-selected={active}>
-                <Link
-                  href={localePath(code)}
-                  prefetch={false}
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center justify-between gap-3 px-3 py-2 text-sm transition-colors ${
+                <button
+                  type="button"
+                  onClick={() => switchLocale(code)}
+                  className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors ${
                     active
                       ? "bg-accent/15 text-accent"
                       : "text-foreground/80 hover:bg-surface-hover hover:text-foreground"
@@ -93,7 +102,7 @@ export default function LanguageSwitcher() {
                   <span className="text-xs font-semibold tracking-wide opacity-70">
                     {localeLabels[code].short}
                   </span>
-                </Link>
+                </button>
               </li>
             );
           })}
