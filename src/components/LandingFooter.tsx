@@ -7,8 +7,8 @@ interface LandingFooterProps {
 
 export default function LandingFooter({ messages: m }: LandingFooterProps) {
   return (
-    <footer className="pointer-events-auto relative z-10 mt-16 border-t border-border sm:mt-20">
-      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 py-6 sm:flex-row">
+    <footer className="pointer-events-auto relative z-10 mt-10 sm:mt-12">
+      <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-3 sm:flex-row">
         <span className="flex items-center gap-2 text-sm font-bold text-foreground">
           <TennisBallIcon size={16} />
           PlayTennis.lt
