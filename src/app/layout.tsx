@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
-import TennisBallPreload from "@/components/TennisBallPreload";
 import { ThemeScript } from "@/components/ThemeScript";
 import { ThemeProvider } from "@/context/ThemeContext";
 import "./globals.css";
 import { defaultLocale, getMessages, isValidLocale, type Locale } from "@/lib/i18n";
+import { BALL_IMAGE_SRC, BALL_OG_IMAGE_SRC } from "@/lib/tennis-ball-assets";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,13 +32,13 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       title: m.meta.title,
       description: m.meta.description,
-      images: [{ url: "/tennis-ball-sprite.png", width: 512, height: 512, alt: "Tennis ball" }],
+      images: [{ url: BALL_OG_IMAGE_SRC, width: 512, height: 512, alt: "Tennis ball" }],
     },
     twitter: {
       card: "summary",
       title: m.meta.title,
       description: m.meta.description,
-      images: ["/tennis-ball-sprite.png"],
+      images: [BALL_OG_IMAGE_SRC],
     },
   };
 }
@@ -54,13 +54,10 @@ export default async function RootLayout({
     <html lang={locale} className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <ThemeScript />
-        <link rel="preload" href="/tennis-ball-sprite.png" as="image" />
+        <link rel="preload" href={BALL_IMAGE_SRC} as="image" type="image/webp" />
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
-        <ThemeProvider>
-          <TennisBallPreload />
-          {children}
-        </ThemeProvider>
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

@@ -96,16 +96,18 @@ body {
   }
 }
 
-.tennis-ball {
-  background: url("/tennis-ball-sprite.png") center / contain no-repeat;
-  filter: drop-shadow(var(--ball-shadow));
-}
-
 .tennis-ball-icon {
   flex-shrink: 0;
   object-fit: contain;
   vertical-align: middle;
   filter: drop-shadow(var(--ball-shadow));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulse,
+  .animate-bounce {
+    animation: none;
+  }
 }
 
 .tennis-ball-icon--cta,
@@ -115,15 +117,6 @@ body {
     drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45))
     contrast(1.35)
     saturate(1.2);
-}
-
-.ball-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.ball-launch {
-  animation: launch 2.5s ease-out forwards;
-  pointer-events: none;
 }
 
 .center-glow {
@@ -159,9 +152,11 @@ body {
     color-mix(in srgb, var(--accent) 16%, #475569) 100%
   );
   background-size: 220% 220%;
-  animation:
-    waitlist-gradient 5s ease-in-out infinite,
-    waitlist-blink 2.4s ease-in-out infinite;
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  box-shadow:
+    0 0 64px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 0 1px rgba(255, 255, 255, 0.14);
+  animation: waitlist-gradient 5s ease-in-out infinite;
 }
 
 .waitlist-card::before {
@@ -221,29 +216,10 @@ body {
   }
 }
 
-@keyframes waitlist-blink {
-  0%,
-  100% {
-    box-shadow:
-      0 0 40px color-mix(in srgb, var(--accent) 14%, transparent),
-      0 0 1px rgba(255, 255, 255, 0.1);
-    border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
-  }
-  50% {
-    box-shadow:
-      0 0 110px color-mix(in srgb, var(--accent) 42%, transparent),
-      0 0 1px rgba(255, 255, 255, 0.24);
-    border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .waitlist-card {
     animation: none;
     background-size: 100% 100%;
-    box-shadow:
-      0 0 64px color-mix(in srgb, var(--accent) 22%, transparent),
-      0 0 1px rgba(255, 255, 255, 0.14);
   }
 
   .waitlist-card::before {

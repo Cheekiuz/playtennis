@@ -3,9 +3,11 @@ import { LocaleProvider } from "@/context/LocaleContext";
 import { getMessages } from "@/lib/i18n";
 
 export default function LithuanianPage() {
+  const messages = getMessages("lt");
+
   return (
-    <LocaleProvider locale="lt" messages={getMessages("lt")}>
-      <LandingPage />
+    <LocaleProvider locale="lt" messages={messages}>
+      <LandingPage messages={messages} />
     </LocaleProvider>
   );
 }

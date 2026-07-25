@@ -76,7 +76,7 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
 
   if (submitted) {
     return (
-      <div className="card-glow success-pop w-full max-w-lg rounded-2xl border border-accent/30 bg-card p-8 text-center backdrop-blur-md">
+      <div className="card-glow success-pop w-full max-w-lg rounded-2xl border border-accent/30 bg-card/95 p-8 text-center">
         <div className="flex justify-center">
           <TennisBallIcon size={48} className="animate-bounce" />
         </div>
@@ -92,7 +92,7 @@ export default function WaitlistForm({ onSuccess }: WaitlistFormProps) {
   return (
     <form
       noValidate
-      className="waitlist-card w-full max-w-lg rounded-2xl border border-border p-8 backdrop-blur-md"
+      className="waitlist-card w-full max-w-lg rounded-2xl border border-border bg-card/95 p-8"
       onSubmit={handleSubmit}
     >
       <h2 className="text-xl font-semibold text-foreground">{m.waitlist.title}</h2>

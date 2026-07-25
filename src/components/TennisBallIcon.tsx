@@ -1,3 +1,5 @@
+import { BALL_IMAGE_SRC } from "@/lib/tennis-ball-assets";
+
 interface TennisBallIconProps {
   className?: string;
   size?: number;
@@ -17,7 +19,7 @@ export default function TennisBallIcon({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src="/tennis-ball-sprite.png"
+      src={BALL_IMAGE_SRC}
       alt=""
       width={srcSize}
       height={srcSize}

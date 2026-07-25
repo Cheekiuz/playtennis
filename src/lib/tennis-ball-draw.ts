@@ -8,7 +8,9 @@ export interface DrawTennisBallOptions {
   showShadow?: boolean;
 }
 
-export const BALL_IMAGE_SRC = "/tennis-ball-sprite.png";
+import { BALL_IMAGE_SRC } from "@/lib/tennis-ball-assets";
+
+export { BALL_IMAGE_SRC, BALL_OG_IMAGE_SRC } from "@/lib/tennis-ball-assets";
 
 let ballImage: HTMLImageElement | null = null;
 let loadPromise: Promise<void> | null = null;
