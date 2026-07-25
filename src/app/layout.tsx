@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { ThemeScript } from "@/components/ThemeScript";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { ThemeProvider } from "@/context/ThemeContext";
 import "./globals.css";
 import { defaultLocale, getMessages, isValidLocale, type Locale } from "@/lib/i18n";
@@ -58,6 +59,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
         <ThemeProvider>{children}</ThemeProvider>
+        <GoogleAnalytics />
       </body>
     </html>
   );
