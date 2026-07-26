@@ -7,7 +7,9 @@
     "ogImageAlt": "PlayTennis.lt - teniso kamuoliukas"
   },
   "header": {
-    "joinWaitlist": "Prisijungti prie sąrašo"
+    "joinWaitlist": "Prisijungti prie sąrašo",
+    "courtAlerts": "Kortų pranešimai",
+    "home": "Pradžia"
   },
   "hero": {
     "badge": "Startuojame 2026 m. IV ketvirtį",
@@ -69,5 +71,78 @@
     "change": "Keisti temą",
     "light": "Šviesi",
     "dark": "Tamsi"
+  },
+  "courtAlerts": {
+    "meta": {
+      "title": "Kortų pranešimai - PlayTennis.lt",
+      "description": "Nebereikia atnaujinti rezervacijų puslapių. Stebėsime laisvas kortas ir pranešime, kai tik atsiras galimybė.",
+      "keywords": "teniso kortų pranešimai, kortų laisvumas, SEB Arena, teniso rezervacija, PlayTennis"
+    },
+    "hero": {
+      "badge": "Tiesioginis stebėjimas",
+      "title": "Kortų pranešimai",
+      "subtitle": "Nebereikia atnaujinti rezervacijų puslapių. Stebėsime laisvas kortas ir pranešime, kai tik atsiras galimybė.",
+      "cta": "Sukurti pranešimą"
+    },
+    "form": {
+      "title": "Naujas pranešimas",
+      "editTitle": "Redaguoti pranešimą",
+      "cancelEdit": "Atšaukti",
+      "stepLabel": "Žingsnis {current} iš {total}",
+      "steps": {
+        "location": "Vieta",
+        "when": "Data",
+        "time": "Pageidaujamas laikas",
+        "court": "Kortas",
+        "notify": "Pranešimai"
+      },
+      "city": "Miestas",
+      "club": "Klubas",
+      "date": "Data",
+      "preferredTime": "Pageidaujamas laikas",
+      "court": "Kortas",
+      "courtAny": "Bet kuris kortas",
+      "courtNumber": "Kortas {n}",
+      "notificationMethods": "Pranešimų būdai",
+      "pushNotification": "Push pranešimas",
+      "emailNotification": "El. paštas",
+      "emailPlaceholder": "Įveskite el. pašto adresą",
+      "back": "Atgal",
+      "continue": "Tęsti",
+      "startWatching": "Pradėti stebėti",
+      "loading": "Kuriama...",
+      "successTitle": "Stebime...",
+      "successSubtitle": "Pranešime, kai tik atsiras atitinkanti laisva rezervacija.",
+      "errors": {
+        "generic": "Kažkas nepavyko. Bandykite dar kartą.",
+        "network": "Tinklo klaida. Patikrinkite ryšį ir bandykite dar kartą."
+      }
+    },
+    "active": {
+      "title": "Aktyvūs pranešimai",
+      "watching": "Stebima",
+      "paused": "Pristabdyta",
+      "statusLabel": "Būsena",
+      "waitingForAvailability": "Laukiama laisvos kortos",
+      "edit": "Redaguoti",
+      "pause": "Pristabdyti",
+      "resume": "Tęsti",
+      "delete": "Ištrinti",
+      "deleteConfirm": "Ištrinti šį pranešimą?",
+      "loading": "Kraunami pranešimai..."
+    },
+    "empty": {
+      "title": "Dar nieko nestebime.",
+      "subtitle": "Sukurkite pirmą pranešimą ir mes stebėsime kortų laisvumą už jus.",
+      "cta": "Sukurti pranešimą"
+    },
+    "howItWorks": {
+      "title": "Kaip tai veikia",
+      "steps": [
+        { "text": "Pasirinkite pageidaujamą klubą, datą ir laiką." },
+        { "text": "PlayTennis realiu laiku stebi atšaukimus ir kortų perkelimus." },
+        { "text": "Gaukite momentinį pranešimą ir rezervuokite kortą anksčiau už kitus." }
+      ]
+    }
   }
 }

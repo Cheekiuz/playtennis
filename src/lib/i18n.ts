@@ -24,6 +24,22 @@ export function getLocaleFromPathname(pathname: string): Locale {
   return defaultLocale;
 }
 
-export function localePath(locale: Locale): string {
-  return locale === defaultLocale ? "/" : `/${locale}`;
+export function localePath(locale: Locale, pathname?: string): string {
+  const suffix = pathname ?? "/";
+  if (locale === defaultLocale) {
+    return suffix === "/" ? "/" : suffix;
+  }
+  if (suffix === "/") {
+    return `/${locale}`;
+  }
+  return `/${locale}${suffix}`;
+}
+
+export function switchLocalePath(currentPathname: string, targetLocale: Locale): string {
+  const currentLocale = getLocaleFromPathname(currentPathname);
+  const pathWithoutLocale =
+    currentLocale === "en" && currentPathname.startsWith("/en")
+      ? currentPathname.slice(3) || "/"
+      : currentPathname;
+  return localePath(targetLocale, pathWithoutLocale);
 }

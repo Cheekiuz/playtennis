@@ -87,6 +87,57 @@ export function buildPageMetadata(locale: Locale): Metadata {
   };
 }
 
+export function buildCourtAlertsMetadata(locale: Locale): Metadata {
+  const m = getMessages(locale);
+  const path = localePath(locale, "/court-alerts");
+  const url = absoluteUrl(path);
+  const ca = m.courtAlerts.meta;
+
+  const languages: Record<string, string> = {
+    lt: absoluteUrl("/court-alerts"),
+    en: absoluteUrl("/en/court-alerts"),
+    "x-default": absoluteUrl("/court-alerts"),
+  };
+
+  return {
+    metadataBase: new URL(getSiteUrl()),
+    title: ca.title,
+    description: ca.description,
+    keywords: ca.keywords,
+    alternates: {
+      canonical: url,
+      languages,
+    },
+    openGraph: {
+      type: "website",
+      locale: locale === "lt" ? "lt_LT" : "en_US",
+      alternateLocale: locale === "lt" ? ["en_US"] : ["lt_LT"],
+      url,
+      siteName: m.meta.siteName,
+      title: ca.title,
+      description: ca.description,
+      images: [
+        {
+          url: BALL_OG_IMAGE_SRC,
+          width: 512,
+          height: 512,
+          alt: m.meta.ogImageAlt,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary",
+      title: ca.title,
+      description: ca.description,
+      images: [BALL_OG_IMAGE_SRC],
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
+
 export function buildWebsiteJsonLd(locale: Locale) {
   const m = getMessages(locale);
 

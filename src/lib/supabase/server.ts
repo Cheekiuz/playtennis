@@ -5,18 +5,34 @@ function cleanEnv(value: string | undefined) {
   return value.trim().replace(/^["']|["']$/g, "");
 }
 
+function isUsableKey(value: string | undefined): value is string {
+  const key = cleanEnv(value);
+  return Boolean(key && !key.includes("SENSITIVE"));
+}
+
+function getSupabaseKey() {
+  const candidates = [
+    process.env.SUPABASE_SECRET_KEY,
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+  ];
+
+  for (const candidate of candidates) {
+    if (isUsableKey(candidate)) {
+      return cleanEnv(candidate)!;
+    }
+  }
+
+  return undefined;
+}
+
 function getSupabaseConfig() {
   const url =
     cleanEnv(process.env.SUPABASE_URL) ??
     cleanEnv(process.env.NEXT_PUBLIC_SUPABASE_URL);
 
-  // Vercel Supabase integration uses SUPABASE_SECRET_KEY (new sb_secret_* format).
-  // Legacy setups use SUPABASE_SERVICE_ROLE_KEY.
-  const key =
-    cleanEnv(process.env.SUPABASE_SERVICE_ROLE_KEY) ??
-    cleanEnv(process.env.SUPABASE_SECRET_KEY);
+  const key = getSupabaseKey();
 
-  if (!url || !key || key.includes("SENSITIVE")) {
+  if (!url || !key) {
     throw new Error(
       "Missing Supabase env vars. Set SUPABASE_URL + SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY).",
     );

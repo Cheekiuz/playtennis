@@ -7,7 +7,9 @@
     "ogImageAlt": "PlayTennis.lt tennis ball"
   },
   "header": {
-    "joinWaitlist": "Join Waitlist"
+    "joinWaitlist": "Join Waitlist",
+    "courtAlerts": "Court Alerts",
+    "home": "Home"
   },
   "hero": {
     "badge": "Launching Q4 2026",
@@ -69,5 +71,78 @@
     "change": "Change theme",
     "light": "Light",
     "dark": "Dark"
+  },
+  "courtAlerts": {
+    "meta": {
+      "title": "Court Alerts - PlayTennis.lt",
+      "description": "Never refresh booking pages again. We'll watch for available courts and notify you the moment one becomes free.",
+      "keywords": "tennis court alerts, court availability, SEB Arena, tennis booking, PlayTennis"
+    },
+    "hero": {
+      "badge": "Live monitoring",
+      "title": "Court Alerts",
+      "subtitle": "Never refresh booking pages again. We'll watch for available courts and notify you the moment one becomes free.",
+      "cta": "Create Alert"
+    },
+    "form": {
+      "title": "Create New Alert",
+      "editTitle": "Edit Alert",
+      "cancelEdit": "Cancel",
+      "stepLabel": "Step {current} of {total}",
+      "steps": {
+        "location": "Location",
+        "when": "Date",
+        "time": "Preferred time",
+        "court": "Court",
+        "notify": "Notifications"
+      },
+      "city": "City",
+      "club": "Club",
+      "date": "Date",
+      "preferredTime": "Preferred Time",
+      "court": "Court",
+      "courtAny": "Any Court",
+      "courtNumber": "Court {n}",
+      "notificationMethods": "Notification Methods",
+      "pushNotification": "Push Notification",
+      "emailNotification": "Email",
+      "emailPlaceholder": "Enter your email address",
+      "back": "Back",
+      "continue": "Continue",
+      "startWatching": "Start Watching",
+      "loading": "Creating...",
+      "successTitle": "Watching...",
+      "successSubtitle": "We'll notify you the moment a matching reservation becomes available.",
+      "errors": {
+        "generic": "Something went wrong. Please try again.",
+        "network": "Network error. Please check your connection and try again."
+      }
+    },
+    "active": {
+      "title": "Active Alerts",
+      "watching": "Watching",
+      "paused": "Paused",
+      "statusLabel": "Status",
+      "waitingForAvailability": "Waiting for availability",
+      "edit": "Edit",
+      "pause": "Pause",
+      "resume": "Resume",
+      "delete": "Delete",
+      "deleteConfirm": "Delete this alert?",
+      "loading": "Loading alerts..."
+    },
+    "empty": {
+      "title": "Nothing to watch yet.",
+      "subtitle": "Create your first alert and we'll monitor court availability for you.",
+      "cta": "Create Alert"
+    },
+    "howItWorks": {
+      "title": "How It Works",
+      "steps": [
+        { "text": "Choose your preferred club, date and time." },
+        { "text": "PlayTennis monitors cancellations and court transfers in real time." },
+        { "text": "Receive an instant notification and reserve the court before anyone else." }
+      ]
+    }
   }
 }

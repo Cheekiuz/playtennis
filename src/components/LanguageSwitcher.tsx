@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "@/context/LocaleContext";
-import { localePath, locales, type Locale } from "@/lib/i18n";
+import { switchLocalePath, locales, type Locale } from "@/lib/i18n";
 
 const localeLabels: Record<Locale, { short: string; full: string }> = {
   en: { short: "EN", full: "English" },
@@ -59,7 +59,7 @@ export default function LanguageSwitcher() {
   }, [open]);
 
   const switchLocale = (code: Locale) => {
-    const href = localePath(code);
+    const href = switchLocalePath(pathname, code);
     setOpen(false);
     if (pathname === href) return;
     router.push(href);
