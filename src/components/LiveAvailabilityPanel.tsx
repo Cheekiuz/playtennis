@@ -48,59 +48,132 @@ export default function LiveAvailabilityPanel() {
   const [data, setData] = useState<AvailabilityResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [updatedSeconds, setUpdatedSeconds] = useState(0);
 
   const clubOptions = CLUBS.vilnius.map((c) => ({
     value: c.value,
     label: m.courtAlerts.clubs[getClubLabelKey(c.value) as keyof typeof m.courtAlerts.clubs]?.label ?? c.value,
   }));
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/court-availability?club=${encodeURIComponent(club)}&date=${encodeURIComponent(date)}`,
-      );
-      const json = (await res.json()) as AvailabilityResponse & { error?: string };
-      if (!res.ok) {
-        setError(json.error ?? la.error);
-        setData(null);
-        return;
+  const fetchAvailability = useCallback(
+    async (options?: { showLoading?: boolean }) => {
+      if (options?.showLoading) {
+        setLoading(true);
+        setError(null);
       }
-      setData(json);
-    } catch {
-      setError(la.networkError);
-      setData(null);
-    } finally {
-      setLoading(false);
+
+      try {
+        const res = await fetch(
+          `/api/court-availability?club=${encodeURIComponent(club)}&date=${encodeURIComponent(date)}`,
+        );
+        const json = (await res.json()) as AvailabilityResponse & { error?: string };
+        if (!res.ok) {
+          setError(json.error ?? la.error);
+          setData(null);
+          return;
+        }
+        setData(json);
+        setError(null);
+      } catch {
+        setError(la.networkError);
+        setData(null);
+      } finally {
+        if (options?.showLoading) {
+          setLoading(false);
+        }
+      }
+    },
+    [club, date, la.error, la.networkError],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitial() {
+      try {
+        const res = await fetch(
+          `/api/court-availability?club=${encodeURIComponent(club)}&date=${encodeURIComponent(date)}`,
+        );
+        const json = (await res.json()) as AvailabilityResponse & { error?: string };
+        if (cancelled) return;
+
+        if (!res.ok) {
+          setError(json.error ?? la.error);
+          setData(null);
+          return;
+        }
+
+        setData(json);
+        setError(null);
+      } catch {
+        if (!cancelled) {
+          setError(la.networkError);
+          setData(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
+
+    void loadInitial();
+    return () => {
+      cancelled = true;
+    };
   }, [club, date, la.error, la.networkError]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
-
-  useEffect(() => {
     const onVisible = () => {
-      if (document.visibilityState === "visible") void load();
+      if (document.visibilityState === "visible") void fetchAvailability();
     };
     const interval = setInterval(() => {
-      if (document.visibilityState === "visible") void load();
+      if (document.visibilityState === "visible") void fetchAvailability();
     }, 60_000);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [load]);
+  }, [fetchAvailability]);
+
+  useEffect(() => {
+    if (!data?.fetchedAt) return;
+
+    const fetchedAt = data.fetchedAt;
+    const tick = () => {
+      setUpdatedSeconds(
+        Math.max(0, Math.floor((Date.now() - new Date(fetchedAt).getTime()) / 1000)),
+      );
+    };
+
+    const initial = window.setTimeout(tick, 0);
+    const interval = window.setInterval(tick, 1000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, [data?.fetchedAt]);
+
+  const handleClubChange = (value: string) => {
+    setClub(value);
+    setLoading(true);
+    setData(null);
+    setError(null);
+  };
+
+  const handleDateChange = (value: string) => {
+    setDate(value);
+    setLoading(true);
+    setData(null);
+    setError(null);
+  };
 
   const courts = useMemo(() => getCourtsForClub(club).map((c) => c.id), [club]);
 
   const timeColumns = useMemo(() => {
-    if (!data?.slots.length) return [];
-    const times = [...new Set(data.slots.map((s) => s.start))].sort();
-    return times;
-  }, [data?.slots]);
+    const slotList = data?.slots ?? [];
+    if (!slotList.length) return [];
+    return [...new Set(slotList.map((s) => s.start))].sort();
+  }, [data]);
 
   const slotMap = useMemo(() => {
     const map = new Map<string, CourtSlotStatus>();
@@ -108,13 +181,11 @@ export default function LiveAvailabilityPanel() {
       map.set(slotKey(slot.courtId, slot.start), slot.status);
     }
     return map;
-  }, [data?.slots]);
+  }, [data]);
 
-  const updatedLabel = useMemo(() => {
-    if (!data?.fetchedAt) return "";
-    const secs = Math.max(0, Math.floor((Date.now() - new Date(data.fetchedAt).getTime()) / 1000));
-    return la.updatedAgo.replace("{seconds}", String(secs));
-  }, [data?.fetchedAt, la.updatedAgo]);
+  const updatedLabel = data?.fetchedAt
+    ? la.updatedAgo.replace("{seconds}", String(updatedSeconds))
+    : "";
 
   const sourceLabel =
     data?.source === "stale"
@@ -149,9 +220,9 @@ export default function LiveAvailabilityPanel() {
             label={m.courtAlerts.form.club}
             value={club}
             options={clubOptions}
-            onChange={setClub}
+            onChange={handleClubChange}
           />
-          <GlassDatePicker id="live-date" label={m.courtAlerts.form.date} value={date} onChange={setDate} />
+          <GlassDatePicker id="live-date" label={m.courtAlerts.form.date} value={date} onChange={handleDateChange} />
         </div>
 
         {data && (
@@ -223,7 +294,7 @@ export default function LiveAvailabilityPanel() {
 
         <button
           type="button"
-          onClick={() => void load()}
+          onClick={() => void fetchAvailability({ showLoading: true })}
           disabled={loading}
           className="mt-6 rounded-xl border border-border bg-surface px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-surface-hover disabled:opacity-50"
         >
