@@ -27,7 +27,11 @@ export function getSiteUrl(): string {
 }
 
 export function absoluteUrl(path: string): string {
-  return `${getSiteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
+  const base = getSiteUrl();
+  if (!path || path === "/") {
+    return base;
+  }
+  return `${base}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export function languageAlternates(): Record<string, string> {

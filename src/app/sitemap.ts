@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { localePath, locales } from "@/lib/i18n";
-import { absoluteUrl, languageAlternates } from "@/lib/seo";
+import { absoluteUrl } from "@/lib/seo";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return locales.map((locale) => ({
@@ -8,8 +8,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified: new Date(),
     changeFrequency: "weekly",
     priority: locale === "lt" ? 1 : 0.9,
-    alternates: {
-      languages: languageAlternates(),
-    },
   }));
 }
