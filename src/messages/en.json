@@ -1,7 +1,10 @@
 {
   "meta": {
-    "title": "PlayTennis.lt - Lithuanian Tennis",
-    "description": "A smarter way to find tennis partners, organize matches, track results, and discover courts-all in one place."
+    "title": "PlayTennis.lt - Find Tennis Partners in Lithuania",
+    "description": "Find tennis partners, organize matches, track results, and discover courts - all in one place. Join the waitlist for early access.",
+    "keywords": "tennis, tennis partner, tennis courts, tennis Lithuania, tennis matches, tennis community, PlayTennis",
+    "siteName": "PlayTennis.lt",
+    "ogImageAlt": "PlayTennis.lt tennis ball"
   },
   "header": {
     "joinWaitlist": "Join Waitlist"

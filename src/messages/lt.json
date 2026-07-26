@@ -1,7 +1,10 @@
 {
   "meta": {
-    "title": "PlayTennis.lt - Lietuvos tenisas",
-    "description": "Rask teniso partnerį, organizuok mačus, sek rezultatus - viskas vienoje vietoje."
+    "title": "PlayTennis.lt - Rask teniso partnerį Lietuvoje",
+    "description": "Rask teniso partnerį, organizuok mačus, sek rezultatus ir atrask kortus - viskas vienoje vietoje. Prisijunk prie laukiančiųjų sąrašo.",
+    "keywords": "tenisas, teniso partneris, teniso kortos, tenisas Lietuvoje, teniso mačai, teniso bendruomenė, PlayTennis",
+    "siteName": "PlayTennis.lt",
+    "ogImageAlt": "PlayTennis.lt - teniso kamuoliukas"
   },
   "header": {
     "joinWaitlist": "Prisijungti prie sąrašo"

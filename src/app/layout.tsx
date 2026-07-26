@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
-import { ThemeScript } from "@/components/ThemeScript";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { JsonLd } from "@/components/JsonLd";
+import { ThemeScript } from "@/components/ThemeScript";
 import { ThemeProvider } from "@/context/ThemeContext";
 import "./globals.css";
-import { defaultLocale, getMessages, isValidLocale, type Locale } from "@/lib/i18n";
-import { BALL_IMAGE_SRC, BALL_OG_IMAGE_SRC } from "@/lib/tennis-ball-assets";
+import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
+import { buildPageMetadata } from "@/lib/seo";
+import { BALL_IMAGE_SRC } from "@/lib/tennis-ball-assets";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,22 +28,7 @@ async function getLocale(): Promise<Locale> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  const m = getMessages(locale);
-  return {
-    title: m.meta.title,
-    description: m.meta.description,
-    openGraph: {
-      title: m.meta.title,
-      description: m.meta.description,
-      images: [{ url: BALL_OG_IMAGE_SRC, width: 512, height: 512, alt: "Tennis ball" }],
-    },
-    twitter: {
-      card: "summary",
-      title: m.meta.title,
-      description: m.meta.description,
-      images: [BALL_OG_IMAGE_SRC],
-    },
-  };
+  return buildPageMetadata(locale);
 }
 
 export default async function RootLayout({
@@ -55,6 +42,7 @@ export default async function RootLayout({
     <html lang={locale} className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <ThemeScript />
+        <JsonLd locale={locale} />
         <link rel="preload" href={BALL_IMAGE_SRC} as="image" type="image/webp" />
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans text-foreground">
