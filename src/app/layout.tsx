@@ -28,7 +28,12 @@ async function getLocale(): Promise<Locale> {
 
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
-  return buildPageMetadata(locale);
+  return {
+    ...buildPageMetadata(locale),
+    verification: {
+      google: "EGCGjn5dVKhFrKOX0HEpSAXz3dY9K6aPe30H94CAaUg",
+    },
+  };
 }
 
 export default async function RootLayout({
