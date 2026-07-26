@@ -138,6 +138,33 @@ export function buildCourtAlertsMetadata(locale: Locale): Metadata {
   };
 }
 
+export function buildDashboardMetadata(locale: Locale): Metadata {
+  const m = getMessages(locale);
+  const path = localePath(locale, "/dashboard");
+  const url = absoluteUrl(path);
+  const dash = m.dashboard.meta;
+
+  const languages: Record<string, string> = {
+    lt: absoluteUrl("/dashboard"),
+    en: absoluteUrl("/en/dashboard"),
+    "x-default": absoluteUrl("/dashboard"),
+  };
+
+  return {
+    metadataBase: new URL(getSiteUrl()),
+    title: dash.title,
+    description: dash.description,
+    alternates: {
+      canonical: url,
+      languages,
+    },
+    robots: {
+      index: false,
+      follow: false,
+    },
+  };
+}
+
 export function buildWebsiteJsonLd(locale: Locale) {
   const m = getMessages(locale);
 
