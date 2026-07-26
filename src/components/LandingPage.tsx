@@ -11,7 +11,7 @@ interface LandingPageProps {
 
 export default function LandingPage({ messages }: LandingPageProps) {
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-clip">
       <LandingPageClient
         messages={messages}
         hero={<LandingHero messages={messages} />}

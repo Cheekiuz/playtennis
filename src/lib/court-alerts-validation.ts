@@ -64,22 +64,13 @@ export function validateCreatePayload(body: unknown): { data: CreateAlertPayload
   }
 
   const court = typeof b.court === "string" ? b.court : "any";
-  const notifyPush = b.notify_push === true;
-  const notifyEmail = b.notify_email === true;
 
-  let email: string | null = null;
-  if (notifyEmail) {
-    if (typeof b.email !== "string" || !b.email.trim()) {
-      return { error: "Email is required when email notifications are enabled" };
-    }
-    email = normalizeEmail(b.email);
-    if (!isValidEmail(email)) {
-      return { error: "Invalid email address" };
-    }
+  if (typeof b.email !== "string" || !b.email.trim()) {
+    return { error: "Email is required" };
   }
-
-  if (!notifyPush && !notifyEmail) {
-    return { error: "At least one notification method is required" };
+  const email = normalizeEmail(b.email);
+  if (!isValidEmail(email)) {
+    return { error: "Invalid email address" };
   }
 
   return {
@@ -91,8 +82,8 @@ export function validateCreatePayload(body: unknown): { data: CreateAlertPayload
       time_start: timeStart,
       time_end: timeEnd,
       court,
-      notify_push: notifyPush,
-      notify_email: notifyEmail,
+      notify_push: false,
+      notify_email: true,
       email,
     },
   };
@@ -147,21 +138,16 @@ export function validateUpdatePayload(body: unknown): { data: UpdateAlertPayload
     data.court = b.court;
   }
 
-  if (b.notify_push !== undefined) {
-    data.notify_push = b.notify_push === true;
-  }
-
-  if (b.notify_email !== undefined) {
-    data.notify_email = b.notify_email === true;
-  }
-
   if (b.email !== undefined) {
     if (b.email === null) {
-      data.email = null;
-    } else if (typeof b.email === "string") {
+      return { error: "Email is required" };
+    }
+    if (typeof b.email === "string") {
       const email = normalizeEmail(b.email);
       if (!isValidEmail(email)) return { error: "Invalid email address" };
       data.email = email;
+      data.notify_email = true;
+      data.notify_push = false;
     } else {
       return { error: "Invalid email" };
     }

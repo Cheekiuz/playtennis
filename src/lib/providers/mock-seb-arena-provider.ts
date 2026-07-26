@@ -1,5 +1,5 @@
 import type { CourtAvailabilityProvider, CourtSlot, FetchSlotsParams } from "@/lib/providers/types";
-import { SEB_ARENA_INDOOR_COURTS } from "@/lib/court-alerts-config";
+import { getCourtsForClub } from "@/lib/court-alerts-config";
 
 function hashString(value: string): number {
   let hash = 0;
@@ -18,9 +18,12 @@ export class MockSebArenaProvider implements CourtAvailabilityProvider {
     const seed = hashString(`${clubId}:${date}`);
     const slots: CourtSlot[] = [];
 
+    const courts = getCourtsForClub(clubId);
+    if (courts.length === 0) return slots;
+
     const hours = [17, 18, 19, 20];
     for (let i = 0; i < 3; i++) {
-      const court = SEB_ARENA_INDOOR_COURTS[(seed + i) % SEB_ARENA_INDOOR_COURTS.length];
+      const court = courts[(seed + i) % courts.length];
       const hour = hours[(seed + i) % hours.length];
       const start = `${date}T${String(hour).padStart(2, "0")}:00:00+03:00`;
       const end = `${date}T${String(hour + 1).padStart(2, "0")}:00:00+03:00`;
@@ -28,7 +31,7 @@ export class MockSebArenaProvider implements CourtAvailabilityProvider {
       slots.push({
         clubId,
         courtId: court.id,
-        courtLabel: court.label,
+        courtLabel: court.name,
         start,
         end,
         status: i === 0 ? "available" : i === 1 ? "for_sale" : "booked",

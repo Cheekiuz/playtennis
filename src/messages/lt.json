@@ -97,14 +97,26 @@
         "notify": "Pranešimai"
       },
       "city": "Miestas",
-      "club": "Klubas",
+      "club": "Vieta",
       "date": "Data",
       "preferredTime": "Pageidaujamas laikas",
       "court": "Kortas",
       "courtAny": "Bet kuris kortas",
+      "courtWithSurface": "{name} · {surface}",
       "courtNumber": "Kortas {n}",
+      "surfaces": {
+        "hard": "Kietas",
+        "carpet": "Kilimas",
+        "clay": "Molis",
+        "grass": "Dirbtinė žolė"
+      },
+      "surfaceGroups": {
+        "hard": "Kietos dangos kortai",
+        "carpet": "Kilimo dangos kortai",
+        "clay": "Moliniai kortai",
+        "grass": "Dirbtinės žolės kortai"
+      },
       "notificationMethods": "Pranešimų būdai",
-      "pushNotification": "Push pranešimas",
       "emailNotification": "El. paštas",
       "emailPlaceholder": "Įveskite el. pašto adresą",
       "back": "Atgal",
@@ -136,6 +148,16 @@
       "subtitle": "Sukurkite pirmą pranešimą ir mes stebėsime kortų laisvumą už jus.",
       "cta": "Sukurti pranešimą"
     },
+    "clubs": {
+      "sebArena": {
+        "label": "SEB Arena",
+        "hint": "Viduje · Ąžuolyno g. 7 · kietos ir kilimo dangos kortai"
+      },
+      "bernardinai": {
+        "label": "Bernardinų sodo kortai",
+        "hint": "Lauke (sezoninis) · molio ir dirbtinės žolės kortai"
+      }
+    },
     "howItWorks": {
       "title": "Kaip tai veikia",
       "steps": [
@@ -143,6 +165,27 @@
         { "text": "PlayTennis realiu laiku stebi atšaukimus ir kortų perkelimus." },
         { "text": "Gaukite momentinį pranešimą ir rezervuokite kortą anksčiau už kitus." }
       ]
+    },
+    "liveAvailability": {
+      "title": "Tiesioginis laisvumas",
+      "subtitle": "Artimiausias realaus laiko kortų būsena iš SEB rezervacijų sistemos.",
+      "bookLink": "Rezervuoti book.sebarena.lt →",
+      "loading": "Kraunama…",
+      "error": "Nepavyko įkelti laisvumo.",
+      "networkError": "Tinklo klaida. Bandykite dar kartą.",
+      "noSlots": "Šiai datai slotų nerasta.",
+      "refresh": "Atnaujinti",
+      "courtColumn": "Kortas",
+      "updatedAgo": "Atnaujinta prieš {seconds} s",
+      "demoBanner": "Demonstraciniai duomenys — nustatykite SEB_ARENA_PROVIDER=scrape tiesioginiam stebėjimui",
+      "liveData": "Tiesioginiai duomenys",
+      "cachedData": "Podėlyje saugomi duomenys",
+      "staleData": "Rodomas paskutinis išsaugotas momentas (tiesioginis užklausimas nepavyko)",
+      "statusLabels": {
+        "available": "Laisva",
+        "booked": "Užimta",
+        "for_sale": "Pardavime / atšaukimas"
+      }
     }
   }
 }

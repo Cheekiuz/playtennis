@@ -1,13 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import GlassCheckbox from "@/components/ui/GlassCheckbox";
 import GlassDatePicker from "@/components/ui/GlassDatePicker";
 import GlassSelect from "@/components/ui/GlassSelect";
 import TimeRangeSlider from "@/components/ui/TimeRangeSlider";
 import WatchingSuccess from "@/components/WatchingSuccess";
 import { useLocale } from "@/context/LocaleContext";
-import { CITIES, CLUBS, getCourtOptionsForClub } from "@/lib/court-alerts-config";
+import { CITIES, CLUBS, getClubLabelKey, getCourtOptionsForClub } from "@/lib/court-alerts-config";
 import type { CourtAlert } from "@/lib/court-alerts-types";
 import { getClientId } from "@/lib/client-id";
 import {
@@ -25,8 +24,6 @@ export interface AlertFormData {
   startHour: number;
   endHour: number;
   court: string;
-  notify_push: boolean;
-  notify_email: boolean;
   email: string;
 }
 
@@ -38,8 +35,6 @@ function defaultFormData(): AlertFormData {
     startHour: 18,
     endHour: 20,
     court: "any",
-    notify_push: true,
-    notify_email: true,
     email: "",
   };
 }
@@ -52,8 +47,6 @@ function alertToFormData(alert: CourtAlert): AlertFormData {
     startHour: parseHourFromTime(alert.time_start),
     endHour: parseHourFromTime(alert.time_end),
     court: alert.court,
-    notify_push: alert.notify_push,
-    notify_email: alert.notify_email,
     email: alert.email ?? "",
   };
 }
@@ -82,7 +75,14 @@ export default function CreateAlertForm({
 
   const clubOptions = CLUBS[form.city] ?? [];
 
-  const courtOptions = getCourtOptionsForClub(form.club, ca.form.courtAny);
+  const courtMessages = {
+    courtAny: ca.form.courtAny,
+    surfaces: ca.form.surfaces,
+    surfaceGroups: ca.form.surfaceGroups,
+    courtWithSurface: ca.form.courtWithSurface,
+  };
+
+  const courtOptions = getCourtOptionsForClub(form.club, courtMessages);
 
   const canContinue = (): boolean => {
     switch (step) {
@@ -95,18 +95,9 @@ export default function CreateAlertForm({
       case 4:
         return Boolean(form.court);
       case 5:
-        if (!form.notify_push && !form.notify_email) return false;
-        if (form.notify_email && !form.email.trim()) return false;
-        return true;
+        return Boolean(form.email.trim());
       default:
         return false;
-    }
-  };
-
-  const handlePushChange = (checked: boolean) => {
-    setForm((prev) => ({ ...prev, notify_push: checked }));
-    if (checked && typeof Notification !== "undefined" && Notification.permission === "default") {
-      Notification.requestPermission();
     }
   };
 
@@ -124,9 +115,8 @@ export default function CreateAlertForm({
       time_start: hourToTime(form.startHour),
       time_end: hourToTime(form.endHour),
       court: form.court,
-      notify_push: form.notify_push,
-      notify_email: form.notify_email,
-      email: form.notify_email ? form.email.trim() : null,
+      notify_email: true,
+      email: form.email.trim(),
     };
 
     try {
@@ -185,7 +175,7 @@ export default function CreateAlertForm({
   return (
     <div
       id="create-alert"
-      className="glass-card card-glow w-full rounded-3xl border border-border bg-card/95 p-8 backdrop-blur-md"
+      className="glass-card card-glow w-full overflow-visible rounded-3xl border border-border bg-card/95 p-8 backdrop-blur-md"
     >
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-foreground">
@@ -220,7 +210,7 @@ export default function CreateAlertForm({
         </p>
       </div>
 
-      <div key={step} className="form-step-enter min-h-[200px]">
+      <div key={step} className="form-step-enter min-h-[200px] overflow-visible">
         {step === 1 && (
           <div className="space-y-4">
             <GlassSelect
@@ -234,6 +224,7 @@ export default function CreateAlertForm({
                   ...prev,
                   city,
                   club: clubs[0]?.value ?? prev.club,
+                  court: "any",
                 }));
               }}
             />
@@ -241,9 +232,15 @@ export default function CreateAlertForm({
               id="club"
               label={ca.form.club}
               value={form.club}
-              options={clubOptions.map((c) => ({ value: c.value, label: c.label }))}
-              onChange={(club) => setForm((prev) => ({ ...prev, club }))}
+              options={clubOptions.map((c) => ({
+                value: c.value,
+                label: ca.clubs[getClubLabelKey(c.value) as keyof typeof ca.clubs]?.label ?? c.value,
+              }))}
+              onChange={(club) => setForm((prev) => ({ ...prev, club, court: "any" }))}
             />
+            <p className="-mt-1 text-xs leading-relaxed text-muted">
+              {ca.clubs[getClubLabelKey(form.club) as keyof typeof ca.clubs]?.hint}
+            </p>
           </div>
         )}
 
@@ -279,28 +276,17 @@ export default function CreateAlertForm({
 
         {step === 5 && (
           <div className="space-y-4">
-            <p className="text-sm font-medium text-foreground">{ca.form.notificationMethods}</p>
-            <GlassCheckbox
-              id="notify-push"
-              label={ca.form.pushNotification}
-              checked={form.notify_push}
-              onChange={handlePushChange}
+            <label htmlFor="alert-email" className="block text-sm font-medium text-foreground">
+              {ca.form.emailNotification}
+            </label>
+            <input
+              id="alert-email"
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+              placeholder={ca.form.emailPlaceholder}
+              className="w-full rounded-xl border border-border bg-input-bg px-4 py-3.5 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:border-accent/50 focus:ring-1 focus:ring-accent/30"
             />
-            <GlassCheckbox
-              id="notify-email"
-              label={ca.form.emailNotification}
-              checked={form.notify_email}
-              onChange={(checked) => setForm((prev) => ({ ...prev, notify_email: checked }))}
-            />
-            {form.notify_email && (
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                placeholder={ca.form.emailPlaceholder}
-                className="w-full rounded-xl border border-border bg-input-bg px-4 py-3.5 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:border-accent/50 focus:ring-1 focus:ring-accent/30"
-              />
-            )}
           </div>
         )}
       </div>

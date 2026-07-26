@@ -1,5 +1,6 @@
 import { matchAlertsToSlots } from "@/lib/court-alerts-matcher";
 import { sendCourtAlertEmail } from "@/lib/court-alert-email";
+import { upsertAvailabilitySnapshots } from "@/lib/court-availability-service";
 import type { CourtAlert } from "@/lib/court-alerts-types";
 import type { AlertMatch } from "@/lib/court-monitoring-types";
 import { getCourtAvailabilityProvider } from "@/lib/providers";
@@ -59,28 +60,6 @@ async function loadNotifiedKeys(
     keys.add(`${row.alert_id}:${row.court_id}:${row.slot_start}`);
   }
   return keys;
-}
-
-async function upsertSnapshots(
-  supabase: ReturnType<typeof createServerSupabaseClient>,
-  slots: CourtSlot[],
-) {
-  if (slots.length === 0) return;
-
-  const rows = slots.map((slot) => ({
-    club: slot.clubId,
-    court_id: slot.courtId,
-    slot_start: slot.start,
-    slot_end: slot.end,
-    status: slot.status,
-    fetched_at: new Date().toISOString(),
-  }));
-
-  const { error } = await supabase.from("court_availability_snapshots").upsert(rows, {
-    onConflict: "club,court_id,slot_start",
-  });
-
-  if (error) throw new Error(error.message);
 }
 
 async function recordEvent(
@@ -146,7 +125,7 @@ export async function runCourtMonitor(): Promise<MonitorRunResult> {
   result.slotsFetched = allSlots.length;
 
   try {
-    await upsertSnapshots(supabase, allSlots);
+    await upsertAvailabilitySnapshots(allSlots);
   } catch (err) {
     result.errors.push(err instanceof Error ? err.message : "Failed to upsert snapshots");
   }

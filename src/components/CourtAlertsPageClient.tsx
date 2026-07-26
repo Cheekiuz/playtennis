@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef } from "react";
+import LiveAvailabilityPanel from "@/components/LiveAvailabilityPanel";
 import { CourtAlertsGrid } from "@/components/ActiveAlertsPanel";
 import CourtAlertsHero from "@/components/CourtAlertsHero";
 import HowItWorksSection from "@/components/HowItWorksSection";
@@ -23,7 +24,7 @@ export default function CourtAlertsPageClient() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-x-hidden">
+    <div className="relative min-h-screen overflow-x-clip">
       <MarketingPageShell
         courtRef={courtRef}
         headerActions={
@@ -48,6 +49,8 @@ export default function CourtAlertsPageClient() {
         <section className="flex max-w-3xl flex-col items-center pt-8 text-center sm:pt-12">
           <CourtAlertsHero />
         </section>
+
+        <LiveAvailabilityPanel />
 
         <CourtAlertsGrid onRain={fireRain} />
 
