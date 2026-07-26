@@ -97,14 +97,26 @@
         "notify": "Notifications"
       },
       "city": "City",
-      "club": "Club",
+      "club": "Venue",
       "date": "Date",
       "preferredTime": "Preferred Time",
       "court": "Court",
-      "courtAny": "Any Court",
+      "courtAny": "Any court",
+      "courtWithSurface": "{name} · {surface}",
       "courtNumber": "Court {n}",
+      "surfaces": {
+        "hard": "Hard",
+        "carpet": "Carpet",
+        "clay": "Clay",
+        "grass": "Artificial grass"
+      },
+      "surfaceGroups": {
+        "hard": "Hard courts",
+        "carpet": "Carpet courts",
+        "clay": "Clay courts",
+        "grass": "Artificial grass courts"
+      },
       "notificationMethods": "Notification Methods",
-      "pushNotification": "Push Notification",
       "emailNotification": "Email",
       "emailPlaceholder": "Enter your email address",
       "back": "Back",
@@ -136,6 +148,16 @@
       "subtitle": "Create your first alert and we'll monitor court availability for you.",
       "cta": "Create Alert"
     },
+    "clubs": {
+      "sebArena": {
+        "label": "SEB Arena",
+        "hint": "Indoor · Ąžuolyno g. 7 · hard and carpet courts"
+      },
+      "bernardinai": {
+        "label": "Bernardinai Garden Courts",
+        "hint": "Outdoor (seasonal) · clay and artificial grass courts"
+      }
+    },
     "howItWorks": {
       "title": "How It Works",
       "steps": [
@@ -143,6 +165,27 @@
         { "text": "PlayTennis monitors cancellations and court transfers in real time." },
         { "text": "Receive an instant notification and reserve the court before anyone else." }
       ]
+    },
+    "liveAvailability": {
+      "title": "Live availability",
+      "subtitle": "Near real-time court status from SEB booking — refresh every minute.",
+      "bookLink": "Book on book.sebarena.lt →",
+      "loading": "Loading availability…",
+      "error": "Could not load availability.",
+      "networkError": "Network error. Please try again.",
+      "noSlots": "No slots returned for this date.",
+      "refresh": "Refresh",
+      "courtColumn": "Court",
+      "updatedAgo": "Updated {seconds}s ago",
+      "demoBanner": "Demo data — set SEB_ARENA_PROVIDER=scrape for live availability",
+      "liveData": "Live data",
+      "cachedData": "Cached data",
+      "staleData": "Showing last saved snapshot (live fetch failed)",
+      "statusLabels": {
+        "available": "Available",
+        "booked": "Booked",
+        "for_sale": "For sale / cancellation"
+      }
     }
   }
 }

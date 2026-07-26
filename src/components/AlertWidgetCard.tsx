@@ -1,7 +1,7 @@
 "use client";
 
 import { useLocale } from "@/context/LocaleContext";
-import { getClubLabel, getCourtLabel } from "@/lib/court-alerts-config";
+import { getClubLabelKey, getCourtLabel } from "@/lib/court-alerts-config";
 import { formatDateForDisplay, formatTimeForDisplay } from "@/lib/court-alerts-validation";
 import type { CourtAlert } from "@/lib/court-alerts-types";
 
@@ -19,13 +19,15 @@ export default function AlertWidgetCard({ alert, onEdit, onPause, onDelete }: Al
   const isActive = alert.status === "active";
   const weekday = formatDateForDisplay(alert.alert_date, locale);
   const timeRange = `${formatTimeForDisplay(alert.time_start)}–${formatTimeForDisplay(alert.time_end)}`;
-  const courtLabel = getCourtLabel(
-    alert.court,
-    alert.club,
-    ca.form.courtAny,
-    (n) => ca.form.courtNumber.replace("{n}", n),
-  );
-  const clubLabel = getClubLabel(alert.city, alert.club);
+  const courtLabel = getCourtLabel(alert.court, alert.club, {
+    courtAny: ca.form.courtAny,
+    surfaces: ca.form.surfaces,
+    surfaceGroups: ca.form.surfaceGroups,
+    courtWithSurface: ca.form.courtWithSurface,
+  });
+  const clubKey = getClubLabelKey(alert.club);
+  const clubLabel =
+    ca.clubs[clubKey as keyof typeof ca.clubs]?.label ?? alert.club;
 
   return (
     <div className="glass-card rounded-2xl border border-border bg-card/80 p-5 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-accent/20 hover:shadow-lg">

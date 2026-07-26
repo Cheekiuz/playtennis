@@ -383,6 +383,10 @@ body {
   animation: form-step-enter 0.3s ease-out forwards;
 }
 
+.time-range-thumb {
+  pointer-events: none;
+}
+
 .time-range-thumb::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -392,6 +396,7 @@ body {
   background: var(--accent);
   border: 2px solid var(--background);
   cursor: pointer;
+  pointer-events: auto;
   box-shadow: 0 0 8px rgba(200, 255, 0, 0.4);
 }
 
@@ -402,6 +407,7 @@ body {
   background: var(--accent);
   border: 2px solid var(--background);
   cursor: pointer;
+  pointer-events: auto;
   box-shadow: 0 0 8px rgba(200, 255, 0, 0.4);
 }
 

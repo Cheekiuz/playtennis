@@ -1,4 +1,5 @@
 import type { CourtAlert } from "@/lib/court-alerts-types";
+import type { CourtLabelMessages } from "@/lib/court-alerts-config";
 import { getCourtLabel } from "@/lib/court-alerts-config";
 import type { AlertMatch } from "@/lib/court-monitoring-types";
 import type { CourtSlot } from "@/lib/providers/types";
@@ -82,8 +83,7 @@ export function formatSlotTimeRange(start: string, end: string, locale: string):
 export function getCourtDisplayLabel(
   courtId: string,
   club: string,
-  anyLabel: string,
-  courtLabelFn: (n: string) => string,
+  messages: CourtLabelMessages,
 ): string {
-  return getCourtLabel(courtId, club, anyLabel, courtLabelFn);
+  return getCourtLabel(courtId, club, messages);
 }

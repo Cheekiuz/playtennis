@@ -24,9 +24,9 @@ export interface CreateAlertPayload {
   time_start: string;
   time_end: string;
   court: string;
-  notify_push: boolean;
-  notify_email: boolean;
-  email?: string | null;
+  notify_push: false;
+  notify_email: true;
+  email: string;
 }
 
 export interface UpdateAlertPayload {
