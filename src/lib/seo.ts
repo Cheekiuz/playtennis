@@ -2,10 +2,20 @@ import type { Metadata } from "next";
 import { defaultLocale, getMessages, localePath, locales, type Locale } from "@/lib/i18n";
 import { BALL_OG_IMAGE_SRC } from "@/lib/tennis-ball-assets";
 
+const DEFAULT_SITE_URL = "https://www.playtennis.lt";
+
 export function getSiteUrl(): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
   if (configured) {
     return configured.replace(/\/$/, "");
+  }
+
+  if (process.env.VERCEL_ENV === "production") {
+    const production = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    if (production) {
+      return `https://${production.replace(/\/$/, "")}`;
+    }
+    return DEFAULT_SITE_URL;
   }
 
   const vercel = process.env.VERCEL_URL;
@@ -13,7 +23,7 @@ export function getSiteUrl(): string {
     return `https://${vercel.replace(/\/$/, "")}`;
   }
 
-  return "https://playtennis.lt";
+  return DEFAULT_SITE_URL;
 }
 
 export function absoluteUrl(path: string): string {
