@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { type ReactNode, type RefObject } from "react";
+import AuthButton from "@/components/AuthButton";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import TennisBallIcon from "@/components/TennisBallIcon";
 import ThemeSwitcher from "@/components/ThemeSwitcher";
@@ -65,6 +66,7 @@ export default function MarketingPageShell({
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
           <LanguageSwitcher />
+          <AuthButton />
           {headerActions}
         </div>
       </header>

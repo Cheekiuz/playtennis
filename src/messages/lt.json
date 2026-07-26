@@ -11,6 +11,22 @@
     "courtAlerts": "Kortų pranešimai",
     "home": "Pradžia"
   },
+  "auth": {
+    "signIn": "Prisijungti su Google",
+    "signOut": "Atsijungti",
+    "dashboard": "Mano pranešimai"
+  },
+  "dashboard": {
+    "meta": {
+      "title": "Mano pranešimai - PlayTennis.lt",
+      "description": "Valdykite kortų pranešimus iš bet kurio įrenginio."
+    },
+    "welcome": "Sveiki sugrįžę",
+    "description": "Jūsų pranešimai susieti su Google paskyra ir pasiekiami visuose įrenginiuose.",
+    "createAlert": "Naujas pranešimas",
+    "alertsTitle": "Jūsų pranešimai",
+    "alertsSubtitle": "Čia galite pristabdyti, redaguoti ar ištrinti pranešimus."
+  },
   "hero": {
     "badge": "Startuojame 2026 m. IV ketvirtį",
     "title": "Kažkas",

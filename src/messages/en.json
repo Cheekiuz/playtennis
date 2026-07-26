@@ -11,6 +11,22 @@
     "courtAlerts": "Court Alerts",
     "home": "Home"
   },
+  "auth": {
+    "signIn": "Sign in with Google",
+    "signOut": "Sign out",
+    "dashboard": "My alerts"
+  },
+  "dashboard": {
+    "meta": {
+      "title": "My Alerts - PlayTennis.lt",
+      "description": "Manage your court alerts from any device."
+    },
+    "welcome": "Welcome back",
+    "description": "Your alerts are saved to your Google account and follow you across devices.",
+    "createAlert": "Create new alert",
+    "alertsTitle": "Your alerts",
+    "alertsSubtitle": "Pause, edit, or delete alerts from here."
+  },
   "hero": {
     "badge": "Launching Q4 2026",
     "title": "Something exciting",

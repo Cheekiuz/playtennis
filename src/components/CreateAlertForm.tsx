@@ -6,6 +6,7 @@ import GlassSelect from "@/components/ui/GlassSelect";
 import TimeRangeSlider from "@/components/ui/TimeRangeSlider";
 import WatchingSuccess from "@/components/WatchingSuccess";
 import { useLocale } from "@/context/LocaleContext";
+import { useAuth } from "@/hooks/useAuth";
 import { CITIES, CLUBS, getClubLabelKey, getCourtOptionsForClub } from "@/lib/court-alerts-config";
 import type { CourtAlert } from "@/lib/court-alerts-types";
 import { getClientId } from "@/lib/client-id";
@@ -63,6 +64,7 @@ export default function CreateAlertForm({
   onCancelEdit,
 }: CreateAlertFormProps) {
   const { messages: m } = useLocale();
+  const { user } = useAuth();
   const ca = m.courtAlerts;
 
   const [step, setStep] = useState(1);
@@ -72,6 +74,8 @@ export default function CreateAlertForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+
+  const emailValue = form.email || user?.email || "";
 
   const clubOptions = CLUBS[form.city] ?? [];
 
@@ -95,7 +99,7 @@ export default function CreateAlertForm({
       case 4:
         return Boolean(form.court);
       case 5:
-        return Boolean(form.email.trim());
+        return Boolean(emailValue.trim());
       default:
         return false;
     }
@@ -106,7 +110,7 @@ export default function CreateAlertForm({
     setLoading(true);
     setError(null);
 
-    const clientId = getClientId();
+    const clientId = user?.id ?? getClientId();
     const payload = {
       client_id: clientId,
       city: form.city,
@@ -116,7 +120,7 @@ export default function CreateAlertForm({
       time_end: hourToTime(form.endHour),
       court: form.court,
       notify_email: true,
-      email: form.email.trim(),
+      email: emailValue.trim(),
     };
 
     try {
@@ -282,7 +286,7 @@ export default function CreateAlertForm({
             <input
               id="alert-email"
               type="email"
-              value={form.email}
+              value={emailValue}
               onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
               placeholder={ca.form.emailPlaceholder}
               className="w-full rounded-xl border border-border bg-input-bg px-4 py-3.5 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:border-accent/50 focus:ring-1 focus:ring-accent/30"
