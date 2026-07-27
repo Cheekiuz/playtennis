@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "monitor:trigger": "node scripts/trigger-court-monitor.mjs",
+    "monitor:test-email": "node scripts/send-test-court-alert-email.mjs"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.11",

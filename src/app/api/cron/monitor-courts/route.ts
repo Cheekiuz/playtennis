@@ -1,18 +1,8 @@
 import { runCourtMonitor } from "@/lib/court-monitor-service";
-
-function isAuthorized(request: Request): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return false;
-
-  const authHeader = request.headers.get("authorization");
-  if (authHeader === `Bearer ${secret}`) return true;
-
-  const url = new URL(request.url);
-  return url.searchParams.get("secret") === secret;
-}
+import { isCronAuthorized } from "@/lib/cron-auth";
 
 export async function GET(request: Request) {
-  if (!isAuthorized(request)) {
+  if (!isCronAuthorized(request)) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
