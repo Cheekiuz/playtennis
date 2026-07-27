@@ -100,6 +100,11 @@
       "subtitle": "Never refresh booking pages again. We'll watch for available courts and notify you the moment one becomes free.",
       "cta": "Create Alert"
     },
+    "signInGate": {
+      "title": "Sign in to create an alert",
+      "subtitle": "Anyone can browse live availability. Alerts require a Google account — manage them on your dashboard.",
+      "cta": "Sign in with Google"
+    },
     "form": {
       "title": "Create New Alert",
       "editTitle": "Edit Alert",
@@ -109,8 +114,7 @@
         "location": "Location",
         "when": "Date",
         "time": "Preferred time",
-        "court": "Court",
-        "notify": "Notifications"
+        "court": "Court"
       },
       "city": "City",
       "club": "Venue",
@@ -141,6 +145,7 @@
       "loading": "Creating...",
       "successTitle": "Watching...",
       "successSubtitle": "We'll notify you the moment a matching reservation becomes available.",
+      "successDashboard": "View my alerts",
       "errors": {
         "generic": "Something went wrong. Please try again.",
         "network": "Network error. Please check your connection and try again."

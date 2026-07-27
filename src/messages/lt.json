@@ -100,6 +100,11 @@
       "subtitle": "Nebereikia atnaujinti rezervacijų puslapių. Stebėsime laisvas kortas ir pranešime, kai tik atsiras galimybė.",
       "cta": "Sukurti pranešimą"
     },
+    "signInGate": {
+      "title": "Prisijunkite, kad sukurtumėte pranešimą",
+      "subtitle": "Laisvumą gali matyti visi. Pranešimams reikia Google paskyros — valdysite juos savo skydelyje.",
+      "cta": "Prisijungti su Google"
+    },
     "form": {
       "title": "Naujas pranešimas",
       "editTitle": "Redaguoti pranešimą",
@@ -109,8 +114,7 @@
         "location": "Vieta",
         "when": "Data",
         "time": "Pageidaujamas laikas",
-        "court": "Kortas",
-        "notify": "Pranešimai"
+        "court": "Kortas"
       },
       "city": "Miestas",
       "club": "Vieta",
@@ -141,6 +145,7 @@
       "loading": "Kuriama...",
       "successTitle": "Stebime...",
       "successSubtitle": "Pranešime, kai tik atsiras atitinkanti laisva rezervacija.",
+      "successDashboard": "Mano pranešimai",
       "errors": {
         "generic": "Kažkas nepavyko. Bandykite dar kartą.",
         "network": "Tinklo klaida. Patikrinkite ryšį ir bandykite dar kartą."

@@ -7,9 +7,7 @@ import RotatingMessage from "@/components/RotatingMessage";
 import TennisBallIcon from "@/components/TennisBallIcon";
 import WaitlistForm from "@/components/WaitlistForm";
 import type { InteractiveCourtHandle } from "@/components/InteractiveCourt";
-import { useLocale } from "@/context/LocaleContext";
 import { triggerCourtBurst, triggerCourtRain } from "@/lib/court-controls";
-import { localePath } from "@/lib/i18n";
 import type { Messages } from "@/lib/i18n";
 
 interface LandingPageClientProps {
@@ -27,7 +25,6 @@ export default function LandingPageClient({
   tip,
   footer,
 }: LandingPageClientProps) {
-  const { locale } = useLocale();
   const courtRef = useRef<InteractiveCourtHandle>(null);
   const [logoClicks, setLogoClicks] = useState(0);
   const [achievement, setAchievement] = useState<Achievement | null>(null);

@@ -7,13 +7,14 @@ import { useLocale } from "@/context/LocaleContext";
 import { useAuth } from "@/hooks/useAuth";
 import { getClientId } from "@/lib/client-id";
 import type { CourtAlert } from "@/lib/court-alerts-types";
+import { localePath } from "@/lib/i18n";
 
 interface DashboardAlertsPanelProps {
   onEditAlert?: (alert: CourtAlert) => void;
 }
 
 export default function DashboardAlertsPanel({ onEditAlert }: DashboardAlertsPanelProps) {
-  const { messages: m } = useLocale();
+  const { messages: m, locale } = useLocale();
   const { user } = useAuth();
   const ca = m.courtAlerts;
   const dash = m.dashboard;
@@ -80,13 +81,12 @@ export default function DashboardAlertsPanel({ onEditAlert }: DashboardAlertsPan
 
   const handlePause = async (alert: CourtAlert) => {
     const newStatus = alert.status === "active" ? "paused" : "active";
-    const clientId = user?.id ?? getClientId();
 
     try {
       const res = await fetch(`/api/court-alerts/${alert.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client_id: clientId, status: newStatus }),
+        body: JSON.stringify({ status: newStatus }),
       });
       if (res.ok) await reloadAlerts();
     } catch {
@@ -95,13 +95,9 @@ export default function DashboardAlertsPanel({ onEditAlert }: DashboardAlertsPan
   };
 
   const handleDelete = async (alert: CourtAlert) => {
-    const clientId = user?.id ?? getClientId();
-
     try {
       const res = await fetch(`/api/court-alerts/${alert.id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ client_id: clientId }),
       });
       if (res.ok) await reloadAlerts();
     } catch {
@@ -123,7 +119,11 @@ export default function DashboardAlertsPanel({ onEditAlert }: DashboardAlertsPan
 
       {!loading && !error && alerts.length === 0 && (
         <div className="mt-6">
-          <AlertEmptyState />
+          <AlertEmptyState
+            onCreateClick={() => {
+              window.location.href = localePath(locale, "/court-alerts");
+            }}
+          />
         </div>
       )}
 

@@ -6,13 +6,13 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-async function resolveOwnerId(bodyClientId: string): Promise<string | null> {
-  const sessionUserId = await getSessionUserId();
-  return sessionUserId ?? bodyClientId;
-}
-
 export async function PATCH(request: Request, context: RouteContext) {
   const { id } = await context.params;
+
+  const ownerId = await getSessionUserId();
+  if (!ownerId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   let body: unknown;
   try {
@@ -26,13 +26,8 @@ export async function PATCH(request: Request, context: RouteContext) {
     return Response.json({ error: validated.error }, { status: 400 });
   }
 
-  const ownerId = await resolveOwnerId(validated.data.client_id);
-  if (!ownerId) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { client_id, ...updates } = validated.data;
-  void client_id;
+  const { client_id: _clientId, ...updates } = validated.data;
+  void _clientId;
 
   let supabase;
   try {
@@ -72,22 +67,10 @@ export async function PATCH(request: Request, context: RouteContext) {
   return Response.json({ alert: data as CourtAlert });
 }
 
-export async function DELETE(request: Request, context: RouteContext) {
+export async function DELETE(_request: Request, context: RouteContext) {
   const { id } = await context.params;
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "Invalid request body" }, { status: 400 });
-  }
-
-  const validated = validateUpdatePayload(body);
-  if ("error" in validated) {
-    return Response.json({ error: validated.error }, { status: 400 });
-  }
-
-  const ownerId = await resolveOwnerId(validated.data.client_id);
+  const ownerId = await getSessionUserId();
   if (!ownerId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -100,11 +83,7 @@ export async function DELETE(request: Request, context: RouteContext) {
     return Response.json({ error: "Court alerts are temporarily unavailable" }, { status: 500 });
   }
 
-  const { error } = await supabase
-    .from("court_alerts")
-    .delete()
-    .eq("id", id)
-    .eq("client_id", ownerId);
+  const { error } = await supabase.from("court_alerts").delete().eq("id", id).eq("client_id", ownerId);
 
   if (error) {
     return Response.json({ error: "Something went wrong. Please try again." }, { status: 500 });

@@ -31,10 +31,6 @@ export function validateCreatePayload(body: unknown): { data: CreateAlertPayload
 
   const b = body as Record<string, unknown>;
 
-  if (!isValidClientId(b.client_id)) {
-    return { error: "Invalid client_id" };
-  }
-
   if (typeof b.city !== "string" || !b.city.trim()) {
     return { error: "City is required" };
   }
@@ -65,17 +61,9 @@ export function validateCreatePayload(body: unknown): { data: CreateAlertPayload
 
   const court = typeof b.court === "string" ? b.court : "any";
 
-  if (typeof b.email !== "string" || !b.email.trim()) {
-    return { error: "Email is required" };
-  }
-  const email = normalizeEmail(b.email);
-  if (!isValidEmail(email)) {
-    return { error: "Invalid email address" };
-  }
-
   return {
     data: {
-      client_id: b.client_id,
+      client_id: "",
       city: b.city.trim(),
       club: b.club.trim(),
       alert_date: alertDate,
@@ -84,7 +72,7 @@ export function validateCreatePayload(body: unknown): { data: CreateAlertPayload
       court,
       notify_push: false,
       notify_email: true,
-      email,
+      email: "",
     },
   };
 }
@@ -96,11 +84,7 @@ export function validateUpdatePayload(body: unknown): { data: UpdateAlertPayload
 
   const b = body as Record<string, unknown>;
 
-  if (!isValidClientId(b.client_id)) {
-    return { error: "Invalid client_id" };
-  }
-
-  const data: UpdateAlertPayload = { client_id: b.client_id };
+  const data: UpdateAlertPayload = { client_id: "" };
 
   if (b.city !== undefined) {
     if (typeof b.city !== "string" || !b.city.trim()) return { error: "Invalid city" };

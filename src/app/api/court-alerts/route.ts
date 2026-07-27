@@ -1,15 +1,12 @@
-import { getSessionUserId } from "@/lib/auth/session";
-import { isValidClientId } from "@/lib/court-alerts-validation";
+import { getSessionUser, getSessionUserId } from "@/lib/auth/session";
 import { validateCreatePayload } from "@/lib/court-alerts-validation";
 import type { CourtAlert } from "@/lib/court-alerts-types";
+import { isValidEmail, normalizeEmail } from "@/lib/email";
 
-export async function GET(request: Request) {
+export async function GET() {
   const sessionUserId = await getSessionUserId();
-  const { searchParams } = new URL(request.url);
-  const clientId = sessionUserId ?? searchParams.get("client_id");
-
-  if (!isValidClientId(clientId)) {
-    return Response.json({ error: "Invalid client_id" }, { status: 400 });
+  if (!sessionUserId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   let supabase;
@@ -23,7 +20,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("court_alerts")
     .select("*")
-    .eq("client_id", clientId)
+    .eq("client_id", sessionUserId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -34,6 +31,17 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const sessionUserId = await getSessionUserId();
+  if (!sessionUserId) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await getSessionUser();
+  const sessionEmail = user?.email ? normalizeEmail(user.email) : null;
+  if (!sessionEmail || !isValidEmail(sessionEmail)) {
+    return Response.json({ error: "A verified email is required on your account" }, { status: 400 });
+  }
+
   let body: unknown;
 
   try {
@@ -42,15 +50,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const sessionUserId = await getSessionUserId();
   const validated = validateCreatePayload(body);
   if ("error" in validated) {
     return Response.json({ error: validated.error }, { status: 400 });
   }
 
-  if (sessionUserId) {
-    validated.data.client_id = sessionUserId;
-  }
+  validated.data.client_id = sessionUserId;
+  validated.data.email = sessionEmail;
 
   let supabase;
   try {

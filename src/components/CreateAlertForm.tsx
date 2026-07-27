@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import GlassDatePicker from "@/components/ui/GlassDatePicker";
 import GlassSelect from "@/components/ui/GlassSelect";
@@ -9,14 +10,14 @@ import { useLocale } from "@/context/LocaleContext";
 import { useAuth } from "@/hooks/useAuth";
 import { CITIES, CLUBS, getClubLabelKey, getCourtOptionsForClub } from "@/lib/court-alerts-config";
 import type { CourtAlert } from "@/lib/court-alerts-types";
-import { getClientId } from "@/lib/client-id";
+import { localePath } from "@/lib/i18n";
 import {
   getTomorrowDateString,
   hourToTime,
   parseHourFromTime,
 } from "@/lib/court-alerts-utils";
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 4;
 
 export interface AlertFormData {
   city: string;
@@ -25,7 +26,6 @@ export interface AlertFormData {
   startHour: number;
   endHour: number;
   court: string;
-  email: string;
 }
 
 function defaultFormData(): AlertFormData {
@@ -36,7 +36,6 @@ function defaultFormData(): AlertFormData {
     startHour: 18,
     endHour: 20,
     court: "any",
-    email: "",
   };
 }
 
@@ -48,7 +47,6 @@ function alertToFormData(alert: CourtAlert): AlertFormData {
     startHour: parseHourFromTime(alert.time_start),
     endHour: parseHourFromTime(alert.time_end),
     court: alert.court,
-    email: alert.email ?? "",
   };
 }
 
@@ -63,7 +61,7 @@ export default function CreateAlertForm({
   onSuccess,
   onCancelEdit,
 }: CreateAlertFormProps) {
-  const { messages: m } = useLocale();
+  const { messages: m, locale } = useLocale();
   const { user } = useAuth();
   const ca = m.courtAlerts;
 
@@ -75,7 +73,7 @@ export default function CreateAlertForm({
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
-  const emailValue = form.email || user?.email || "";
+  if (!user) return null;
 
   const clubOptions = CLUBS[form.city] ?? [];
 
@@ -98,8 +96,6 @@ export default function CreateAlertForm({
         return form.endHour > form.startHour;
       case 4:
         return Boolean(form.court);
-      case 5:
-        return Boolean(emailValue.trim());
       default:
         return false;
     }
@@ -110,17 +106,13 @@ export default function CreateAlertForm({
     setLoading(true);
     setError(null);
 
-    const clientId = user?.id ?? getClientId();
-    const payload = {
-      client_id: clientId,
+    const alertFields = {
       city: form.city,
       club: form.club,
       alert_date: form.alert_date,
       time_start: hourToTime(form.startHour),
       time_end: hourToTime(form.endHour),
       court: form.court,
-      notify_email: true,
-      email: emailValue.trim(),
     };
 
     try {
@@ -130,7 +122,7 @@ export default function CreateAlertForm({
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(alertFields),
       });
 
       const data = (await res.json()) as { error?: string };
@@ -164,7 +156,17 @@ export default function CreateAlertForm({
 
   if (submitted) {
     return (
-      <WatchingSuccess title={ca.form.successTitle} subtitle={ca.form.successSubtitle} />
+      <div id="create-alert" className="w-full max-w-2xl">
+        <WatchingSuccess title={ca.form.successTitle} subtitle={ca.form.successSubtitle} />
+        <div className="mt-4 text-center">
+          <Link
+            href={localePath(locale, "/dashboard")}
+            className="btn-glow btn-primary inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all hover:scale-105 active:scale-95"
+          >
+            {ca.form.successDashboard}
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -173,13 +175,12 @@ export default function CreateAlertForm({
     ca.form.steps.when,
     ca.form.steps.time,
     ca.form.steps.court,
-    ca.form.steps.notify,
   ];
 
   return (
     <div
       id="create-alert"
-      className="glass-card card-glow w-full overflow-visible rounded-3xl border border-border bg-card/95 p-8 backdrop-blur-md"
+      className="glass-card card-glow w-full max-w-2xl overflow-visible rounded-3xl border border-border bg-card/95 p-8 backdrop-blur-md"
     >
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-xl font-semibold text-foreground">
@@ -276,22 +277,6 @@ export default function CreateAlertForm({
             options={courtOptions}
             onChange={(court) => setForm((prev) => ({ ...prev, court }))}
           />
-        )}
-
-        {step === 5 && (
-          <div className="space-y-4">
-            <label htmlFor="alert-email" className="block text-sm font-medium text-foreground">
-              {ca.form.emailNotification}
-            </label>
-            <input
-              id="alert-email"
-              type="email"
-              value={emailValue}
-              onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-              placeholder={ca.form.emailPlaceholder}
-              className="w-full rounded-xl border border-border bg-input-bg px-4 py-3.5 text-sm text-foreground placeholder:text-muted outline-none transition-colors focus:border-accent/50 focus:ring-1 focus:ring-accent/30"
-            />
-          </div>
         )}
       </div>
 
