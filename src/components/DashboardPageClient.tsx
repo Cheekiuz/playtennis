@@ -29,14 +29,9 @@ export default function DashboardPageClient() {
   return (
     <div className="relative min-h-screen overflow-x-clip">
       <MarketingPageShell
+        showAuth
         headerActions={
           <>
-            <Link
-              href={localePath(locale, "/court-alerts")}
-              className="hidden text-sm font-medium text-muted transition-colors hover:text-foreground sm:inline"
-            >
-              {m.header.courtAlerts}
-            </Link>
             <a
               href={`/auth/logout?next=${encodeURIComponent(localePath(locale, "/"))}`}
               className="text-sm font-medium text-muted transition-colors hover:text-foreground"

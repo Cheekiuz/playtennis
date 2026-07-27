@@ -27,6 +27,7 @@ export default function CourtAlertsPageClient() {
     <div className="relative min-h-screen overflow-x-clip">
       <MarketingPageShell
         courtRef={courtRef}
+        showAuth
         headerActions={
           <>
             <a

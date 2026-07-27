@@ -84,12 +84,6 @@ export default function LandingPageClient({
       headerActions={
         <>
           <a
-            href={localePath(locale, "/court-alerts")}
-            className="hidden text-sm font-medium text-muted transition-colors hover:text-foreground sm:inline"
-          >
-            {m.header.courtAlerts}
-          </a>
-          <a
             href="#waitlist"
             className="btn-glow btn-primary flex items-center gap-2 rounded-full px-5 py-2 text-sm font-semibold transition-all hover:scale-105 active:scale-95"
           >

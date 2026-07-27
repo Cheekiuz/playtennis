@@ -23,6 +23,7 @@ interface MarketingPageShellProps {
   onLogoClick?: () => void;
   logoHref?: string;
   overlay?: ReactNode;
+  showAuth?: boolean;
 }
 
 export default function MarketingPageShell({
@@ -32,6 +33,7 @@ export default function MarketingPageShell({
   onLogoClick,
   logoHref = "/",
   overlay,
+  showAuth = false,
 }: MarketingPageShellProps) {
   const logoContent = (
     <>
@@ -66,7 +68,7 @@ export default function MarketingPageShell({
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
           <LanguageSwitcher />
-          <AuthButton />
+          {showAuth ? <AuthButton /> : null}
           {headerActions}
         </div>
       </header>
