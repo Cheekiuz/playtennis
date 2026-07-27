@@ -14,7 +14,6 @@ export default function DashboardPageClient() {
   const { locale, messages: m } = useLocale();
   const { user } = useAuth();
   const dash = m.dashboard;
-  const auth = m.auth;
   const [editingAlert, setEditingAlert] = useState<CourtAlert | null>(null);
 
   const displayName =
@@ -28,19 +27,7 @@ export default function DashboardPageClient() {
 
   return (
     <div className="relative min-h-screen overflow-x-clip">
-      <MarketingPageShell
-        showAuth
-        headerActions={
-          <>
-            <a
-              href={`/auth/logout?next=${encodeURIComponent(localePath(locale, "/"))}`}
-              className="text-sm font-medium text-muted transition-colors hover:text-foreground"
-            >
-              {auth.signOut}
-            </a>
-          </>
-        }
-      >
+      <MarketingPageShell showAuth>
         <section className="w-full max-w-3xl pt-4">
           <div className="glass-card card-glow rounded-3xl border border-border bg-card/95 p-8 backdrop-blur-md">
             <div className="flex items-center gap-4">
