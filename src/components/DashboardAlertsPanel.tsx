@@ -22,6 +22,14 @@ export default function DashboardAlertsPanel({ onEditAlert }: DashboardAlertsPan
   const [alerts, setAlerts] = useState<CourtAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  useEffect(() => {
+    if (!notice) return;
+
+    const timer = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
 
   useEffect(() => {
     if (!user) return;
@@ -95,18 +103,40 @@ export default function DashboardAlertsPanel({ onEditAlert }: DashboardAlertsPan
   };
 
   const handleDelete = async (alert: CourtAlert) => {
+    if (!window.confirm(ca.active.deleteConfirm)) return;
+
     try {
       const res = await fetch(`/api/court-alerts/${alert.id}`, {
         method: "DELETE",
       });
-      if (res.ok) await reloadAlerts();
+      if (res.ok) {
+        await reloadAlerts();
+        setNotice({ type: "success", message: ca.active.deleteSuccess });
+      } else {
+        setNotice({ type: "error", message: ca.active.deleteError });
+      }
     } catch {
-      // silent
+      setNotice({ type: "error", message: ca.active.deleteError });
     }
   };
 
   return (
-    <div className="glass-card card-glow w-full rounded-3xl border border-border bg-card/95 p-8 backdrop-blur-md">
+    <>
+      {notice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`achievement-toast pointer-events-none fixed top-24 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full border px-6 py-3 text-sm font-medium shadow-lg backdrop-blur-md ${
+            notice.type === "success"
+              ? "border-accent/40 bg-card text-accent"
+              : "border-destructive/40 bg-card text-destructive"
+          }`}
+        >
+          {notice.message}
+        </div>
+      )}
+
+      <div className="glass-card card-glow w-full rounded-3xl border border-border bg-card/95 p-8 backdrop-blur-md">
       <h2 className="text-xl font-semibold text-foreground">{dash.alertsTitle}</h2>
       <p className="mt-1 text-sm text-muted">{dash.alertsSubtitle}</p>
 
@@ -140,6 +170,7 @@ export default function DashboardAlertsPanel({ onEditAlert }: DashboardAlertsPan
           ))}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

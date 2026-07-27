@@ -161,7 +161,9 @@
       "pause": "Pristabdyti",
       "resume": "Tęsti",
       "delete": "Ištrinti",
-      "deleteConfirm": "Ištrinti šį pranešimą?",
+      "deleteConfirm": "Ar tikrai norite ištrinti šį pranešimą? Šio veiksmo anuliuoti negalėsite.",
+      "deleteSuccess": "Pranešimas ištrintas.",
+      "deleteError": "Nepavyko ištrinti pranešimo. Bandykite dar kartą.",
       "loading": "Kraunami pranešimai..."
     },
     "empty": {
