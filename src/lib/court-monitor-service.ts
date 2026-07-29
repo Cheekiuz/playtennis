@@ -62,6 +62,16 @@ async function loadNotifiedKeys(
   return keys;
 }
 
+function groupMatchesByAlert(matches: AlertMatch[]): AlertMatch[][] {
+  const groups = new Map<string, AlertMatch[]>();
+  for (const match of matches) {
+    const list = groups.get(match.alertId) ?? [];
+    list.push(match);
+    groups.set(match.alertId, list);
+  }
+  return [...groups.values()];
+}
+
 async function recordEvent(
   supabase: ReturnType<typeof createServerSupabaseClient>,
   match: AlertMatch,
@@ -144,14 +154,21 @@ export async function runCourtMonitor(): Promise<MonitorRunResult> {
   const matches = matchAlertsToSlots(alerts, allSlots, notifiedKeys);
   result.matchesFound = matches.length;
 
-  for (const match of matches) {
+  for (const alertMatches of groupMatchesByAlert(matches)) {
+    const alertId = alertMatches[0]?.alertId;
+    if (!alertId) continue;
+
     try {
-      await recordEvent(supabase, match);
-      const sent = await sendCourtAlertEmail({ match, locale: "lt" });
+      for (const match of alertMatches) {
+        await recordEvent(supabase, match);
+        notifiedKeys.add(`${match.alertId}:${match.courtId}:${match.slotStart}`);
+      }
+
+      const sent = await sendCourtAlertEmail({ matches: alertMatches, locale: "lt" });
       if (sent) result.emailsSent++;
     } catch (err) {
       result.errors.push(
-        `Notify ${match.alertId}: ${err instanceof Error ? err.message : "unknown error"}`,
+        `Notify ${alertId}: ${err instanceof Error ? err.message : "unknown error"}`,
       );
     }
   }
