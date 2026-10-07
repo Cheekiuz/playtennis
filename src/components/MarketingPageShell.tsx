@@ -20,6 +20,7 @@ interface MarketingPageShellProps {
   children: ReactNode;
   courtRef?: RefObject<InteractiveCourtHandle | null>;
   headerActions?: ReactNode;
+  header?: ReactNode;
   onLogoClick?: () => void;
   logoHref?: string;
   overlay?: ReactNode;
@@ -30,6 +31,7 @@ export default function MarketingPageShell({
   children,
   courtRef,
   headerActions,
+  header,
   onLogoClick,
   logoHref = "/",
   overlay,
@@ -48,6 +50,7 @@ export default function MarketingPageShell({
 
       {overlay}
 
+      {header ?? (
       <header className="pointer-events-auto relative z-30 mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-6">
         {onLogoClick ? (
           <button
@@ -72,8 +75,9 @@ export default function MarketingPageShell({
           {headerActions}
         </div>
       </header>
+      )}
 
-      <main className="relative z-10 flex flex-col items-center px-6 pb-8">{children}</main>
+      <main className="relative z-10 flex w-full flex-col items-center px-6 pb-8">{children}</main>
     </>
   );
 }

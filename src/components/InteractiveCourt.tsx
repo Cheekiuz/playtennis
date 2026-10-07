@@ -21,6 +21,7 @@ import { drawTennisBall, preloadTennisBallImage, type BallExpression } from "@/l
 export interface InteractiveCourtHandle {
   triggerRain: () => void;
   triggerBurst: () => void;
+  cycleSurface: () => void;
 }
 
 interface Ball {
@@ -339,7 +340,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
   const autoTimerRef = useRef(0);
   const frameRef = useRef<number>(0);
   const burstRef = useRef<() => void>(() => {});
-  const actionsRef = useRef({ triggerBurst: () => {}, triggerRain: () => {} });
+  const actionsRef = useRef({ triggerBurst: () => {}, triggerRain: () => {}, cycleSurface: () => {} });
   const canvasColorsRef = useRef<CanvasColors>(readCanvasColors());
   const courtCacheRef = useRef<CourtCache>({ canvas: null, w: 0, h: 0, clayBlend: -1 });
   const dprRef = useRef(1);
@@ -350,6 +351,9 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     },
     triggerBurst() {
       actionsRef.current.triggerBurst();
+    },
+    cycleSurface() {
+      actionsRef.current.cycleSurface();
     },
   }));
 
@@ -394,7 +398,8 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       invalidateCourtCache();
 
       if (ballsRef.current.length === 0) {
-        for (let i = 0; i < 4; i++) {
+        const floatingCount = window.innerWidth < 768 ? 2 : 4;
+        for (let i = 0; i < floatingCount; i++) {
           ballsRef.current.push(
             createBall(
               Math.random() * window.innerWidth,
@@ -536,7 +541,12 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       playRacketSound(0.05);
     };
 
-    actionsRef.current = { triggerBurst, triggerRain };
+    const cycleSurface = () => {
+      clayRef.current.active = 3.5;
+      playRacketSound(0.04);
+    };
+
+    actionsRef.current = { triggerBurst, triggerRain, cycleSurface };
     registerCourtActions(actionsRef.current);
 
     const onMove = (e: MouseEvent) => updatePointer(e.clientX, e.clientY);
@@ -597,7 +607,21 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     window.addEventListener("touchmove", onTouchMove, { passive: true });
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("click", onClick);
+    let lastTap = 0;
+    const onTouchEnd = (event: TouchEvent) => {
+      const target = event.target as HTMLElement;
+      if (target.closest("a, button, input, form, select, textarea, header, footer")) return;
+      const now = Date.now();
+      if (now - lastTap < 350) {
+        cycleSurface();
+        lastTap = 0;
+        return;
+      }
+      lastTap = now;
+    };
+
     window.addEventListener("dblclick", onDblClick);
+    window.addEventListener("touchend", onTouchEnd);
 
     if (reducedMotion) {
       renderScene(window.innerWidth, window.innerHeight, false);
@@ -611,8 +635,23 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
         window.removeEventListener("touchstart", onTouchStart);
         window.removeEventListener("click", onClick);
         window.removeEventListener("dblclick", onDblClick);
+        window.removeEventListener("touchend", onTouchEnd);
       };
     }
+
+    const onScroll = () => {
+      const away = window.scrollY > window.innerHeight * 0.85;
+      if (away) {
+        running = false;
+        cancelAnimationFrame(frameRef.current);
+        return;
+      }
+      if (!document.hidden && !running) {
+        running = true;
+        lastTime = performance.now();
+        frameRef.current = requestAnimationFrame(tick);
+      }
+    };
 
     let lastTime = performance.now();
     let running = true;
@@ -629,6 +668,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     };
 
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("scroll", onScroll, { passive: true });
 
     const tick = (now: number) => {
       if (!running) return;
@@ -646,17 +686,21 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
 
       autoTimerRef.current -= dt;
       if (autoTimerRef.current <= 0) {
-        autoTimerRef.current = 9 + Math.random() * 8;
-        const fromLeft = Math.random() > 0.5;
-        ballsRef.current.push(
-          createBall(
-            fromLeft ? -30 : w + 30,
-            h * (0.35 + Math.random() * 0.25),
-            fromLeft ? 320 + Math.random() * 80 : -320 - Math.random() * 80,
-            (Math.random() - 0.5) * 60,
-            { radius: 11 + Math.random() * 4 },
-          ),
-        );
+        const narrow = w < 768;
+        autoTimerRef.current = narrow ? 14 + Math.random() * 10 : 9 + Math.random() * 8;
+        const moving = ballsRef.current.filter((ball) => !ball.floating).length;
+        if (!(narrow && moving >= 8)) {
+          const fromLeft = Math.random() > 0.5;
+          ballsRef.current.push(
+            createBall(
+              fromLeft ? -30 : w + 30,
+              h * (0.35 + Math.random() * 0.25),
+              fromLeft ? 320 + Math.random() * 80 : -320 - Math.random() * 80,
+              (Math.random() - 0.5) * 60,
+              { radius: 11 + Math.random() * 4 },
+            ),
+          );
+        }
       }
 
       const cursor = cursorBallRef.current;
@@ -746,6 +790,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       registerCourtActions(null);
       themeObserver.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("scroll", onScroll);
       clearTimeout(resizeTimer);
       window.removeEventListener("resize", onResize);
       window.removeEventListener("mousemove", onMove);
@@ -753,6 +798,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("click", onClick);
       window.removeEventListener("dblclick", onDblClick);
+      window.removeEventListener("touchend", onTouchEnd);
     };
   }, []);
 

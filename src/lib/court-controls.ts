@@ -1,6 +1,7 @@
 interface CourtActions {
   triggerBurst: () => void;
   triggerRain: () => void;
+  cycleSurface: () => void;
 }
 
 let courtActions: CourtActions | null = null;
@@ -18,5 +19,11 @@ export function triggerCourtBurst(): boolean {
 export function triggerCourtRain(): boolean {
   if (!courtActions) return false;
   courtActions.triggerRain();
+  return true;
+}
+
+export function cycleCourtSurface(): boolean {
+  if (!courtActions) return false;
+  courtActions.cycleSurface();
   return true;
 }

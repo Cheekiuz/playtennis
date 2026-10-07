@@ -1,13 +1,5 @@
-import LandingPage from "@/components/LandingPage";
-import { LocaleProvider } from "@/context/LocaleContext";
-import { getMessages } from "@/lib/i18n";
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
-  const messages = getMessages("lt");
-
-  return (
-    <LocaleProvider key="lt" locale="lt" messages={messages}>
-      <LandingPage messages={messages} />
-    </LocaleProvider>
-  );
+export default function RootPage() {
+  redirect("/lt");
 }

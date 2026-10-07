@@ -1,19 +1,32 @@
 import type { MetadataRoute } from "next";
 import { localePath, locales } from "@/lib/i18n";
 import { absoluteUrl } from "@/lib/seo";
+import { listSitemapTournaments } from "@/lib/tournaments/queries";
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const paths = ["/", "/court-alerts"];
+export const dynamic = "force-dynamic";
 
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const paths = ["/", "/tournaments", "/about", "/play", "/quiz"];
   const entries: MetadataRoute.Sitemap = [];
 
   for (const path of paths) {
     for (const locale of locales) {
       entries.push({
         url: absoluteUrl(localePath(locale, path)),
-        lastModified: new Date(),
+        changeFrequency: path === "/tournaments" ? "daily" : "weekly",
+        priority: path === "/" ? 1 : 0.7,
+      });
+    }
+  }
+
+  const tournaments = await listSitemapTournaments();
+  for (const tournament of tournaments) {
+    for (const locale of locales) {
+      entries.push({
+        url: absoluteUrl(localePath(locale, `/tournaments/${tournament.slug}`)),
+        lastModified: new Date(tournament.updatedAt),
         changeFrequency: "weekly",
-        priority: path === "/" ? (locale === "lt" ? 1 : 0.9) : locale === "lt" ? 0.8 : 0.7,
+        priority: 0.6,
       });
     }
   }

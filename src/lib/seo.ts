@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { defaultLocale, getMessages, localePath, locales, type Locale } from "@/lib/i18n";
+import { getMessages, localePath, locales, type Locale } from "@/lib/i18n";
 import { BALL_OG_IMAGE_SRC } from "@/lib/tennis-ball-assets";
 
 const DEFAULT_SITE_URL = "https://www.playtennis.lt";
@@ -39,8 +39,16 @@ export function languageAlternates(): Record<string, string> {
   for (const locale of locales) {
     alternates[locale] = absoluteUrl(localePath(locale));
   }
-  alternates["x-default"] = absoluteUrl(localePath(defaultLocale));
+  alternates["x-default"] = absoluteUrl(localePath("en"));
   return alternates;
+}
+
+export function routeAlternates(pathname: string): Record<string, string> {
+  return {
+    lt: absoluteUrl(localePath("lt", pathname)),
+    en: absoluteUrl(localePath("en", pathname)),
+    "x-default": absoluteUrl(localePath("en", pathname)),
+  };
 }
 
 export function buildPageMetadata(locale: Locale): Metadata {
@@ -93,11 +101,7 @@ export function buildCourtAlertsMetadata(locale: Locale): Metadata {
   const url = absoluteUrl(path);
   const ca = m.courtAlerts.meta;
 
-  const languages: Record<string, string> = {
-    lt: absoluteUrl("/court-alerts"),
-    en: absoluteUrl("/en/court-alerts"),
-    "x-default": absoluteUrl("/court-alerts"),
-  };
+  const languages = routeAlternates("/court-alerts");
 
   return {
     metadataBase: new URL(getSiteUrl()),
@@ -144,11 +148,7 @@ export function buildDashboardMetadata(locale: Locale): Metadata {
   const url = absoluteUrl(path);
   const dash = m.dashboard.meta;
 
-  const languages: Record<string, string> = {
-    lt: absoluteUrl("/dashboard"),
-    en: absoluteUrl("/en/dashboard"),
-    "x-default": absoluteUrl("/dashboard"),
-  };
+  const languages = routeAlternates("/dashboard");
 
   return {
     metadataBase: new URL(getSiteUrl()),

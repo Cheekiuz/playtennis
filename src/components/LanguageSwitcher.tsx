@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useLocale } from "@/context/LocaleContext";
+import { track } from "@/lib/analytics";
 import { switchLocalePath, locales, type Locale } from "@/lib/i18n";
 
 const localeLabels: Record<Locale, { short: string; full: string }> = {
@@ -31,7 +32,7 @@ function GlobeIcon() {
 }
 
 export default function LanguageSwitcher() {
-  const { locale } = useLocale();
+  const { locale, messages } = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -62,6 +63,7 @@ export default function LanguageSwitcher() {
     const href = switchLocalePath(pathname, code);
     setOpen(false);
     if (pathname === href) return;
+    track("language_changed", { locale: code });
     router.push(href);
     router.refresh();
   };
@@ -73,7 +75,7 @@ export default function LanguageSwitcher() {
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-label="Change language"
+        aria-label={messages.nav.changeLanguage}
         className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-foreground/80 transition-colors hover:bg-surface-hover hover:text-foreground"
       >
         <GlobeIcon />

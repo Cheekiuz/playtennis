@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   }
 
   const { searchParams, origin } = new URL(request.url);
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = searchParams.get("next") ?? "/admin";
 
   const supabase = await createAuthSupabaseClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
