@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Space_Grotesk, Syne } from "next/font/google";
 import BallRain from "@/components/BallRain";
 import CourtHotkeys from "@/components/CourtHotkeys";
 import HomeCourt, { RainControl } from "@/components/HomeCourt";
@@ -22,18 +21,6 @@ import {
 import { listTournaments } from "@/lib/tournaments/queries";
 import type { TournamentRecord } from "@/lib/tournaments/types";
 
-const syne = Syne({
-  subsets: ["latin", "latin-ext"],
-  weight: ["700", "800"],
-  variable: "--font-home-display",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-home-text",
-});
-
 export default async function DiscoverHome({ locale, messages }: { locale: Locale; messages: Messages }) {
   const upcoming = await listTournaments({ page: 1 }, 24);
   const cards = upcoming.items.slice(0, 4);
@@ -43,7 +30,13 @@ export default async function DiscoverHome({ locale, messages }: { locale: Local
   const tournamentsHref = localePath(locale, "/tournaments");
 
   return (
-    <div className={`${syne.variable} ${spaceGrotesk.variable} home-editorial relative min-h-screen`}>
+    <div className="home-editorial relative min-h-screen">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&display=swap"
+        rel="stylesheet"
+      />
       <CourtHotkeys />
       <BallRain />
       <p className="sticky top-0 z-50 flex h-10 items-center justify-center border-b border-white/60 bg-white/45 text-sm font-bold tracking-wide text-[#dc2626] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-md">

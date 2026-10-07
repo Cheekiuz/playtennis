@@ -423,9 +423,9 @@ body {
   background: #f9f9f8;
   color: #1a1c1c;
   color-scheme: light;
-  font-family: var(--font-home-text), var(--font-inter), system-ui, sans-serif;
+  font-family: "Space Grotesk", var(--font-inter), system-ui, sans-serif;
 }
 
 .home-editorial :is(h1, h2, h3, h4) {
-  font-family: var(--font-home-display), var(--font-inter), system-ui, sans-serif;
+  font-family: Syne, var(--font-inter), system-ui, sans-serif;
 }
