@@ -9,11 +9,13 @@ export default function SaveButton({
   saveLabel,
   savedLabel,
   unsaveLabel,
+  paper = false,
 }: {
   id: string;
   saveLabel: string;
   savedLabel: string;
   unsaveLabel: string;
+  paper?: boolean;
 }) {
   const [saved, setSaved] = useState(false);
 
@@ -34,7 +36,11 @@ export default function SaveButton({
         setSaved(next);
         track("save_tournament", { tournament_id: id, saved: next });
       }}
-      className="rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      className={
+        paper
+          ? "rounded-full border border-[#e2e2e2] bg-white px-3 py-1.5 text-sm font-semibold text-[#1a1c1c] hover:border-[#111915]"
+          : "rounded-full border border-border bg-surface px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-surface-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      }
     >
       {saved ? savedLabel : saveLabel}
     </button>
