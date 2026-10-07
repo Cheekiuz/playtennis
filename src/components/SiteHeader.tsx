@@ -49,7 +49,7 @@ export default function SiteHeader({ courtHome = false }: { courtHome?: boolean 
     );
 
     return (
-      <header className="sticky top-0 z-40 border-b border-[#e2e2e2] bg-[#f9f9f8]/90 backdrop-blur">
+      <header className="sticky top-10 z-40 border-b border-[#e2e2e2] bg-[#f9f9f8]/90 backdrop-blur">
         <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-4 px-4 lg:px-12">
           <div className="flex items-center gap-4">
             <Link href={home} className="flex items-center gap-2 text-lg font-bold tracking-tight text-[#1a1c1c]">

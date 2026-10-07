@@ -46,6 +46,9 @@ export default async function DiscoverHome({ locale, messages }: { locale: Local
     <div className={`${syne.variable} ${spaceGrotesk.variable} home-editorial relative min-h-screen`}>
       <CourtHotkeys />
       <BallRain />
+      <p className="sticky top-0 z-50 flex h-10 items-center justify-center border-b border-white/60 bg-white/45 text-sm font-bold tracking-wide text-[#dc2626] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] backdrop-blur-md">
+        Under construction
+      </p>
       <SiteHeader courtHome />
       <main>
         <section className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-8 lg:px-12 lg:pb-24">
