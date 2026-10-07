@@ -47,7 +47,7 @@ function MoonIcon() {
   );
 }
 
-export default function ThemeSwitcher() {
+export default function ThemeSwitcher({ paper = false }: { paper?: boolean }) {
   const { theme, toggleTheme } = useTheme();
   const { messages: m } = useLocale();
 
@@ -59,7 +59,11 @@ export default function ThemeSwitcher() {
       onClick={toggleTheme}
       aria-label={`${m.theme.change}: ${nextTheme}`}
       title={`${m.theme.change}: ${nextTheme}`}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-foreground/80 transition-colors hover:bg-surface-hover hover:text-foreground"
+      className={
+        paper
+          ? "flex h-9 w-9 items-center justify-center rounded-full border border-[#e2e2e2] bg-white text-[#1a1c1c] hover:border-[#111915]"
+          : "flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-foreground/80 transition-colors hover:bg-surface-hover hover:text-foreground"
+      }
     >
       {theme === "dark" ? <MoonIcon /> : <SunIcon />}
     </button>
