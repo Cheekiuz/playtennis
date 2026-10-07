@@ -6,15 +6,27 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
-import { registerCourtActions } from "@/lib/court-controls";
+import {
+  emitCourtSurface,
+  peekRequestedSurface,
+  registerCourtActions,
+  registerCourtMotion,
+  registerCourtSurface,
+  releaseCourtMotion,
+  releaseCourtSurface,
+  type CourtSurface,
+} from "@/lib/court-controls";
 import { playRacketSound } from "@/lib/court-sound";
 import {
   CLAY_COURT,
+  containCourtDimensions,
   COURT_BLUR_PX,
   drawClayTexture,
   drawRegulationCourtLines,
   fitCourtDimensions,
+  GRASS_COURT,
   HARD_COURT,
+  SURFACE_APRON,
 } from "@/lib/court-draw";
 import { drawTennisBall, preloadTennisBallImage, type BallExpression } from "@/lib/tennis-ball-draw";
 
@@ -61,6 +73,7 @@ interface CourtCache {
   w: number;
   h: number;
   clayBlend: number;
+  variant: string;
 }
 
 const GRAVITY = 680;
@@ -182,6 +195,8 @@ function drawCourt(
   tiltX: number,
   tiltY: number,
   clayBlend: number,
+  locked: CourtSurface | null = null,
+  landscape = false,
 ) {
   const lerpColor = (a: number, b: number, t: number) =>
     Math.round(a + (b - a) * t);
@@ -198,9 +213,10 @@ function drawCourt(
     return `rgb(${lerpColor(hr, cr, t)},${lerpColor(hg, cg, t)},${lerpColor(hb, cb, t)})`;
   };
 
-  const isFullClay = clayBlend >= 0.95;
-  const isFullHard = clayBlend <= 0.05;
-  const isClay = clayBlend > 0.35;
+  const isFullClay = locked === "clay" || (locked == null && clayBlend >= 0.95);
+  const isFullHard = locked === "hard" || (locked == null && clayBlend <= 0.05);
+  const isGrass = locked === "grass";
+  const isClay = !isGrass && !isFullHard && (locked === "clay" || clayBlend > 0.35);
 
   let surface: string;
   let surfaceDark: string;
@@ -208,7 +224,13 @@ function drawCourt(
   let line: string;
   let useChalk: boolean;
 
-  if (isFullClay) {
+  if (isGrass) {
+    surface = GRASS_COURT.surface;
+    surfaceDark = GRASS_COURT.surfaceDark;
+    outer = GRASS_COURT.outer;
+    line = GRASS_COURT.line;
+    useChalk = false;
+  } else if (isFullClay) {
     surface = CLAY_COURT.surface;
     surfaceDark = CLAY_COURT.surfaceDark;
     outer = CLAY_COURT.outer;
@@ -231,9 +253,12 @@ function drawCourt(
   ctx.save();
   ctx.filter = `blur(${COURT_BLUR_PX}px)`;
   ctx.translate(w / 2, h / 2);
+  if (landscape) ctx.rotate(-Math.PI / 2);
   ctx.transform(1, tiltX * 0.04, tiltY * 0.02, 1, 0, 0);
 
-  const { courtW, courtH } = fitCourtDimensions(w, h);
+  const { courtW, courtH } = landscape
+    ? containCourtDimensions(h, w)
+    : fitCourtDimensions(w, h);
 
   const pad = Math.max(8, courtW * 0.015);
   ctx.fillStyle = outer;
@@ -245,7 +270,7 @@ function drawCourt(
   ctx.fillStyle = surfaceGrad;
   ctx.fillRect(-courtW / 2, -courtH / 2, courtW, courtH);
 
-  if (!isFullHard && clayBlend > 0) {
+  if (!isGrass && !isFullHard && clayBlend > 0) {
     drawClayTexture(
       ctx,
       -courtW / 2,
@@ -267,14 +292,17 @@ function ensureCourtCache(
   h: number,
   clayBlend: number,
   dpr: number,
+  locked: CourtSurface | null = null,
+  landscape = false,
 ) {
   const clayKey = quantizeClayBlend(clayBlend);
+  const variant = `${locked ?? "mix"}:${locked ? "x" : clayKey}:${landscape ? "l" : "p"}`;
 
   if (
     cache.canvas &&
     cache.w === w &&
     cache.h === h &&
-    cache.clayBlend === clayKey
+    cache.variant === variant
   ) {
     return cache.canvas;
   }
@@ -290,11 +318,21 @@ function ensureCourtCache(
 
   cacheCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   cacheCtx.clearRect(0, 0, w, h);
-  drawCourt(cacheCtx, w, h, 0, 0, clayBlend);
+  drawCourt(
+    cacheCtx,
+    w,
+    h,
+    0,
+    0,
+    locked === "hard" ? 0 : locked === "clay" || locked === "grass" ? 1 : clayBlend,
+    locked,
+    landscape,
+  );
 
   cache.w = w;
   cache.h = h;
   cache.clayBlend = clayKey;
+  cache.variant = variant;
   return cache.canvas;
 }
 
@@ -318,7 +356,14 @@ function drawBackground(
   w: number,
   h: number,
   canvasColors: CanvasColors,
+  apron: string | null = null,
 ) {
+  if (apron) {
+    ctx.fillStyle = apron;
+    ctx.fillRect(0, 0, w, h);
+    return;
+  }
+
   const bgGrad = ctx.createRadialGradient(w / 2, h * 0.2, 0, w / 2, h * 0.2, w * 0.8);
   bgGrad.addColorStop(0, canvasColors.glow);
   bgGrad.addColorStop(1, "rgba(0,0,0,0)");
@@ -328,7 +373,14 @@ function drawBackground(
   ctx.fillRect(0, 0, w, h);
 }
 
-const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function InteractiveCourt(_, ref) {
+type InteractiveCourtProps = {
+  mode?: "backdrop" | "panel" | "rain";
+};
+
+const InteractiveCourt = forwardRef<InteractiveCourtHandle, InteractiveCourtProps>(function InteractiveCourt(
+  { mode = "backdrop" },
+  ref,
+) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const ballsRef = useRef<Ball[]>([]);
   const particlesRef = useRef<Particle[]>([]);
@@ -340,10 +392,18 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
   const autoTimerRef = useRef(0);
   const frameRef = useRef<number>(0);
   const burstRef = useRef<() => void>(() => {});
-  const actionsRef = useRef({ triggerBurst: () => {}, triggerRain: () => {}, cycleSurface: () => {} });
+  const actionsRef = useRef<{
+    triggerBurst: () => void;
+    triggerRain: () => void;
+    cycleSurface: () => void;
+    setSurface?: (surface: CourtSurface) => void;
+  }>({ triggerBurst: () => {}, triggerRain: () => {}, cycleSurface: () => {} });
   const canvasColorsRef = useRef<CanvasColors>(readCanvasColors());
-  const courtCacheRef = useRef<CourtCache>({ canvas: null, w: 0, h: 0, clayBlend: -1 });
+  const courtCacheRef = useRef<CourtCache>({ canvas: null, w: 0, h: 0, clayBlend: -1, variant: "" });
   const dprRef = useRef(1);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const surfaceLockRef = useRef<CourtSurface | null>(null);
+  const pointerInsideRef = useRef(false);
 
   useImperativeHandle(ref, () => ({
     triggerRain() {
@@ -364,6 +424,25 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     if (!ctx) return;
 
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const contained = mode === "panel";
+    const pageRain = mode === "rain";
+    const ballCap = pageRain ? 64 : MAX_BALLS;
+    if (contained) {
+      surfaceLockRef.current = peekRequestedSurface() ?? "clay";
+      emitCourtSurface(surfaceLockRef.current);
+    } else {
+      surfaceLockRef.current = null;
+    }
+
+    const box = () => {
+      if (contained && rootRef.current) {
+        const rect = rootRef.current.getBoundingClientRect();
+        return { w: rect.width, h: rect.height, left: rect.left, top: rect.top };
+      }
+      return { w: window.innerWidth, h: window.innerHeight, left: 0, top: 0 };
+    };
+
+    let paintReduced: ((w: number, h: number) => void) | null = null;
 
     const refreshCanvasColors = () => {
       canvasColorsRef.current = readCanvasColors();
@@ -380,30 +459,33 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       courtCacheRef.current.w = 0;
       courtCacheRef.current.h = 0;
       courtCacheRef.current.clayBlend = -1;
+      courtCacheRef.current.variant = "";
     };
 
     const resize = () => {
+      const view = box();
+      if (view.w < 8 || view.h < 8) return;
       dprRef.current = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = window.innerWidth * dprRef.current;
-      canvas.height = window.innerHeight * dprRef.current;
-      canvas.style.width = `${window.innerWidth}px`;
-      canvas.style.height = `${window.innerHeight}px`;
+      canvas.width = view.w * dprRef.current;
+      canvas.height = view.h * dprRef.current;
+      canvas.style.width = `${view.w}px`;
+      canvas.style.height = `${view.h}px`;
       ctx.setTransform(dprRef.current, 0, 0, dprRef.current, 0, 0);
 
-      cursorBallRef.current.x = window.innerWidth / 2;
-      cursorBallRef.current.y = window.innerHeight / 2;
+      cursorBallRef.current.x = view.w / 2;
+      cursorBallRef.current.y = view.h / 2;
       cursorBallRef.current.targetX = cursorBallRef.current.x;
       cursorBallRef.current.targetY = cursorBallRef.current.y;
 
       invalidateCourtCache();
 
-      if (ballsRef.current.length === 0) {
-        const floatingCount = window.innerWidth < 768 ? 2 : 4;
+      if (ballsRef.current.length === 0 && !pageRain) {
+        const floatingCount = view.w < 768 ? 2 : 4;
         for (let i = 0; i < floatingCount; i++) {
           ballsRef.current.push(
             createBall(
-              Math.random() * window.innerWidth,
-              Math.random() * window.innerHeight,
+              Math.random() * view.w,
+              Math.random() * view.h,
               (Math.random() - 0.5) * 20,
               (Math.random() - 0.5) * 20,
               {
@@ -416,6 +498,8 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
           );
         }
       }
+
+      if (paintReduced) paintReduced(view.w, view.h);
     };
 
     resize();
@@ -428,25 +512,30 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     window.addEventListener("resize", onResize);
 
     const updatePointer = (clientX: number, clientY: number) => {
-      mouseRef.current.x = clientX;
-      mouseRef.current.y = clientY;
-      cursorBallRef.current.targetX = clientX;
-      cursorBallRef.current.targetY = clientY;
+      const view = box();
+      const x = clientX - view.left;
+      const y = clientY - view.top;
+      mouseRef.current.x = x;
+      mouseRef.current.y = y;
+      cursorBallRef.current.targetX = x;
+      cursorBallRef.current.targetY = y;
+      pointerInsideRef.current = true;
 
-      const cx = window.innerWidth / 2;
-      const cy = window.innerHeight / 2;
+      const cx = view.w / 2;
+      const cy = view.h / 2;
       const maxTilt = 0.5;
-      tiltTargetRef.current.x = clamp((clientX - cx) / cx, -maxTilt, maxTilt);
-      tiltTargetRef.current.y = clamp((clientY - cy) / cy, -maxTilt, maxTilt);
+      tiltTargetRef.current.x = clamp((x - cx) / Math.max(cx, 1), -maxTilt, maxTilt);
+      tiltTargetRef.current.y = clamp((y - cy) / Math.max(cy, 1), -maxTilt, maxTilt);
     };
 
     const burst = () => {
+      const view = box();
       for (let i = 0; i < 24; i++) {
-        if (ballsRef.current.length >= MAX_BALLS) break;
+        if (ballsRef.current.length >= ballCap) break;
         ballsRef.current.push(
           createBall(
-            Math.random() * window.innerWidth * 0.8 + window.innerWidth * 0.1,
-            window.innerHeight * 0.65 + Math.random() * 100,
+            Math.random() * view.w * 0.8 + view.w * 0.1,
+            view.h * 0.65 + Math.random() * Math.min(100, view.h * 0.25),
             150 + Math.random() * 250,
             -300 - Math.random() * 200,
           ),
@@ -459,7 +548,9 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
 
     const renderScene = (w: number, h: number, drawDynamic = true) => {
       ctx.clearRect(0, 0, w, h);
-      drawBackground(ctx, w, h, canvasColorsRef.current);
+      if (!pageRain) {
+      const locked = surfaceLockRef.current;
+      drawBackground(ctx, w, h, canvasColorsRef.current, locked ? SURFACE_APRON[locked] : null);
 
       const courtCache = ensureCourtCache(
         courtCacheRef.current,
@@ -467,6 +558,8 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
         h,
         clayRef.current.blend,
         dprRef.current,
+        locked,
+        contained,
       );
       drawCachedCourtWithTilt(
         ctx,
@@ -476,6 +569,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
         tiltRef.current.y,
         courtCache,
       );
+      }
 
       if (!drawDynamic) return;
 
@@ -489,7 +583,9 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
 
       for (const p of particlesRef.current) {
         ctx.globalAlpha = p.life / p.maxLife;
-        ctx.fillStyle = clayRef.current.blend > 0.5
+        ctx.fillStyle = surfaceLockRef.current === "grass"
+          ? "rgba(190, 230, 160, 0.7)"
+          : clayRef.current.blend > 0.5
           ? "rgba(230,180,120,0.7)"
           : "rgba(180,220,255,0.6)";
         ctx.beginPath();
@@ -498,6 +594,7 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       }
       ctx.globalAlpha = 1;
 
+      if (!pageRain && (!contained || pointerInsideRef.current)) {
       const cursor = cursorBallRef.current;
       drawBall(ctx, {
         id: -1,
@@ -515,39 +612,82 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
         rotation: performance.now() * 0.002,
         spin: 0,
       });
+      }
+    };
+
+    paintReduced = (w, h) => renderScene(w, h, false);
+
+    const paintNow = (drawDynamic: boolean) => {
+      const view = box();
+      if (view.w < 8 || view.h < 8) return;
+      renderScene(view.w, view.h, drawDynamic);
     };
 
     const triggerBurst = () => {
       burst();
-      if (reducedMotion) {
-        renderScene(window.innerWidth, window.innerHeight, true);
-      }
+      if (reducedMotion) paintNow(true);
     };
     burstRef.current = triggerBurst;
 
     const triggerRain = () => {
-      const w = window.innerWidth;
+      const view = box();
       for (let i = 0; i < 35; i++) {
-        if (ballsRef.current.length >= MAX_BALLS) break;
+        if (ballsRef.current.length >= ballCap) break;
         ballsRef.current.push(
           createBall(
-            Math.random() * w,
-            -20 - Math.random() * 200,
+            Math.random() * view.w,
+            -20 - Math.random() * Math.min(200, view.h),
             (Math.random() - 0.5) * 120,
             200 + Math.random() * 180,
           ),
         );
       }
       playRacketSound(0.05);
+      if (reducedMotion) paintNow(true);
+    };
+
+    const applyLockedSurface = (surface: CourtSurface) => {
+      surfaceLockRef.current = surface;
+      courtCacheRef.current.variant = "";
+      emitCourtSurface(surface);
+      playRacketSound(0.04);
+      if (reducedMotion) paintNow(false);
     };
 
     const cycleSurface = () => {
+      if (surfaceLockRef.current) {
+        const order: CourtSurface[] = ["clay", "hard", "grass"];
+        const index = Math.max(0, order.indexOf(surfaceLockRef.current));
+        applyLockedSurface(order[(index + 1) % order.length]);
+        return;
+      }
       clayRef.current.active = 3.5;
       playRacketSound(0.04);
     };
 
-    actionsRef.current = { triggerBurst, triggerRain, cycleSurface };
-    registerCourtActions(actionsRef.current);
+    actionsRef.current = {
+      triggerBurst,
+      triggerRain,
+      cycleSurface,
+      setSurface: contained ? applyLockedSurface : undefined,
+    };
+    if (pageRain) registerCourtMotion(actionsRef.current);
+    else if (contained) registerCourtSurface(actionsRef.current);
+    else registerCourtActions(actionsRef.current);
+
+    const releaseActions = () => {
+      if (pageRain) releaseCourtMotion(actionsRef.current);
+      else if (contained) releaseCourtSurface(actionsRef.current);
+      else {
+        releaseCourtMotion(actionsRef.current);
+        releaseCourtSurface(actionsRef.current);
+      }
+    };
+
+    let introRain: ReturnType<typeof setTimeout> | undefined;
+    if (pageRain && !reducedMotion) {
+      introRain = setTimeout(() => triggerRain(), 400);
+    }
 
     const onMove = (e: MouseEvent) => updatePointer(e.clientX, e.clientY);
 
@@ -593,20 +733,20 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     const onClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest("a, button, input, form, header, footer")) return;
-      addBallAt(e.clientX, e.clientY);
+      const view = box();
+      addBallAt(e.clientX - view.left, e.clientY - view.top);
     };
 
     const onDblClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (target.closest("a, button, input, form, header, footer")) return;
-      clayRef.current.active = 3.5;
-      playRacketSound(0.04);
+      cycleSurface();
     };
 
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("click", onClick);
+    const onLeave = () => {
+      pointerInsideRef.current = false;
+    };
+
     let lastTap = 0;
     const onTouchEnd = (event: TouchEvent) => {
       const target = event.target as HTMLElement;
@@ -620,22 +760,61 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
       lastTap = now;
     };
 
-    window.addEventListener("dblclick", onDblClick);
-    window.addEventListener("touchend", onTouchEnd);
+    if (!pageRain && contained) {
+      canvas.addEventListener("mousemove", onMove);
+      canvas.addEventListener("touchmove", onTouchMove, { passive: true });
+      canvas.addEventListener("touchstart", onTouchStart, { passive: true });
+      canvas.addEventListener("click", onClick);
+      canvas.addEventListener("dblclick", onDblClick);
+      canvas.addEventListener("touchend", onTouchEnd);
+      canvas.addEventListener("mouseleave", onLeave);
+    } else if (!pageRain) {
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("touchmove", onTouchMove, { passive: true });
+      window.addEventListener("touchstart", onTouchStart, { passive: true });
+      window.addEventListener("click", onClick);
+      window.addEventListener("dblclick", onDblClick);
+      window.addEventListener("touchend", onTouchEnd);
+    }
 
-    if (reducedMotion) {
-      renderScene(window.innerWidth, window.innerHeight, false);
-      return () => {
-        themeObserver.disconnect();
-        registerCourtActions(null);
+    let resizeObserver: ResizeObserver | null = null;
+    if (contained && rootRef.current && typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
         clearTimeout(resizeTimer);
-        window.removeEventListener("resize", onResize);
+        resizeTimer = setTimeout(resize, RESIZE_DEBOUNCE_MS);
+      });
+      resizeObserver.observe(rootRef.current);
+    }
+
+    const unlisten = () => {
+      if (contained) {
+        canvas.removeEventListener("mousemove", onMove);
+        canvas.removeEventListener("touchmove", onTouchMove);
+        canvas.removeEventListener("touchstart", onTouchStart);
+        canvas.removeEventListener("click", onClick);
+        canvas.removeEventListener("dblclick", onDblClick);
+        canvas.removeEventListener("touchend", onTouchEnd);
+        canvas.removeEventListener("mouseleave", onLeave);
+      } else if (!pageRain) {
         window.removeEventListener("mousemove", onMove);
         window.removeEventListener("touchmove", onTouchMove);
         window.removeEventListener("touchstart", onTouchStart);
         window.removeEventListener("click", onClick);
         window.removeEventListener("dblclick", onDblClick);
         window.removeEventListener("touchend", onTouchEnd);
+      }
+      resizeObserver?.disconnect();
+    };
+
+    if (reducedMotion) {
+      paintNow(false);
+      return () => {
+        themeObserver.disconnect();
+        releaseActions();
+        clearTimeout(introRain);
+        clearTimeout(resizeTimer);
+        window.removeEventListener("resize", onResize);
+        unlisten();
       };
     }
 
@@ -668,24 +847,34 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
     };
 
     document.addEventListener("visibilitychange", onVisibility);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    let intersectionObserver: IntersectionObserver | null = null;
+    if (!contained && !pageRain) {
+      window.addEventListener("scroll", onScroll, { passive: true });
+    }
 
     const tick = (now: number) => {
       if (!running) return;
       const dt = Math.min((now - lastTime) / 1000, 0.033);
       lastTime = now;
-      const w = window.innerWidth;
-      const h = window.innerHeight;
+      const view = box();
+      const w = view.w;
+      const h = view.h;
+      if (w < 8 || h < 8) {
+        frameRef.current = requestAnimationFrame(tick);
+        return;
+      }
 
-      if (clayRef.current.active > 0) {
-        clayRef.current.active -= dt;
-        clayRef.current.blend = Math.max(0, clayRef.current.blend - dt * 2.5);
-      } else {
-        clayRef.current.blend = Math.min(1, clayRef.current.blend + dt * 1.2);
+      if (!surfaceLockRef.current) {
+        if (clayRef.current.active > 0) {
+          clayRef.current.active -= dt;
+          clayRef.current.blend = Math.max(0, clayRef.current.blend - dt * 2.5);
+        } else {
+          clayRef.current.blend = Math.min(1, clayRef.current.blend + dt * 1.2);
+        }
       }
 
       autoTimerRef.current -= dt;
-      if (autoTimerRef.current <= 0) {
+      if (!pageRain && autoTimerRef.current <= 0) {
         const narrow = w < 768;
         autoTimerRef.current = narrow ? 14 + Math.random() * 10 : 9 + Math.random() * 8;
         const moving = ballsRef.current.filter((ball) => !ball.floating).length;
@@ -784,27 +973,66 @@ const InteractiveCourt = forwardRef<InteractiveCourtHandle>(function Interactive
 
     frameRef.current = requestAnimationFrame(tick);
 
+    if (contained && rootRef.current && typeof IntersectionObserver !== "undefined") {
+      intersectionObserver = new IntersectionObserver(([entry]) => {
+        const visible = entry?.isIntersecting ?? false;
+        if (!visible) {
+          running = false;
+          cancelAnimationFrame(frameRef.current);
+          return;
+        }
+        if (!document.hidden && !running) {
+          running = true;
+          lastTime = performance.now();
+          frameRef.current = requestAnimationFrame(tick);
+        }
+      });
+      intersectionObserver.observe(rootRef.current);
+    }
+
     return () => {
       running = false;
       cancelAnimationFrame(frameRef.current);
-      registerCourtActions(null);
+      releaseActions();
+      clearTimeout(introRain);
       themeObserver.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
+      intersectionObserver?.disconnect();
       window.removeEventListener("scroll", onScroll);
       clearTimeout(resizeTimer);
       window.removeEventListener("resize", onResize);
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("click", onClick);
-      window.removeEventListener("dblclick", onDblClick);
-      window.removeEventListener("touchend", onTouchEnd);
+      unlisten();
     };
-  }, []);
+  }, [mode]);
+
+  if (mode === "rain") {
+    return (
+      <canvas
+        ref={canvasRef}
+        data-court="rain"
+        className="pointer-events-none fixed inset-0 z-30"
+        aria-hidden="true"
+      />
+    );
+  }
+
+  if (mode === "panel") {
+    return (
+      <div ref={rootRef} className="absolute inset-0">
+        <canvas
+          ref={canvasRef}
+          data-court="panel"
+          className="block h-full w-full cursor-pointer"
+          aria-hidden="true"
+        />
+      </div>
+    );
+  }
 
   return (
     <canvas
       ref={canvasRef}
+      data-court="backdrop"
       className="pointer-events-none fixed inset-0 z-0"
       aria-hidden="true"
     />
