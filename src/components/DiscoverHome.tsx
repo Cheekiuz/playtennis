@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CourtHotkeys from "@/components/CourtHotkeys";
+import IndependenceNote from "@/components/IndependenceNote";
 import MarketingPageShell from "@/components/MarketingPageShell";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -24,8 +25,10 @@ export default async function DiscoverHome({ locale, messages }: { locale: Local
       <CourtHotkeys />
       <MarketingPageShell header={<SiteHeader courtHome />}>
         <section className="mx-auto flex w-full max-w-3xl flex-col items-center pt-6 text-center sm:pt-10">
-          <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-6xl">{d.headline}</h1>
-          <p className="mt-4 max-w-xl text-base text-foreground/80 sm:text-lg">{d.subhead}</p>
+          <p className="text-sm font-semibold tracking-wide text-foreground/60">{d.brand}</p>
+          <h1 className="mt-3 text-4xl font-bold tracking-tight text-foreground sm:text-6xl">{d.headline}</h1>
+          <p className="mt-4 text-base font-medium text-foreground sm:text-lg">{d.builtBy}</p>
+          <p className="mt-3 max-w-xl text-base text-foreground/80 sm:text-lg">{d.subhead}</p>
           <div className="mt-8 w-full border border-border bg-card/80 p-4 text-left sm:p-5">
             <TournamentFilters locale={locale} messages={messages} values={{}} showSearch={false} allowMore={false} />
           </div>
@@ -85,10 +88,7 @@ export default async function DiscoverHome({ locale, messages }: { locale: Local
           </Link>
         </section>
 
-        <section className="mx-auto mt-16 w-full max-w-2xl text-center">
-          <h2 className="text-2xl font-bold tracking-tight">{d.aboutTitle}</h2>
-          <p className="mt-3 text-base leading-relaxed text-foreground/80">{d.aboutBody}</p>
-        </section>
+        <IndependenceNote messages={messages} />
 
         <SiteFooter locale={locale} messages={messages} />
       </MarketingPageShell>
