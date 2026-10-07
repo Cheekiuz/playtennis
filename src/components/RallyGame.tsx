@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { track } from "@/lib/analytics";
 import {
   CLAY_COURT,
@@ -15,28 +15,45 @@ type Surface = "clay" | "hard" | "grass";
 
 const WINDOWS: Record<Surface, number> = { clay: 0.16, hard: 0.1, grass: 0.07 };
 const BEST_KEY = "playtennis.rally.best";
+const bestListeners = new Set<() => void>();
+
+function todayStamp() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function readBest(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = window.localStorage.getItem(BEST_KEY);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw) as { day?: string; score?: number };
+    if (parsed.day === todayStamp() && typeof parsed.score === "number") return parsed.score;
+    return 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeBest(score: number) {
+  const next = Math.max(readBest(), score);
+  window.localStorage.setItem(BEST_KEY, JSON.stringify({ day: todayStamp(), score: next }));
+  for (const listener of bestListeners) listener();
+}
+
+function subscribeBest(listener: () => void) {
+  bestListeners.add(listener);
+  return () => bestListeners.delete(listener);
+}
 
 export default function RallyGame({ messages, findHref }: { messages: Messages; findHref: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [surface, setSurface] = useState<Surface>("clay");
   const [phase, setPhase] = useState<"ready" | "play" | "over">("ready");
   const [score, setScore] = useState(0);
-  const [best, setBest] = useState(0);
+  const best = useSyncExternalStore(subscribeBest, readBest, () => 0);
   const [line, setLine] = useState("");
   const [sound, setSound] = useState(true);
   const stateRef = useRef({ phase: "ready" as "ready" | "play" | "over", score: 0, surface: "clay" as Surface, sound: true });
-
-  useEffect(() => {
-    const today = new Date().toISOString().slice(0, 10);
-    const raw = window.localStorage.getItem(BEST_KEY);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as { day?: string; score?: number };
-      if (parsed.day === today && typeof parsed.score === "number") setBest(parsed.score);
-    } catch {
-      window.localStorage.removeItem(BEST_KEY);
-    }
-  }, []);
 
   useEffect(() => {
     stateRef.current.surface = surface;
@@ -109,12 +126,7 @@ export default function RallyGame({ messages, findHref }: { messages: Messages; 
         setLine(lines[finalScore % lines.length] ?? lines[0]);
         setPhase("over");
         stateRef.current.phase = "over";
-        const today = new Date().toISOString().slice(0, 10);
-        setBest((current) => {
-          const next = Math.max(current, finalScore);
-          window.localStorage.setItem(BEST_KEY, JSON.stringify({ day: today, score: next }));
-          return next;
-        });
+        writeBest(finalScore);
         track("rally_finished", { score: finalScore, surface: stateRef.current.surface });
       }
     };

@@ -33,7 +33,6 @@ export async function generateMetadata({
   if (!isValidLocale(locale)) return {};
   const tournament = await getTournament(slug);
   if (!tournament) return {};
-  const messages = getMessages(locale);
   const translation = translationFor(tournament, locale);
   const title = translation?.seoTitle || `${tournament.name} | PlayTennis.lt`;
   const description =
