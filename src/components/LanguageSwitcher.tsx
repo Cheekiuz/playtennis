@@ -31,7 +31,7 @@ function GlobeIcon() {
   );
 }
 
-export default function LanguageSwitcher() {
+export default function LanguageSwitcher({ paper = false }: { paper?: boolean }) {
   const { locale, messages } = useLocale();
   const router = useRouter();
   const pathname = usePathname();
@@ -76,7 +76,11 @@ export default function LanguageSwitcher() {
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={messages.nav.changeLanguage}
-        className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-foreground/80 transition-colors hover:bg-surface-hover hover:text-foreground"
+        className={
+          paper
+            ? "flex h-9 w-9 items-center justify-center rounded-full border border-[#e2e2e2] bg-white text-[#1a1c1c] hover:border-[#111915]"
+            : "flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface text-foreground/80 transition-colors hover:bg-surface-hover hover:text-foreground"
+        }
       >
         <GlobeIcon />
       </button>
@@ -85,7 +89,9 @@ export default function LanguageSwitcher() {
         <ul
           role="listbox"
           aria-label="Languages"
-          className="absolute right-0 top-full z-50 mt-2 min-w-[9rem] overflow-hidden rounded-xl border border-border bg-card py-1 shadow-xl"
+          className={`absolute right-0 top-full z-50 mt-2 min-w-[9rem] overflow-hidden rounded-xl border py-1 shadow-xl ${
+            paper ? "border-[#e2e2e2] bg-white" : "border-border bg-card"
+          }`}
         >
           {locales.map((code) => {
             const active = locale === code;
@@ -96,8 +102,12 @@ export default function LanguageSwitcher() {
                   onClick={() => switchLocale(code)}
                   className={`flex w-full items-center justify-between gap-3 px-3 py-2 text-left text-sm transition-colors ${
                     active
-                      ? "bg-accent/15 text-accent"
-                      : "text-foreground/80 hover:bg-surface-hover hover:text-foreground"
+                      ? paper
+                        ? "bg-[#f3f4f3] text-[#1a1c1c]"
+                        : "bg-accent/15 text-accent"
+                      : paper
+                        ? "text-[#1a1c1c] hover:bg-[#f3f4f3]"
+                        : "text-foreground/80 hover:bg-surface-hover hover:text-foreground"
                   }`}
                 >
                   <span>{localeLabels[code].full}</span>
