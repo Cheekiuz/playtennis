@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { triggerCourtBurst } from "@/lib/court-controls";
+import { triggerCourtBurst, triggerCourtRain } from "@/lib/court-controls";
 
 export default function CourtHotkeys() {
   useEffect(() => {
@@ -21,6 +21,7 @@ export default function CourtHotkeys() {
       }
 
       event.preventDefault();
+      triggerCourtRain();
       triggerCourtBurst();
     };
 

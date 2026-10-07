@@ -21,6 +21,19 @@ export const HARD_COURT = {
   outer: "#2e7db5",
 } as const;
 
+export const GRASS_COURT = {
+  surface: "#4e9a62",
+  surfaceDark: "#3d7d4e",
+  line: "rgba(255, 255, 255, 0.94)",
+  outer: "#1b4d3e",
+} as const;
+
+export const SURFACE_APRON = {
+  clay: "#C85A32",
+  hard: "#1E4B8A",
+  grass: "#1B4D3E",
+} as const;
+
 // ITF regulation dimensions (metres)
 export const COURT_LENGTH_M = 23.77;
 export const COURT_WIDTH_M = 10.97;
@@ -63,6 +76,23 @@ export function fitCourtDimensions(
   };
 
   return byWidth.courtW >= byHeight.courtW ? byWidth : byHeight;
+}
+
+/** Fit a portrait court inside a box without overflowing it. */
+export function containCourtDimensions(
+  viewportW: number,
+  viewportH: number,
+  fillFraction = 0.92,
+): CourtDimensions {
+  const maxW = viewportW * fillFraction;
+  const maxH = viewportH * fillFraction;
+  let courtW = maxW;
+  let courtH = courtW * COURT_RATIO;
+  if (courtH > maxH) {
+    courtH = maxH;
+    courtW = courtH / COURT_RATIO;
+  }
+  return { courtW, courtH };
 }
 
 export interface CourtLayout {
