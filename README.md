@@ -27,6 +27,15 @@ A smarter way to find tennis partners, organize matches, track results, and disc
 
 Signups appear in **Supabase → Table Editor → waitlist**.
 
+## Events and federation ingest
+
+1. In the Supabase SQL Editor, run (in order): `supabase/tournaments.sql`, `supabase/events.sql`, `supabase/event-submissions.sql`, `supabase/discovery.sql`.  
+   Or, with a direct Postgres URL in `.env.local` (`POSTGRES_URL_NON_POOLING`), run `node scripts/apply-supabase-schema.mjs`.
+2. On Vercel, set `INGEST_ENABLED=true` (and keep `CRON_SECRET` plus Supabase service keys). Redeploy after changing env vars.
+3. Trigger a sync: GitHub Actions → **Ingest federation events** → Run workflow, or `POST /api/cron/ingest-events` with `Authorization: Bearer $CRON_SECRET`.
+
+LT and LV calendars are pulled from Tournated’s public GraphQL API (same data as play.tennis.lt / play.teniss.lat). Daily schedule: `.github/workflows/ingest-events.yml` (05:30 UTC).
+
 ## Getting started
 
 Install dependencies:

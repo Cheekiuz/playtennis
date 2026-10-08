@@ -99,11 +99,12 @@ async function ingestObservations(observations: RawObservation[], source: Source
   };
 
   const supabase = createServerSupabaseClient();
-  const sourceId = await ensureSource(supabase, source);
-  if (!sourceId) {
-    summary.errors.push("Could not resolve the import source.");
+  const sourceResult = await ensureSource(supabase, source);
+  if (!sourceResult.id) {
+    summary.errors.push(sourceResult.error ?? "Could not resolve the import source.");
     return summary;
   }
+  const sourceId = sourceResult.id;
 
   const existing = await loadDuplicateCandidates(supabase);
   const dryRun = process.env.INGEST_DRY_RUN === "true";
@@ -159,35 +160,71 @@ function externalIdFrom(raw: RawObservation): string | null {
   return match ? match[1] : null;
 }
 
+type EnsureSourceResult = { id: string | null; error?: string };
+
+function schemaMissingMessage(error: { code?: string; message?: string } | null): string | null {
+  if (!error) return null;
+  if (error.code === "PGRST205" || /schema cache|Could not find the table/i.test(error.message ?? "")) {
+    return "Event tables are missing in Supabase. Run supabase/tournaments.sql, events.sql, event-submissions.sql, and discovery.sql (see scripts/apply-supabase-schema.mjs).";
+  }
+  return null;
+}
+
 async function ensureSource(
   supabase: ReturnType<typeof createServerSupabaseClient>,
   source: SourceMeta,
-): Promise<string | null> {
-  const { data: existing } = await supabase.from("sources").select("id").eq("url", source.sourceUrl).maybeSingle();
-  if (existing?.id) return existing.id as string;
+): Promise<EnsureSourceResult> {
+  const { data: existing, error: selectError } = await supabase
+    .from("sources")
+    .select("id")
+    .eq("url", source.sourceUrl)
+    .maybeSingle();
+  const missing = schemaMissingMessage(selectError);
+  if (missing) return { id: null, error: missing };
+  if (existing?.id) return { id: existing.id as string };
 
-  const row = {
-    kind: "import",
+  const minimal = {
+    kind: "import" as const,
     name: source.sourceName,
     url: source.sourceUrl,
-    ingestion: "feed",
-    source_type: source.sourceType,
-    country_code: source.countryCode?.toUpperCase() ?? null,
-    trust_level: source.trustLevel,
-    active: true,
+    ingestion: "feed" as const,
   };
 
-  const inserted = await supabase.from("sources").insert(row).select("id").single();
-  if (inserted.error || !inserted.data) {
-    const fallback = await supabase.from("sources").insert({
-      kind: "import",
-      name: source.sourceName,
-      url: source.sourceUrl,
-      ingestion: "feed",
-    }).select("id").single();
-    return (fallback.data?.id as string) ?? null;
+  const baseInsert = await supabase.from("sources").insert(minimal).select("id").single();
+  if (baseInsert.data?.id) {
+    await supabase
+      .from("sources")
+      .update({
+        source_type: source.sourceType,
+        country_code: source.countryCode?.toUpperCase() ?? null,
+        trust_level: source.trustLevel,
+        active: true,
+      })
+      .eq("id", baseInsert.data.id);
+    return { id: baseInsert.data.id as string };
   }
-  return inserted.data.id as string;
+
+  const richInsert = await supabase
+    .from("sources")
+    .insert({
+      ...minimal,
+      source_type: source.sourceType,
+      country_code: source.countryCode?.toUpperCase() ?? null,
+      trust_level: source.trustLevel,
+      active: true,
+    })
+    .select("id")
+    .single();
+
+  if (richInsert.data?.id) return { id: richInsert.data.id as string };
+
+  const hint =
+    schemaMissingMessage(baseInsert.error) ??
+    schemaMissingMessage(richInsert.error) ??
+    baseInsert.error?.message ??
+    richInsert.error?.message ??
+    "Could not create the import source row.";
+  return { id: null, error: hint };
 }
 
 async function loadDuplicateCandidates(supabase: ReturnType<typeof createServerSupabaseClient>): Promise<DuplicateCandidate[]> {

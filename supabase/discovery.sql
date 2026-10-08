@@ -168,3 +168,37 @@ alter table public.event_submissions drop constraint if exists event_submissions
 alter table public.event_submissions
   add constraint event_submissions_type_check
   check (event_type in ('TOURNAMENT', 'PLAY_SESSION', 'MATCH_DAY', 'SOCIAL', 'CLUB_COMPETITION', 'OTHER'));
+
+-- Federation feeds (Tournated public API). Safe to re-run.
+insert into public.sources (id, kind, name, url, ingestion, source_type, country_code, trust_level, active)
+values
+  (
+    '00000000-0000-4000-8000-000000000010',
+    'import',
+    'Lietuvos teniso sąjunga (play.tennis.lt)',
+    'https://play.tennis.lt/tournaments',
+    'feed',
+    'federation',
+    'LT',
+    'high',
+    true
+  ),
+  (
+    '00000000-0000-4000-8000-000000000011',
+    'import',
+    'Latvijas Tenisa Savienība (play.teniss.lat)',
+    'https://play.teniss.lat/tournaments',
+    'feed',
+    'federation',
+    'LV',
+    'high',
+    true
+  )
+on conflict (id) do update set
+  name = excluded.name,
+  url = excluded.url,
+  ingestion = excluded.ingestion,
+  source_type = excluded.source_type,
+  country_code = excluded.country_code,
+  trust_level = excluded.trust_level,
+  active = excluded.active;
