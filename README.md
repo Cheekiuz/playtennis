@@ -34,7 +34,11 @@ Signups appear in **Supabase → Table Editor → waitlist**.
 2. On Vercel, set `INGEST_ENABLED=true` (and keep `CRON_SECRET` plus Supabase service keys). Redeploy after changing env vars.
 3. Trigger a sync: GitHub Actions → **Ingest federation events** → Run workflow, or `POST /api/cron/ingest-events` with `Authorization: Bearer $CRON_SECRET`.
 
-LT and LV calendars are pulled from Tournated’s public GraphQL API (same data as play.tennis.lt / play.teniss.lat). Daily schedule: `.github/workflows/ingest-events.yml` (05:30 UTC).
+LT and LV federation calendars use Tournated public GraphQL. Registry-driven discovery (Facebook groups/pages, LT organizers, venues) runs when `DISCOVERY_ENABLED=true` via `POST /api/cron/discover-events` or the ingest cron when discovery is enabled.
+
+Run `npx tsx scripts/discovery-test.ts` for a live adapter report. Apply `supabase/source-registry.sql` after the other event SQL files.
+
+Set `FACEBOOK_ACCESS_TOKEN` for live Facebook Graph ingestion (groups/pages otherwise stay in manual/API mode).
 
 ## Getting started
 

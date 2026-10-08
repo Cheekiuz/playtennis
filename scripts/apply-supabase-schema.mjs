@@ -57,6 +57,7 @@ const files = [
   "supabase/events.sql",
   "supabase/event-submissions.sql",
   "supabase/discovery.sql",
+  "supabase/source-registry.sql",
 ];
 
 const client = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false } });

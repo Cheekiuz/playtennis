@@ -194,6 +194,7 @@ export async function saveTournament(_prev: AdminFormState, formData: FormData):
     const sourceConfidence = confidenceForKind(sourceKind);
     const level = standardiseLevel(text(formData, "original_level") || null);
     const quality = scoreQuality({
+      title: name,
       officialEventUrl: text(formData, "official_url") || null,
       registrationUrl: text(formData, "registration_url") || null,
       startDate: startsOn,

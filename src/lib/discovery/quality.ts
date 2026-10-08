@@ -9,6 +9,7 @@ export type QualityResult = {
 
 export function scoreQuality(event: Pick<
   NormalizedEvent,
+  | "title"
   | "officialEventUrl"
   | "registrationUrl"
   | "startDate"
@@ -34,9 +35,16 @@ export function scoreQuality(event: Pick<
   else if (event.sourceConfidence === "medium") score += 8;
   score = Math.min(100, score);
 
+  if (event.sourceType === "social_media") {
+    if (!event.startDate || !event.title) return { score, decision: "review" };
+    if (event.city && event.countryCode) {
+      return { score, decision: score >= 50 ? "needs_verification" : "review" };
+    }
+    return { score, decision: "review" };
+  }
+
   const discoveryOnly =
     event.sourceConfidence === "low" ||
-    event.sourceType === "social_media" ||
     event.sourceType === "user_submission" ||
     event.sourceType === "public_calendar";
 

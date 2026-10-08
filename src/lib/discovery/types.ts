@@ -57,6 +57,11 @@ export type RawObservation = {
   isTest?: boolean;
   /** Optional division rows attached during federation ingest. Not shown publicly as-is. */
   ingestCategories?: IngestCategory[];
+  startTime?: string | null;
+  endTime?: string | null;
+  discoveryStage?: string | null;
+  registrySourceType?: string | null;
+  visibility?: "public" | "closed" | "invitation" | null;
 };
 
 export type IngestCategory = {

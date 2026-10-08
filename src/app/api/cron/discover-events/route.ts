@@ -4,22 +4,23 @@ import { discoveryIsEnabled, runRegistryDiscovery } from "@/lib/discovery/discov
 import { ingestAllEnabled, ingestIsEnabled } from "@/lib/discovery/ingest";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!ingestIsEnabled()) {
+  if (!ingestIsEnabled() && !discoveryIsEnabled()) {
     return NextResponse.json({
       skipped: true,
-      reason: "Set INGEST_ENABLED=true (or INGEST_LTS_ENABLED=true) on the deployment.",
+      reason: "Set INGEST_ENABLED=true or DISCOVERY_ENABLED=true on the deployment.",
     });
   }
 
   try {
-    if (discoveryIsEnabled()) {
+    const useRegistry = process.env.DISCOVERY_ENABLED === "true";
+    if (useRegistry) {
       const report = await runRegistryDiscovery();
       return NextResponse.json(report);
     }
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ platforms: results, totals });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Ingest failed.";
+    const message = error instanceof Error ? error.message : "Discovery failed.";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

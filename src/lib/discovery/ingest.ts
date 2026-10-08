@@ -8,6 +8,8 @@ import {
   TOURNATED_PLATFORMS,
   type TournatedPlatformConfig,
 } from "@/lib/discovery/tournated-public";
+import { shouldExcludeRaw } from "@/lib/discovery/adult-filter";
+import { tournamentSourceKind, type RegistrySource } from "@/lib/discovery/registry-types";
 import type { DuplicateCandidate, RawObservation, ReviewStatus } from "@/lib/discovery/types";
 import { preparePublication } from "@/lib/discovery/workflow";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -56,6 +58,34 @@ export async function ingestLtsUpcoming(): Promise<IngestSummary> {
   return ingestTournatedPlatform(TOURNATED_PLATFORMS[0]);
 }
 
+export async function ingestObservationsFromRegistry(
+  registry: RegistrySource,
+  observations: RawObservation[],
+  options?: { dryRun?: boolean },
+): Promise<IngestSummary> {
+  const dryRun = options?.dryRun ?? process.env.INGEST_DRY_RUN === "true";
+  const previousDryRun = process.env.INGEST_DRY_RUN;
+  if (dryRun) process.env.INGEST_DRY_RUN = "true";
+  try {
+    return await ingestObservations(observations, {
+      sourceKey: registry.id,
+      sourceId: registry.id,
+      sourceName: registry.sourceName,
+      sourceUrl: registry.url,
+      sourceType: registry.sourceType,
+      registrySourceType: registry.registrySourceType,
+      trustLevel: registry.sourceType === "federation" ? "high" : "medium",
+      countryCode: registry.countryCode,
+      slugPrefix: registry.countryCode ?? "lt",
+    });
+  } finally {
+    if (dryRun) {
+      if (previousDryRun === undefined) delete process.env.INGEST_DRY_RUN;
+      else process.env.INGEST_DRY_RUN = previousDryRun;
+    }
+  }
+}
+
 export async function ingestFromConnector(connector: SourceConnector): Promise<IngestSummary> {
   const observations = await connector.collect();
   const listUrl = connector.listUrl ?? "https://play.tennis.lt/tournaments";
@@ -79,9 +109,11 @@ function platformsToIngest(): TournatedPlatformConfig[] {
 
 type SourceMeta = {
   sourceKey: string;
+  sourceId?: string;
   sourceName: string;
   sourceUrl: string;
   sourceType: string;
+  registrySourceType?: RegistrySource["registrySourceType"];
   trustLevel: "high" | "medium" | "low";
   countryCode: string | null;
   slugPrefix: string;
@@ -99,18 +131,31 @@ async function ingestObservations(observations: RawObservation[], source: Source
   };
 
   const supabase = createServerSupabaseClient();
-  const sourceResult = await ensureSource(supabase, source);
-  if (!sourceResult.id) {
-    summary.errors.push(sourceResult.error ?? "Could not resolve the import source.");
-    return summary;
+  let sourceId = source.sourceId ?? null;
+  if (!sourceId) {
+    const sourceResult = await ensureSource(supabase, source);
+    if (!sourceResult.id) {
+      summary.errors.push(sourceResult.error ?? "Could not resolve the import source.");
+      return summary;
+    }
+    sourceId = sourceResult.id;
   }
-  const sourceId = sourceResult.id;
 
   const existing = await loadDuplicateCandidates(supabase);
   const dryRun = process.env.INGEST_DRY_RUN === "true";
 
+  const sourceKind = source.registrySourceType
+    ? tournamentSourceKind(source.registrySourceType)
+    : "ORGANISER_WEBSITE";
+
   for (const raw of observations) {
     try {
+      const excluded = shouldExcludeRaw(raw);
+      if (excluded) {
+        summary.rejected += 1;
+        continue;
+      }
+
       const externalId = externalIdFrom(raw);
       const prior = externalId ? await findByExternalId(supabase, sourceId, externalId) : null;
       if (prior) {
@@ -142,7 +187,16 @@ async function ingestObservations(observations: RawObservation[], source: Source
         summary.created += 1;
         continue;
       }
-      const created = await createTournament(supabase, event, raw, sourceId, externalId, decision.publish, source.slugPrefix);
+      const created = await createTournament(
+        supabase,
+        event,
+        raw,
+        sourceId,
+        externalId,
+        decision.publish,
+        source.slugPrefix,
+        sourceKind,
+      );
       if (created) {
         summary.created += 1;
         existing.push(toCandidate(created.id, event, raw));
@@ -152,7 +206,20 @@ async function ingestObservations(observations: RawObservation[], source: Source
     }
   }
 
+  await touchSourceScrape(supabase, sourceId, summary.errors.length === 0);
   return summary;
+}
+
+async function touchSourceScrape(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  sourceId: string,
+  success: boolean,
+) {
+  const now = new Date().toISOString();
+  const patch: Record<string, string> = { last_checked: now };
+  if (success) patch.last_successful_scrape = now;
+  const updated = await supabase.from("sources").update(patch).eq("id", sourceId);
+  if (updated.error && /last_checked|last_successful_scrape|schema cache/i.test(updated.error.message)) return;
 }
 
 function externalIdFrom(raw: RawObservation): string | null {
@@ -324,11 +391,12 @@ async function attachSourceRow(
   tournamentId: string,
   raw: RawObservation,
   sourceId: string,
+  sourceKind = "AGGREGATOR",
 ) {
   const row = {
     tournament_id: tournamentId,
     source_id: sourceId,
-    source_kind: "AGGREGATOR",
+    source_kind: raw.registrySourceType?.startsWith("FACEBOOK") ? "FACEBOOK" : sourceKind,
     source_name: raw.sourceName,
     source_url: raw.sourceUrl,
     source_confidence: raw.sourceConfidence ?? "high",
@@ -362,10 +430,11 @@ async function createTournament(
   externalId: string | null,
   publish: boolean,
   slugPrefix: string,
+  sourceKind = "ORGANISER_WEBSITE",
 ) {
   const country = event.countryCode ?? slugPrefix;
   await ensureCountry(supabase, country);
-  const slug = await uniqueSlug(supabase, `${slugPrefix}-tournated-${externalId ?? "event"}-${slugify(event.title)}`);
+  const slug = await uniqueSlug(supabase, `${slugPrefix}-${externalId ?? slugify(event.title).slice(0, 40)}`);
   const quality = scoreQuality(event);
   const now = new Date().toISOString();
   const row = {
@@ -390,7 +459,10 @@ async function createTournament(
     duration_type: event.startDate === event.endDate ? "ONE_DAY" : "WEEKEND",
     play_audience: "OPEN_AMATEURS",
     public_registration: event.registrationStatus,
-    source_kind: "ORGANISER_WEBSITE",
+    source_kind: raw.registrySourceType?.startsWith("FACEBOOK") ? "FACEBOOK" : sourceKind,
+    discovery_stage: raw.discoveryStage ?? (publish ? "PUBLISHED" : "VALIDATED"),
+    start_time: raw.startTime ?? null,
+    end_time: raw.endTime ?? null,
     dedupe_key: dedupeKey({
       name: event.title,
       startsOn: event.startDate,
@@ -414,7 +486,7 @@ async function createTournament(
   };
 
   let saved = await supabase.from("tournaments").insert(row).select("id").single();
-  if (saved.error && /review_status|source_confidence|quality_score|original_level|standardised_level|price_amount|price_currency|age_group|event_gender|schema cache/i.test(saved.error.message)) {
+  if (saved.error && /review_status|source_confidence|quality_score|original_level|standardised_level|price_amount|price_currency|age_group|event_gender|discovery_stage|start_time|end_time|schema cache/i.test(saved.error.message)) {
     const {
       review_status: _a,
       source_confidence: _b,
@@ -425,6 +497,9 @@ async function createTournament(
       price_currency: _g,
       age_group: _h,
       event_gender: _i,
+      discovery_stage: _j,
+      start_time: _k,
+      end_time: _l,
       ...legacy
     } = row;
     saved = await supabase.from("tournaments").insert(legacy).select("id").single();
@@ -433,7 +508,7 @@ async function createTournament(
   if (saved.error || !saved.data) return null;
   const tournamentId = saved.data.id as string;
   await replaceCategories(supabase, tournamentId, raw);
-  await attachSourceRow(supabase, tournamentId, raw, sourceId);
+  await attachSourceRow(supabase, tournamentId, raw, sourceId, sourceKind);
   return { id: tournamentId };
 }
 
