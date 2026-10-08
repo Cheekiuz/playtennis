@@ -47,6 +47,16 @@ export async function POST(request: Request) {
   const surface = oneOf(input.surface, SURFACES);
   const environment = oneOf(input.environment, ENVIRONMENTS);
   const playLevel = oneOf(input.playLevel, PLAY_LEVELS);
+  const notes = await reviewNotes(input, {
+    eventName,
+    eventType,
+    startsOn,
+    endsOn,
+    city,
+    officialUrl,
+    registrationUrl,
+    submitterName,
+  });
 
   let supabase;
   try {
@@ -69,7 +79,7 @@ export async function POST(request: Request) {
     surface,
     environment,
     play_level: playLevel,
-    notes: clip(input.notes, 2000) || null,
+    notes,
     submitter_name: submitterName,
     submitter_email: email,
   });
@@ -94,4 +104,76 @@ function isHttpUrl(value: string): boolean {
 
 function oneOf<T extends string>(value: unknown, allowed: readonly T[]): T | null {
   return typeof value === "string" && (allowed as readonly string[]).includes(value) ? (value as T) : null;
+}
+
+async function reviewNotes(
+  input: Record<string, unknown>,
+  submission: {
+    eventName: string;
+    eventType: string;
+    startsOn: string;
+    endsOn: string;
+    city: string;
+    officialUrl: string;
+    registrationUrl: string;
+    submitterName: string;
+  },
+): Promise<string | null> {
+  let notes = clip(input.notes, 1600);
+  try {
+    const { listTournaments } = await import("@/lib/tournaments/queries");
+    const { preparePublication } = await import("@/lib/discovery/workflow");
+    const listed = await listTournaments({ city: submission.city, page: 1 }, 40);
+    const decision = preparePublication(
+      listed.items.map((event) => ({
+        id: event.id,
+        title: event.name,
+        startDate: event.startsOn,
+        endDate: event.endsOn,
+        city: event.city,
+        venue: event.venueName,
+        organiser: event.organizerName,
+        officialEventUrl: event.officialUrl,
+        registrationUrl: event.registrationUrl,
+        sourceUrl: event.sourceUrl,
+        sourceConfidence: event.sourceConfidence ?? "medium",
+        registrationStatus: event.publicRegistration,
+        surface: event.surface,
+        priceAmount: event.priceAmount,
+        currency: event.priceCurrency,
+        sources: [
+          {
+            sourceName: event.sourceName ?? "Existing source",
+            sourceUrl: event.sourceUrl,
+            sourceType: "other" as const,
+            sourceConfidence: event.sourceConfidence ?? "medium",
+          },
+        ],
+      })),
+      {
+        title: submission.eventName,
+        eventType: submission.eventType,
+        startDate: submission.startsOn,
+        endDate: submission.endsOn || null,
+        city: submission.city,
+        organiser: clip(input.organiser, 160) || null,
+        officialEventUrl: submission.officialUrl,
+        registrationUrl: submission.registrationUrl || null,
+        sourceName: submission.submitterName,
+        sourceUrl: submission.officialUrl,
+        sourceType: "user_submission",
+        sourceConfidence: "low",
+      },
+    );
+    if (decision.action === "review" || decision.action === "attach_source") {
+      const hint =
+        decision.action === "review"
+          ? decision.reason
+          : "This matches an existing event. Attach the source instead of publishing a second event.";
+      notes = [notes, hint].filter(Boolean).join("\n").slice(0, 2000);
+    }
+  } catch {
+    // A failed duplicate check still leaves the submission for review.
+  }
+  return notes || null;
 }

@@ -21,7 +21,7 @@ create table if not exists public.event_submissions (
   status text not null default 'pending',
   created_at timestamptz not null default now(),
   constraint event_submissions_status_check check (status in ('pending', 'reviewed', 'rejected')),
-  constraint event_submissions_type_check check (event_type in ('TOURNAMENT', 'PLAY_SESSION', 'MATCH_DAY', 'SOCIAL', 'OTHER'))
+  constraint event_submissions_type_check check (event_type in ('TOURNAMENT', 'PLAY_SESSION', 'MATCH_DAY', 'SOCIAL', 'CLUB_COMPETITION', 'OTHER'))
 );
 
 alter table public.event_submissions enable row level security;

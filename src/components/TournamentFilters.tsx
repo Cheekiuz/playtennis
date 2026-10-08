@@ -199,6 +199,7 @@ export default function TournamentFilters({
                   ["hard", d.surfaces.hard],
                   ["grass", d.surfaces.grass],
                   ["carpet", d.surfaces.carpet],
+                  ["unknown", d.surfaces.unknown],
                 ]}
               />
               <Select
@@ -244,6 +245,8 @@ export default function TournamentFilters({
                   ["women", d.genders.women],
                   ["mixed", d.genders.mixed],
                   ["open", d.genders.open],
+                  ["boys", d.genders.boys],
+                  ["girls", d.genders.girls],
                 ]}
               />
               <Select
@@ -268,6 +271,16 @@ export default function TournamentFilters({
                 labelClass={labelClass}
                 options={countryOptions(places, values.country, locale, d.anyCountry)}
               />
+              {places.regions.length > 0 || values.region ? (
+                <Select
+                  label={d.region}
+                  name="region"
+                  defaultValue={values.region ?? ""}
+                  fieldClass={fieldClass}
+                  labelClass={labelClass}
+                  options={regionOptions(places, values.region, d.anyRegion)}
+                />
+              ) : null}
               <Select label={d.from} name="from" defaultValue={values.from ?? ""} fieldClass={fieldClass} labelClass={labelClass} options={[]} date />
               <Select label={d.to} name="to" defaultValue={values.to ?? ""} fieldClass={fieldClass} labelClass={labelClass} options={[]} date />
               <Select
@@ -319,6 +332,7 @@ function advancedValues(values: TournamentFilters): Record<string, string> {
     gender: values.gender ?? "",
     format: values.format ?? "",
     country: values.country ?? "",
+    region: values.region ?? "",
     from: values.from ?? "",
     to: values.to ?? "",
     audience: values.audience ?? "",
@@ -367,7 +381,13 @@ function Select({
 function countryOptions(places: EventPlaces, selected: string | undefined, locale: Locale, anyLabel: string): string[][] {
   const countries = [...places.countries];
   if (selected && !countries.some((country) => country.code === selected)) {
-    countries.push({ code: selected, name: regionName(selected, locale) });
+    countries.push({ code: selected, name: regionName(selected, locale), count: 0 });
   }
   return [["", anyLabel], ...countries.map((country) => [country.code, country.name] as [string, string])];
+}
+
+function regionOptions(places: EventPlaces, selected: string | undefined, anyLabel: string): string[][] {
+  const regions = [...places.regions];
+  if (selected && !regions.includes(selected)) regions.push(selected);
+  return [["", anyLabel], ...regions.map((region) => [region, region] as [string, string])];
 }

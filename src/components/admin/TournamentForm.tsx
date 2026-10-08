@@ -16,7 +16,7 @@ const emptyCategory = {
   level: "recreational",
   rankingRequirement: "",
   entryFeeAmount: "",
-  currency: "EUR",
+  currency: "",
   registrationDeadline: "",
   registrationStatus: "",
 };
@@ -34,7 +34,7 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
         level: category.level,
         rankingRequirement: category.rankingRequirement ?? "",
         entryFeeAmount: category.entryFeeAmount?.toString() ?? "",
-        currency: category.currency ?? "EUR",
+        currency: category.currency ?? "",
         registrationDeadline: category.registrationDeadline ?? "",
         registrationStatus: category.registrationStatus ?? "",
       })) ?? [{ ...emptyCategory }],
@@ -52,16 +52,29 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
       <Field label="Slug" name="slug" defaultValue={tournament?.slug} />
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1 text-sm">
-          <span className="font-semibold">Country</span>
-          <select className={inputClass} name="country" defaultValue={tournament?.countryCode ?? "lt"} required>
+          <span className="font-semibold">Country code</span>
+          <input
+            className={inputClass}
+            name="country"
+            list="country-codes"
+            defaultValue={tournament?.countryCode ?? ""}
+            required
+            maxLength={2}
+            autoComplete="off"
+          />
+          <datalist id="country-codes">
             {COUNTRIES.map((country) => (
               <option key={country.code} value={country.code}>
                 {country.nameEn}
               </option>
             ))}
-          </select>
+          </datalist>
         </label>
         <Field label="City" name="city" defaultValue={tournament?.city} required />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Region" name="region" defaultValue={tournament?.region ?? ""} />
+        <Field label="Timezone" name="timezone" defaultValue={tournament?.timezone ?? ""} required />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Start date" name="starts_on" type="date" defaultValue={tournament?.startsOn} required />
@@ -77,7 +90,7 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
       <Field label="Source URL" name="source_url" defaultValue={tournament?.sourceUrl} required />
       <Field label="Source external id" name="source_external_id" />
       <div className="grid gap-4 sm:grid-cols-3">
-        <Select label="Surface" name="surface" defaultValue={tournament?.surface ?? "hard"} options={["clay", "hard", "grass", "carpet", "other"]} />
+        <Select label="Surface" name="surface" defaultValue={tournament?.surface ?? "hard"} options={["clay", "hard", "grass", "carpet", "other", "unknown"]} />
         <Select label="Indoor or outdoor" name="environment" defaultValue={tournament?.environment ?? "outdoor"} options={["indoor", "outdoor", "mixed"]} />
         <Select label="Legacy audience" name="audience" defaultValue={tournament?.audience ?? "recreational"} options={["recreational", "masters", "junior", "professional"]} />
       </div>
@@ -88,12 +101,19 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
         <Select label="Who can play" name="play_audience" defaultValue={tournament?.playAudience ?? "OPEN_AMATEURS"} options={["OPEN_AMATEURS", "CLUB_MEMBERS", "INVITATION_ONLY", "COMPANY", "PROFESSION_SPECIFIC", "JUNIORS"]} />
         <Select label="Public registration" name="public_registration" defaultValue={tournament?.publicRegistration ?? "UNKNOWN"} options={["OPEN", "NOT_STARTED", "CLOSED", "FULL", "INVITATION_ONLY", "UNKNOWN"]} />
         <Select label="Level" name="play_level" defaultValue={tournament?.playLevel ?? ""} options={["", "LIGHT", "MIDDLE", "ADVANCED", "NTRP", "OTHER"]} />
+        <Field label="Original level" name="original_level" defaultValue={tournament?.originalLevel ?? ""} />
+        <Field label="Age group" name="age_group" defaultValue={tournament?.ageGroup ?? ""} />
+        <Select label="Gender" name="event_gender" defaultValue={tournament?.eventGender ?? ""} options={["", "open", "men", "women", "mixed", "boys", "girls"]} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Start time" name="start_time" type="time" defaultValue={tournament?.startTime ?? ""} />
         <Field label="End time" name="end_time" type="time" defaultValue={tournament?.endTime ?? ""} />
       </div>
-      <Field label="Price" name="price_label" defaultValue={tournament?.priceLabel ?? ""} />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="Price" name="price_label" defaultValue={tournament?.priceLabel ?? ""} />
+        <Field label="Price amount" name="price_amount" defaultValue={tournament?.priceAmount?.toString() ?? ""} />
+        <Field label="Currency" name="price_currency" defaultValue={tournament?.priceCurrency ?? ""} />
+      </div>
       <Field label="Original source URL" name="original_source_url" defaultValue={tournament?.originalSourceUrl ?? ""} />
       <Select label="Source kind" name="source_kind" defaultValue={tournament?.sourceKind ?? "ORGANISER_WEBSITE"} options={["ORGANISER_WEBSITE", "FACEBOOK", "INSTAGRAM", "AGGREGATOR", "MUNICIPALITY", "VENUE", "OTHER"]} />
       <Select label="Type" name="tournament_type" defaultValue={tournament?.tournamentType ?? "recreational"} options={["club", "national", "masters", "recreational", "other"]} />

@@ -4,4 +4,4 @@ alter table public.tournaments drop constraint if exists tournaments_event_type_
 
 alter table public.tournaments
   add constraint tournaments_event_type_check
-  check (event_type in ('TOURNAMENT', 'PLAY_SESSION', 'MATCH_DAY', 'SOCIAL', 'OTHER'));
+  check (event_type in ('TOURNAMENT', 'PLAY_SESSION', 'MATCH_DAY', 'SOCIAL', 'CLUB_COMPETITION', 'OTHER'));

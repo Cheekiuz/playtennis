@@ -25,6 +25,7 @@ import {
 } from "@/lib/tournaments/present";
 import CheckedBadge from "@/components/CheckedBadge";
 import { RegistrationStatus } from "@/components/TournamentCard";
+import { isPubliclyChecked } from "@/lib/discovery/review";
 import { getTournament } from "@/lib/tournaments/queries";
 
 export const dynamic = "force-dynamic";
@@ -118,7 +119,7 @@ export default async function TournamentPage({
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <RegistrationStatus status={tournament.publicRegistration} messages={messages} />
-        {tournament.verificationStatus === "verified" ? (
+        {isPubliclyChecked(tournament) ? (
           <CheckedBadge verifiedAt={tournament.lastVerifiedAt} locale={locale} messages={messages} />
         ) : null}
       </div>

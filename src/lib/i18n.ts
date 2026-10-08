@@ -119,6 +119,9 @@ export function publicRedirectPath(pathname: string): string | null {
   };
   if (legacy[pathname]) return legacy[pathname];
 
+  if (pathname === "/events") return "/lt/turnyrai";
+  if (pathname.startsWith("/events/")) return `/lt${pathname}`;
+
   const parts = splitPath(pathname);
   if ((parts[0] === "lt" || parts[0] === "en") && (parts[1] === "court-alerts" || parts[1] === "dashboard")) {
     return `/${parts[0]}`;

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import CheckedBadge from "@/components/CheckedBadge";
 import SaveButton from "@/components/SaveButton";
+import { isPubliclyChecked } from "@/lib/discovery/review";
 import type { Locale, Messages } from "@/lib/i18n";
 import { localePath } from "@/lib/i18n";
 import {
@@ -67,7 +68,7 @@ export default function TournamentCard({
           </li>
         ))}
       </ul>
-      {tournament.verificationStatus === "verified" ? (
+      {isPubliclyChecked(tournament) ? (
         <CheckedBadge verifiedAt={tournament.lastVerifiedAt} locale={locale} messages={messages} paper={paper} />
       ) : null}
       <RegistrationStatus status={tournament.publicRegistration} messages={messages} paper={paper} />

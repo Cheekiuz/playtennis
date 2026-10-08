@@ -158,6 +158,10 @@
     "subhead": "Amateur tournaments, organised play and tennis events, all in one place.",
     "country": "Country",
     "anyCountry": "Any country",
+    "region": "Region",
+    "anyRegion": "Any region",
+    "placeTitle": "Tennis events in {place}",
+    "placeDescription": "Amateur tournaments, organised play and tennis events in {place}.",
     "date": "Date",
     "anyDate": "Any date",
     "today": "Today",
@@ -183,7 +187,8 @@
       "hard": "Hard",
       "grass": "Grass",
       "carpet": "Carpet",
-      "other": "Other"
+      "other": "Other",
+      "unknown": "Unknown"
     },
     "explore": "Find events",
     "upcoming": "Upcoming events",
@@ -194,6 +199,7 @@
       "PLAY_SESSION": "Organised play",
       "MATCH_DAY": "Match day",
       "SOCIAL": "Social tennis",
+      "CLUB_COMPETITION": "Club competition",
       "OTHER": "Other tennis event"
     },
     "format": "Format",
@@ -272,7 +278,9 @@
       "men": "Men",
       "women": "Women",
       "open": "Open",
-      "mixed": "Mixed"
+      "mixed": "Mixed",
+      "boys": "Boys",
+      "girls": "Girls"
     },
     "levels": {
       "recreational": "Recreational",

@@ -2,7 +2,8 @@ import { EVENT_TYPES, type PublicRegistration, type TournamentRecord } from "@/l
 
 const PUBLIC_TYPES = new Set<string>(EVENT_TYPES);
 
-export function isMainFeed(event: Pick<TournamentRecord, "playAudience" | "eventType" | "endsOn">, today: string): boolean {
+export function isMainFeed(event: Pick<TournamentRecord, "playAudience" | "eventType" | "endsOn" | "isTest">, today: string): boolean {
+  if (event.isTest) return false;
   if (event.playAudience !== "OPEN_AMATEURS") return false;
   if (!PUBLIC_TYPES.has(event.eventType)) return false;
   return event.endsOn >= today;

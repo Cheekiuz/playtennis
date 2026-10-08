@@ -158,6 +158,10 @@
     "subhead": "Mėgėjų turnyrai, organizuotas tenisas ir teniso renginiai, vienoje vietoje.",
     "country": "Šalis",
     "anyCountry": "Visos šalys",
+    "region": "Regionas",
+    "anyRegion": "Bet kuris regionas",
+    "placeTitle": "Teniso renginiai: {place}",
+    "placeDescription": "Mėgėjų turnyrai, organizuotas tenisas ir teniso renginiai: {place}.",
     "date": "Data",
     "anyDate": "Bet kada",
     "today": "Šiandien",
@@ -183,7 +187,8 @@
       "hard": "Kieta",
       "grass": "Žolė",
       "carpet": "Kilimas",
-      "other": "Kita"
+      "other": "Kita",
+      "unknown": "Nežinoma"
     },
     "explore": "Rasti renginius",
     "upcoming": "Artimiausi renginiai",
@@ -194,6 +199,7 @@
       "PLAY_SESSION": "Organizuotas tenisas",
       "MATCH_DAY": "Mačo diena",
       "SOCIAL": "Socialus tenisas",
+      "CLUB_COMPETITION": "Klubo varžybos",
       "OTHER": "Kitas teniso renginys"
     },
     "format": "Formatas",
@@ -272,7 +278,9 @@
       "men": "Vyrai",
       "women": "Moterys",
       "open": "Atvira",
-      "mixed": "Mišrūs"
+      "mixed": "Mišrūs",
+      "boys": "Berniukai",
+      "girls": "Mergaitės"
     },
     "levels": {
       "recreational": "Mėgėjų",

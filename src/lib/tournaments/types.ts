@@ -1,8 +1,8 @@
-export const SURFACES = ["clay", "hard", "grass", "carpet", "other"] as const;
+export const SURFACES = ["clay", "hard", "grass", "carpet", "other", "unknown"] as const;
 export const ENVIRONMENTS = ["indoor", "outdoor", "mixed"] as const;
 export const AUDIENCES = ["recreational", "masters", "junior", "professional"] as const;
 export const DISCIPLINES = ["singles", "doubles", "mixed_doubles"] as const;
-export const GENDERS = ["men", "women", "mixed", "open"] as const;
+export const GENDERS = ["men", "women", "mixed", "open", "boys", "girls"] as const;
 export const LEVELS = ["recreational", "club", "competitive", "national"] as const;
 export const LIFECYCLE = [
   "upcoming",
@@ -24,7 +24,7 @@ export type Level = (typeof LEVELS)[number];
 export type LifecycleStatus = (typeof LIFECYCLE)[number];
 export type RegistrationStatus = (typeof REGISTRATION)[number];
 
-export const EVENT_TYPES = ["TOURNAMENT", "PLAY_SESSION", "MATCH_DAY", "SOCIAL", "OTHER"] as const;
+export const EVENT_TYPES = ["TOURNAMENT", "PLAY_SESSION", "MATCH_DAY", "SOCIAL", "CLUB_COMPETITION", "OTHER"] as const;
 export const EVENT_FORMATS = ["SINGLES", "MEN_DOUBLES", "WOMEN_DOUBLES", "MIXED_DOUBLES", "MULTIPLE"] as const;
 export const DURATION_TYPES = ["ONE_DAY", "WEEKEND", "ONGOING", "LEAGUE"] as const;
 export const PLAY_AUDIENCES = ["OPEN_AMATEURS", "CLUB_MEMBERS", "INVITATION_ONLY", "COMPANY", "PROFESSION_SPECIFIC", "JUNIORS"] as const;
@@ -68,6 +68,7 @@ export type TournamentRecord = {
   countryCode: string;
   countryNameEn: string;
   countryNameLt: string;
+  region: string | null;
   city: string;
   venueName: string | null;
   venueAddress: string | null;
@@ -102,9 +103,19 @@ export type TournamentRecord = {
   startTime: string | null;
   endTime: string | null;
   priceLabel: string | null;
+  priceAmount: number | null;
+  priceCurrency: string | null;
   playLevel: PlayLevel | null;
+  originalLevel: string | null;
+  standardisedLevel: string | null;
+  ageGroup: string | null;
+  eventGender: Gender | null;
   originalSourceUrl: string | null;
   sourceKind: string | null;
+  sourceConfidence: "high" | "medium" | "low" | null;
+  reviewStatus: "verified" | "checked" | "needs_review" | "conflicting" | "expired" | "unknown";
+  qualityScore: number | null;
+  isTest: boolean;
   translations: {
     locale: string;
     description: string | null;
@@ -124,6 +135,7 @@ export type TournamentFilters = {
   surface?: string;
   environment?: string;
   city?: string;
+  region?: string;
   age?: string;
   gender?: string;
   discipline?: string;
