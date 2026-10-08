@@ -72,6 +72,13 @@ export default async function TournamentsPage({
   return (
     <SiteFrame locale={locale} messages={messages}>
       <h1 className="text-4xl font-bold tracking-tight">{messages.discover.results}</h1>
+      <p className="mt-3 max-w-2xl text-base text-foreground/80">{messages.discover.subhead}</p>
+      <p className="mt-3 text-sm text-foreground/80">
+        {messages.home.submitTitle}{" "}
+        <Link href={localePath(locale, "/submit")} className="font-semibold text-accent underline-offset-2 hover:underline">
+          {messages.nav.submit}
+        </Link>
+      </p>
       <div className="mt-6">
         <TournamentFilters locale={locale} messages={messages} values={filters} />
       </div>
@@ -83,9 +90,12 @@ export default async function TournamentsPage({
           {messages.discover.mapView}
         </Link>
       </div>
-      <p className="mt-4 text-sm text-foreground/70">
-        {result.total}{view === "list" ? ` · ${messages.discover.page} ${page}` : ""}
-      </p>
+      {result.items.length > 0 ? (
+        <p className="mt-4 text-sm text-foreground/70">
+          {messages.discover.count.replace("{count}", String(result.total))}
+          {view === "list" && pages > 1 ? ` · ${messages.discover.page} ${page}` : ""}
+        </p>
+      ) : null}
       {view === "map" ? (
         <div className="mt-6">
           <TournamentMap
@@ -96,7 +106,11 @@ export default async function TournamentsPage({
           />
         </div>
       ) : result.items.length === 0 ? (
-        <p className="mt-6 text-sm text-foreground/70">{messages.discover.empty}</p>
+        <EventsEmpty
+          locale={locale}
+          messages={messages}
+          kind={!result.ready ? "error" : filtersAreIndexable(filters) ? "building" : "filtered"}
+        />
       ) : (
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {result.items.map((tournament) => (
@@ -119,6 +133,44 @@ export default async function TournamentsPage({
         </nav>
       ) : null}
     </SiteFrame>
+  );
+}
+
+function EventsEmpty({
+  locale,
+  messages,
+  kind,
+}: {
+  locale: Locale;
+  messages: ReturnType<typeof getMessages>;
+  kind: "filtered" | "building" | "error";
+}) {
+  const d = messages.discover;
+  if (kind === "error") return <p className="mt-8 text-base text-foreground/80">{d.loadError}</p>;
+  if (kind === "filtered") {
+    return (
+      <div className="mt-8 max-w-xl space-y-3">
+        <h2 className="text-2xl font-bold">{d.empty}</h2>
+        <p className="text-base text-foreground/80">{d.emptyBody}</p>
+        <Link href={localePath(locale, "/tournaments")} className="inline-flex min-h-11 items-center text-sm font-semibold text-accent underline-offset-2 hover:underline">
+          {d.clear}
+        </Link>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-8 max-w-xl space-y-4">
+      <h2 className="text-2xl font-bold">{d.buildingTitle}</h2>
+      <p className="text-base leading-7 text-foreground/80">{d.buildingBody}</p>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Link href={localePath(locale, "/submit")} className="btn-primary inline-flex min-h-11 items-center justify-center rounded-full px-5 text-sm font-semibold">
+          {messages.nav.submit}
+        </Link>
+        <Link href={localePath(locale, "/tournaments")} className="inline-flex min-h-11 items-center justify-center text-sm font-semibold text-accent underline-offset-2 hover:underline">
+          {messages.quiz.browse}
+        </Link>
+      </div>
+    </div>
   );
 }
 

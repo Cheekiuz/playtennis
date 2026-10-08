@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { saveTournament, type AdminFormState } from "@/app/admin/actions";
 import { COUNTRIES } from "@/lib/tournaments/countries";
-import type { TournamentRecord } from "@/lib/tournaments/types";
+import { EVENT_TYPES, type TournamentRecord } from "@/lib/tournaments/types";
 
 const inputClass = "w-full border border-border bg-input-bg px-3 py-2 text-sm";
 
@@ -82,7 +82,7 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
         <Select label="Legacy audience" name="audience" defaultValue={tournament?.audience ?? "recreational"} options={["recreational", "masters", "junior", "professional"]} />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Select label="Event type" name="event_type" defaultValue={tournament?.eventType ?? "TOURNAMENT"} options={["TOURNAMENT", "PLAY_SESSION"]} />
+        <Select label="Event type" name="event_type" defaultValue={tournament?.eventType ?? "TOURNAMENT"} options={[...EVENT_TYPES]} />
         <Select label="Format" name="event_format" defaultValue={tournament?.eventFormat ?? "MULTIPLE"} options={["SINGLES", "MEN_DOUBLES", "WOMEN_DOUBLES", "MIXED_DOUBLES", "MULTIPLE"]} />
         <Select label="Duration" name="duration_type" defaultValue={tournament?.durationType ?? "ONE_DAY"} options={["ONE_DAY", "WEEKEND", "ONGOING", "LEAGUE"]} />
         <Select label="Who can play" name="play_audience" defaultValue={tournament?.playAudience ?? "OPEN_AMATEURS"} options={["OPEN_AMATEURS", "CLUB_MEMBERS", "INVITATION_ONLY", "COMPANY", "PROFESSION_SPECIFIC", "JUNIORS"]} />

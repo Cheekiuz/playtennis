@@ -10,7 +10,7 @@ export type Messages = typeof en;
 
 const messages: Record<Locale, Messages> = { en, lt };
 
-const CANONICAL_SEGMENTS = ["tournaments", "saved", "about", "play", "quiz"] as const;
+const CANONICAL_SEGMENTS = ["tournaments", "saved", "about", "play", "quiz", "submit"] as const;
 
 const PUBLIC_SEGMENT: Record<Locale, Record<string, string>> = {
   lt: {
@@ -19,6 +19,7 @@ const PUBLIC_SEGMENT: Record<Locale, Record<string, string>> = {
     about: "apie",
     play: "zaidimas",
     quiz: "kvizas",
+    submit: "pateikti",
   },
   en: {
     tournaments: "tournaments",
@@ -26,6 +27,7 @@ const PUBLIC_SEGMENT: Record<Locale, Record<string, string>> = {
     about: "about",
     play: "play",
     quiz: "quiz",
+    submit: "submit",
   },
 };
 
@@ -40,6 +42,8 @@ const SEGMENT_TO_CANONICAL: Record<string, string> = {
   play: "play",
   kvizas: "quiz",
   quiz: "quiz",
+  pateikti: "submit",
+  submit: "submit",
 };
 
 export function isValidLocale(value: string): value is Locale {
@@ -111,6 +115,7 @@ export function publicRedirectPath(pathname: string): string | null {
     "/saved": "/lt/issaugoti",
     "/play": "/lt/zaidimas",
     "/quiz": "/lt/kvizas",
+    "/submit": "/lt/pateikti",
   };
   if (legacy[pathname]) return legacy[pathname];
 

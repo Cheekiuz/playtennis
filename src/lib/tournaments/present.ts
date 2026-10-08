@@ -10,6 +10,20 @@ export function translationFor(tournament: TournamentRecord, locale: Locale) {
   );
 }
 
+export function formatCardDate(start: string, end: string, locale: Locale): string {
+  const tag = locale === "lt" ? "lt-LT" : "en-GB";
+  const startDate = parseDate(start);
+  const endDate = parseDate(end);
+  const month = new Intl.DateTimeFormat(tag, { month: "short" });
+  const startMonth = month.format(startDate);
+  const endMonth = month.format(endDate);
+  if (start.slice(0, 10) === end.slice(0, 10)) return `${startMonth} ${startDate.getDate()}`;
+  if (startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear()) {
+    return `${startMonth} ${startDate.getDate()}-${endDate.getDate()}`;
+  }
+  return `${startMonth} ${startDate.getDate()} - ${endMonth} ${endDate.getDate()}`;
+}
+
 export function formatDateRange(start: string, end: string, locale: Locale): string {
   const tag = locale === "lt" ? "lt-LT" : "en-GB";
   const startDate = parseDate(start);

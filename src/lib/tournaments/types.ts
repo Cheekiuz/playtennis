@@ -24,7 +24,7 @@ export type Level = (typeof LEVELS)[number];
 export type LifecycleStatus = (typeof LIFECYCLE)[number];
 export type RegistrationStatus = (typeof REGISTRATION)[number];
 
-export const EVENT_TYPES = ["TOURNAMENT", "PLAY_SESSION"] as const;
+export const EVENT_TYPES = ["TOURNAMENT", "PLAY_SESSION", "MATCH_DAY", "SOCIAL", "OTHER"] as const;
 export const EVENT_FORMATS = ["SINGLES", "MEN_DOUBLES", "WOMEN_DOUBLES", "MIXED_DOUBLES", "MULTIPLE"] as const;
 export const DURATION_TYPES = ["ONE_DAY", "WEEKEND", "ONGOING", "LEAGUE"] as const;
 export const PLAY_AUDIENCES = ["OPEN_AMATEURS", "CLUB_MEMBERS", "INVITATION_ONLY", "COMPANY", "PROFESSION_SPECIFIC", "JUNIORS"] as const;

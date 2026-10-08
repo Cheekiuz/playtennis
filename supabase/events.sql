@@ -80,7 +80,7 @@ begin
   if not exists (select 1 from pg_constraint where conname = 'tournaments_event_type_check') then
     alter table public.tournaments
       add constraint tournaments_event_type_check
-      check (event_type in ('TOURNAMENT', 'PLAY_SESSION'));
+      check (event_type in ('TOURNAMENT', 'PLAY_SESSION', 'MATCH_DAY', 'SOCIAL', 'OTHER'));
   end if;
   if not exists (select 1 from pg_constraint where conname = 'tournaments_event_format_check') then
     alter table public.tournaments

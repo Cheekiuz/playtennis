@@ -44,7 +44,9 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  const redirected = publicRedirectPath(pathname);
+  // Rewrites re-enter this proxy with x-locale already set. Skip the public
+  // redirect on that second pass, or /lt/turnyrai would bounce forever.
+  const redirected = request.headers.has("x-locale") ? null : publicRedirectPath(pathname);
   if (redirected) {
     const url = request.nextUrl.clone();
     url.pathname = redirected;

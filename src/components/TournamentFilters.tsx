@@ -1,79 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { track } from "@/lib/analytics";
 import type { Locale, Messages } from "@/lib/i18n";
 import { localePath } from "@/lib/i18n";
 import { COUNTRIES } from "@/lib/tournaments/countries";
-import type { TournamentFilters } from "@/lib/tournaments/types";
-
-const fieldClass =
-  "w-full border border-border bg-input-bg px-3 py-2 text-sm text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+import { EVENT_TYPES, type TournamentFilters } from "@/lib/tournaments/types";
 
 export default function TournamentFilters({
   locale,
   messages,
   values,
-  showSearch = true,
-  allowMore = true,
+  appearance = "theme",
 }: {
   locale: Locale;
   messages: Messages;
   values: TournamentFilters;
-  showSearch?: boolean;
-  allowMore?: boolean;
+  appearance?: "theme" | "paper";
 }) {
   const [open, setOpen] = useState(false);
+  const titleId = useId();
   const action = localePath(locale, "/tournaments");
   const d = messages.discover;
+  const paper = appearance === "paper";
+  const fieldClass = paper
+    ? "min-h-11 w-full rounded-lg border border-[#e2e2e2] bg-white px-3 py-2 text-sm text-[#1a1c1c]"
+    : "min-h-11 w-full rounded-lg border border-border bg-input-bg px-3 py-2 text-sm text-foreground";
+  const labelClass = paper ? "grid gap-1 text-sm text-[#1a1c1c]" : "grid gap-1 text-sm text-foreground";
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const advanced = advancedValues(values);
 
   return (
     <form
       action={action}
       method="get"
-      className="grid gap-3"
+      className="grid gap-4"
       onSubmit={(event) => {
         const data = new FormData(event.currentTarget);
         track("tournament_search", {
           country: String(data.get("country") ?? ""),
           when: String(data.get("when") ?? ""),
           surface: String(data.get("surface") ?? ""),
-          audience: String(data.get("audience") ?? ""),
+          event: String(data.get("event") ?? ""),
         });
       }}
     >
-      {showSearch ? (
-        <label className="grid gap-1 text-sm">
-          <span className="font-semibold">{d.search}</span>
-          <input className={fieldClass} name="q" defaultValue={values.q ?? ""} placeholder={d.searchPlaceholder} />
-        </label>
-      ) : null}
-
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Select
-          label={d.registrationLabel}
-          name="registration"
-          defaultValue={values.registration ?? ""}
-          options={[
-            ["", d.anyRegistration],
-            ["open", d.openNow],
-            ["soon", d.openingSoon],
-          ]}
-        />
-        <Select
-          label={d.eventType}
-          name="event"
-          defaultValue={values.event ?? ""}
-          options={[
-            ["", d.anyType],
-            ["TOURNAMENT", d.eventTypes.TOURNAMENT],
-            ["PLAY_SESSION", d.eventTypes.PLAY_SESSION],
-          ]}
-        />
         <Select
           label={d.date}
           name="when"
           defaultValue={values.when ?? ""}
+          fieldClass={fieldClass}
+          labelClass={labelClass}
           options={[
             ["", d.anyDate],
             ["this-weekend", d.thisWeekend],
@@ -86,6 +78,8 @@ export default function TournamentFilters({
           label={d.city}
           name="city"
           defaultValue={values.city ?? ""}
+          fieldClass={fieldClass}
+          labelClass={labelClass}
           options={[
             ["", d.anyCity],
             ["Vilnius", "Vilnius"],
@@ -99,124 +93,237 @@ export default function TournamentFilters({
           ]}
         />
         <Select
-          label={d.category}
-          name="audience"
-          defaultValue={values.audience ?? ""}
-          options={[
-            ["", d.anyCategory],
-            ["recreational", d.audiences.recreational],
-            ["masters", d.audiences.masters],
-            ["junior", d.audiences.junior],
-          ]}
+          label={d.eventType}
+          name="event"
+          defaultValue={values.event ?? ""}
+          fieldClass={fieldClass}
+          labelClass={labelClass}
+          options={[["", d.anyType], ...EVENT_TYPES.map((type) => [type, d.eventTypes[type]] as [string, string])]}
         />
         <Select
-          label={d.surface}
-          name="surface"
-          defaultValue={values.surface ?? ""}
+          label={d.playLevel}
+          name="playLevel"
+          defaultValue={values.playLevel ?? ""}
+          fieldClass={fieldClass}
+          labelClass={labelClass}
           options={[
-            ["", d.anySurface],
-            ["clay", d.surfaces.clay],
-            ["hard", d.surfaces.hard],
-            ["grass", d.surfaces.grass],
-            ["carpet", d.surfaces.carpet],
+            ["", d.anyPlayLevel],
+            ["LIGHT", d.playLevels.LIGHT],
+            ["MIDDLE", d.playLevels.MIDDLE],
+            ["ADVANCED", d.playLevels.ADVANCED],
+            ["NTRP", d.playLevels.NTRP],
+            ["OTHER", d.playLevels.OTHER],
           ]}
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <button type="submit" className="btn-primary btn-glow rounded-full px-5 py-2 text-sm font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
-          {showSearch ? d.apply : d.explore}
+      {open ? null : <HiddenFields values={advanced} />}
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button
+          type="submit"
+          className={`inline-flex min-h-11 items-center justify-center rounded-full px-5 text-sm font-semibold ${
+            paper ? "bg-[#151d19] text-[#c1f100] hover:bg-[#506600]" : "btn-primary"
+          }`}
+        >
+          {d.explore}
         </button>
-        {allowMore ? (
         <button
           type="button"
-          className="text-sm font-semibold text-foreground/80 underline-offset-2 hover:underline sm:hidden"
+          className={`inline-flex min-h-11 items-center justify-center rounded-full border px-5 text-sm font-semibold ${
+            paper ? "border-[#c3c8c3] bg-white text-[#1a1c1c]" : "border-border bg-card text-foreground"
+          }`}
           aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
+          aria-controls={titleId}
+          onClick={() => setOpen(true)}
         >
-          {open ? d.hideFilters : d.moreFilters}
+          {d.moreFilters}
+          {advancedActive(values) ? <span className="ml-2 h-2 w-2 rounded-full bg-current" aria-hidden="true" /> : null}
         </button>
-        ) : null}
-      </div>
-
-      {allowMore ? (
-      <div className={`${open ? "fixed inset-x-0 bottom-0 z-40 grid max-h-[70vh] overflow-auto" : "hidden"} gap-3 border border-border bg-card p-4 sm:static sm:z-auto sm:grid sm:max-h-none`}>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Select label={d.country} name="country" defaultValue={values.country ?? ""} options={countryOptions(locale, d.anyCountry)} />
-          <Select label={d.from} name="from" defaultValue={values.from ?? ""} options={[]} date />
-          <Select label={d.to} name="to" defaultValue={values.to ?? ""} options={[]} date />
-          <Select
-            label={d.environment}
-            name="environment"
-            defaultValue={values.environment ?? ""}
-            options={[
-              ["", d.anyEnvironment],
-              ["indoor", d.environments.indoor],
-              ["outdoor", d.environments.outdoor],
-              ["mixed", d.environments.mixed],
-            ]}
-          />
-          <Select
-            label={d.age}
-            name="age"
-            defaultValue={values.age ?? ""}
-            options={[
-              ["", d.anyAge],
-              ["open", d.ages.open],
-              ["35", d.ages["35"]],
-              ["40", d.ages["40"]],
-              ["45", d.ages["45"]],
-              ["50", d.ages["50"]],
-              ["55", d.ages["55"]],
-              ["60", d.ages["60"]],
-              ["u18", d.ages.u18],
-            ]}
-          />
-          <Select
-            label={d.gender}
-            name="gender"
-            defaultValue={values.gender ?? ""}
-            options={[
-              ["", d.anyGender],
-              ["men", d.genders.men],
-              ["women", d.genders.women],
-              ["mixed", d.genders.mixed],
-              ["open", d.genders.open],
-            ]}
-          />
-          <Select
-            label={d.format}
-            name="format"
-            defaultValue={values.format ?? ""}
-            options={[
-              ["", d.anyFormat],
-              ["SINGLES", d.formats.SINGLES],
-              ["MEN_DOUBLES", d.formats.MEN_DOUBLES],
-              ["WOMEN_DOUBLES", d.formats.WOMEN_DOUBLES],
-              ["MIXED_DOUBLES", d.formats.MIXED_DOUBLES],
-            ]}
-          />
-          <Select
-            label={d.playLevel}
-            name="playLevel"
-            defaultValue={values.playLevel ?? ""}
-            options={[
-              ["", d.anyPlayLevel],
-              ["LIGHT", d.playLevels.LIGHT],
-              ["MIDDLE", d.playLevels.MIDDLE],
-              ["ADVANCED", d.playLevels.ADVANCED],
-              ["NTRP", d.playLevels.NTRP],
-              ["OTHER", d.playLevels.OTHER],
-            ]}
-          />
-        </div>
-        <a href={action} className="text-sm font-semibold text-foreground/80 underline-offset-2 hover:underline">
+        <a href={action} className={`inline-flex min-h-11 items-center text-sm font-semibold underline-offset-2 hover:underline ${paper ? "text-[#1a1c1c]" : "text-foreground"}`}>
           {d.clear}
         </a>
       </div>
+
+      {open ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+          <button type="button" className="absolute inset-0 bg-black/50" aria-label={messages.nav.close} onClick={() => setOpen(false)} />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            className={`relative max-h-[88vh] w-full overflow-auto rounded-t-2xl p-5 sm:max-w-xl sm:rounded-2xl ${
+              paper ? "bg-[#f9f9f8] text-[#1a1c1c]" : "bg-background text-foreground"
+            }`}
+          >
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h2 id={titleId} className="text-lg font-bold">
+                {d.moreFilters}
+              </h2>
+              <button type="button" className="min-h-11 px-2 text-sm font-semibold" onClick={() => setOpen(false)}>
+                {messages.nav.close}
+              </button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className={labelClass}>
+                <span className="font-semibold">{d.search}</span>
+                <input className={fieldClass} name="q" defaultValue={values.q ?? ""} placeholder={d.searchPlaceholder} />
+              </label>
+              <Select
+                label={d.registrationLabel}
+                name="registration"
+                defaultValue={values.registration ?? ""}
+                fieldClass={fieldClass}
+                labelClass={labelClass}
+                options={[
+                  ["", d.anyRegistration],
+                  ["open", d.publicRegistration.OPEN],
+                  ["soon", d.publicRegistration.NOT_STARTED],
+                  ["closed", d.publicRegistration.CLOSED],
+                  ["full", d.publicRegistration.FULL],
+                  ["unknown", d.publicRegistration.UNKNOWN],
+                ]}
+              />
+              <Select
+                label={d.surface}
+                name="surface"
+                defaultValue={values.surface ?? ""}
+                fieldClass={fieldClass}
+                labelClass={labelClass}
+                options={[
+                  ["", d.anySurface],
+                  ["clay", d.surfaces.clay],
+                  ["hard", d.surfaces.hard],
+                  ["grass", d.surfaces.grass],
+                  ["carpet", d.surfaces.carpet],
+                ]}
+              />
+              <Select
+                label={d.environment}
+                name="environment"
+                defaultValue={values.environment ?? ""}
+                fieldClass={fieldClass}
+                labelClass={labelClass}
+                options={[
+                  ["", d.anyEnvironment],
+                  ["indoor", d.environments.indoor],
+                  ["outdoor", d.environments.outdoor],
+                  ["mixed", d.environments.mixed],
+                ]}
+              />
+              <Select
+                label={d.age}
+                name="age"
+                defaultValue={values.age ?? ""}
+                fieldClass={fieldClass}
+                labelClass={labelClass}
+                options={[
+                  ["", d.anyAge],
+                  ["open", d.ages.open],
+                  ["35", d.ages["35"]],
+                  ["40", d.ages["40"]],
+                  ["45", d.ages["45"]],
+                  ["50", d.ages["50"]],
+                  ["55", d.ages["55"]],
+                  ["60", d.ages["60"]],
+                  ["u18", d.ages.u18],
+                ]}
+              />
+              <Select
+                label={d.gender}
+                name="gender"
+                defaultValue={values.gender ?? ""}
+                fieldClass={fieldClass}
+                labelClass={labelClass}
+                options={[
+                  ["", d.anyGender],
+                  ["men", d.genders.men],
+                  ["women", d.genders.women],
+                  ["mixed", d.genders.mixed],
+                  ["open", d.genders.open],
+                ]}
+              />
+              <Select
+                label={d.format}
+                name="format"
+                defaultValue={values.format ?? ""}
+                fieldClass={fieldClass}
+                labelClass={labelClass}
+                options={[
+                  ["", d.anyFormat],
+                  ["SINGLES", d.formats.SINGLES],
+                  ["MEN_DOUBLES", d.formats.MEN_DOUBLES],
+                  ["WOMEN_DOUBLES", d.formats.WOMEN_DOUBLES],
+                  ["MIXED_DOUBLES", d.formats.MIXED_DOUBLES],
+                ]}
+              />
+              <Select
+                label={d.country}
+                name="country"
+                defaultValue={values.country ?? ""}
+                fieldClass={fieldClass}
+                labelClass={labelClass}
+                options={countryOptions(locale, d.anyCountry)}
+              />
+              <Select label={d.from} name="from" defaultValue={values.from ?? ""} fieldClass={fieldClass} labelClass={labelClass} options={[]} date />
+              <Select label={d.to} name="to" defaultValue={values.to ?? ""} fieldClass={fieldClass} labelClass={labelClass} options={[]} date />
+              <Select
+                label={d.category}
+                name="audience"
+                defaultValue={values.audience ?? ""}
+                fieldClass={fieldClass}
+                labelClass={labelClass}
+                options={[
+                  ["", d.anyCategory],
+                  ["recreational", d.audiences.recreational],
+                  ["masters", d.audiences.masters],
+                  ["junior", d.audiences.junior],
+                ]}
+              />
+            </div>
+            <button
+              type="submit"
+              className={`mt-5 inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-semibold ${
+                paper ? "bg-[#151d19] text-[#c1f100]" : "btn-primary"
+              }`}
+            >
+              {d.explore}
+            </button>
+          </div>
+        </div>
       ) : null}
     </form>
   );
+}
+
+function HiddenFields({ values }: { values: Record<string, string> }) {
+  return (
+    <>
+      {Object.entries(values).map(([name, value]) =>
+        value ? <input key={name} type="hidden" name={name} value={value} /> : null,
+      )}
+    </>
+  );
+}
+
+function advancedValues(values: TournamentFilters): Record<string, string> {
+  return {
+    q: values.q ?? "",
+    registration: values.registration ?? "",
+    surface: values.surface ?? "",
+    environment: values.environment ?? "",
+    age: values.age ?? "",
+    gender: values.gender ?? "",
+    format: values.format ?? "",
+    country: values.country ?? "",
+    from: values.from ?? "",
+    to: values.to ?? "",
+    audience: values.audience ?? "",
+  };
+}
+
+function advancedActive(values: TournamentFilters): boolean {
+  return Object.values(advancedValues(values)).some(Boolean);
 }
 
 function Select({
@@ -224,16 +331,20 @@ function Select({
   name,
   defaultValue,
   options,
+  fieldClass,
+  labelClass,
   date = false,
 }: {
   label: string;
   name: string;
   defaultValue: string;
   options: string[][];
+  fieldClass: string;
+  labelClass: string;
   date?: boolean;
 }) {
   return (
-    <label className="grid gap-1 text-sm">
+    <label className={labelClass}>
       <span className="font-semibold">{label}</span>
       {date ? (
         <input className={fieldClass} type="date" name={name} defaultValue={defaultValue} />

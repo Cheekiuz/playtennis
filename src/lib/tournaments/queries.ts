@@ -300,6 +300,9 @@ function matchesEvent(tournament: TournamentRecord, filters: TournamentFilters):
   if (filters.playLevel && tournament.playLevel !== filters.playLevel) return false;
   if (filters.registration === "open" && tournament.publicRegistration !== "OPEN") return false;
   if (filters.registration === "soon" && tournament.publicRegistration !== "NOT_STARTED") return false;
+  if (filters.registration === "closed" && tournament.publicRegistration !== "CLOSED") return false;
+  if (filters.registration === "full" && tournament.publicRegistration !== "FULL") return false;
+  if (filters.registration === "unknown" && tournament.publicRegistration !== "UNKNOWN") return false;
   if (filters.city?.toLowerCase() === "other") {
     const city = tournament.city.trim().toLowerCase();
     if (PLAY_CITIES.includes(city)) return false;
@@ -439,7 +442,8 @@ function isAudience(value: string): value is Audience {
 }
 
 function eventType(value: unknown): EventType {
-  return value === "PLAY_SESSION" ? "PLAY_SESSION" : "TOURNAMENT";
+  if (value === "PLAY_SESSION" || value === "MATCH_DAY" || value === "SOCIAL" || value === "OTHER") return value;
+  return "TOURNAMENT";
 }
 
 function eventFormat(value: unknown): EventFormat {

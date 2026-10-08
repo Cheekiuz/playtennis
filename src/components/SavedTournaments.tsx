@@ -35,7 +35,7 @@ export default function SavedTournaments({ locale, messages }: { locale: Locale;
     };
   }, []);
 
-  if (tournaments === null) return null;
+  if (tournaments === null) return <p className="text-sm text-foreground/70">{messages.discover.loading}</p>;
   if (tournaments.length === 0) {
     return <p className="text-sm text-foreground/70">{messages.discover.savedEmpty}</p>;
   }

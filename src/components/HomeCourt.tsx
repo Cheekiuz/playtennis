@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import {
   COURT_SURFACE_EVENT,
   setCourtSurface,
-  triggerCourtRain,
   type CourtSurface,
 } from "@/lib/court-controls";
 import { SURFACE_APRON } from "@/lib/court-draw";
@@ -21,33 +20,6 @@ function surfaceLabel(surface: CourtSurface, messages: Messages) {
   if (surface === "clay") return messages.home.surfaceClay;
   if (surface === "hard") return messages.home.surfaceHard;
   return messages.home.surfaceGrass;
-}
-
-export function RainControl({ messages }: { messages: Messages }) {
-  const drop = () => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    triggerCourtRain();
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={drop}
-      data-rain-control="hero"
-      className="inline-flex items-center gap-2 rounded-lg bg-[#eeeeed] px-3.5 py-1.5 text-left text-[10px] font-bold uppercase tracking-[0.06em] text-[#434845] transition-colors hover:bg-[#e2e2e2] hover:text-[#1a1c1c]"
-    >
-      <span aria-hidden="true">🎾</span>
-      <span>
-        {messages.tip.press}{" "}
-        <kbd className="rounded border border-[#c3c8c3] bg-white px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-[#1a1c1c]">
-          T
-        </kbd>{" "}
-        {messages.tip.ballStorm}
-        <span className="mx-1 text-[#747874]">·</span>
-        {messages.home.rainDrop}
-      </span>
-    </button>
-  );
 }
 
 export default function HomeCourt({ messages }: { messages: Messages }) {
@@ -82,7 +54,7 @@ export default function HomeCourt({ messages }: { messages: Messages }) {
                   type="button"
                   aria-pressed={active}
                   onClick={() => choose(key)}
-                  className={`flex items-center gap-2 rounded px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.06em] ${active ? "text-white" : "text-[#434845] hover:text-[#1a1c1c]"}`}
+                  className={`flex min-h-11 items-center gap-2 rounded px-3.5 text-xs font-bold uppercase tracking-[0.06em] ${active ? "text-white" : "text-[#434845] hover:text-[#1a1c1c]"}`}
                   style={active ? { background: SURFACE_APRON[key] } : undefined}
                 >
                   <span
@@ -95,7 +67,6 @@ export default function HomeCourt({ messages }: { messages: Messages }) {
             })}
           </div>
         </div>
-        <p className="px-2 text-[10px] font-bold uppercase tracking-[0.06em] text-[#434845]">{home.doubleClick}</p>
       </div>
 
       <div
@@ -114,15 +85,13 @@ export default function HomeCourt({ messages }: { messages: Messages }) {
             style={{ backgroundImage: "radial-gradient(#000 1px, transparent 1px)", backgroundSize: "16px 16px" }}
           />
         </div>
-        <div className="relative z-10 mx-4 flex flex-wrap items-center justify-between gap-2 border-t border-white/20 px-0 py-4 text-[11px] font-semibold text-white/90 sm:mx-8">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 tabular-nums">
-            <span>{home.length}</span>
-            <span className="hidden sm:inline">{home.width}</span>
-            <span className="hidden md:inline">{home.net}</span>
-          </div>
-          <span className="text-[10px] font-bold uppercase tracking-wider text-white/75">{home.doubleClick}</span>
-        </div>
       </div>
+      <p className="text-xs text-[#434845]">
+        <span className="sr-only">{home.surfaceFeed}. </span>
+        {home.pressT}
+        <span aria-hidden="true"> · </span>
+        {home.doubleClick}
+      </p>
     </div>
   );
 }

@@ -89,7 +89,7 @@ export default function QuizFlow({ messages, action }: { messages: Messages; act
               key={value}
               type="button"
               onClick={() => setAnswers((prev) => ({ ...prev, [current.key]: value }))}
-              className={`border px-4 py-3 text-left text-sm font-semibold ${selected ? "border-accent text-accent" : "border-border hover:bg-surface"}`}
+              className={`min-h-11 border px-4 py-3 text-left text-sm font-semibold ${selected ? "border-accent text-accent" : "border-border hover:bg-surface"}`}
             >
               {label}
             </button>
@@ -106,7 +106,7 @@ export default function QuizFlow({ messages, action }: { messages: Messages; act
           <button
             type="button"
             disabled={!answers[current.key]}
-            className="btn-primary rounded-full px-5 py-2 text-sm font-semibold disabled:opacity-40"
+            className="btn-primary min-h-11 rounded-full px-5 text-sm font-semibold disabled:opacity-40"
             onClick={() => setStep((value) => value + 1)}
           >
             {q.next}
@@ -115,7 +115,7 @@ export default function QuizFlow({ messages, action }: { messages: Messages; act
           <button
             type="button"
             disabled={!answers.mood}
-            className="btn-primary rounded-full px-5 py-2 text-sm font-semibold disabled:opacity-40"
+            className="btn-primary min-h-11 rounded-full px-5 text-sm font-semibold disabled:opacity-40"
             onClick={() => {
               const params = new URLSearchParams({ done: "1" });
               for (const [key, value] of Object.entries(answers)) {

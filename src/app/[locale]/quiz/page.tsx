@@ -5,8 +5,8 @@ import SiteFrame from "@/components/SiteFrame";
 import TournamentCard from "@/components/TournamentCard";
 import { getMessages, isValidLocale, localePath, type Locale } from "@/lib/i18n";
 import { absoluteUrl, routeAlternates } from "@/lib/seo";
+import { matchReasons } from "@/lib/tournaments/match";
 import { listTournaments } from "@/lib/tournaments/queries";
-import type { TournamentFilters } from "@/lib/tournaments/types";
 
 export const dynamic = "force-dynamic";
 
@@ -53,27 +53,60 @@ export default async function QuizPage({
       age: one(query.age),
       mood: one(query.mood),
     };
-    const result = await listTournaments(filtersFromAnswers(answers), 8);
+    const result = await listTournaments({ page: 1 }, 80);
+    const matches = result.items
+      .map((tournament) => ({ tournament, ...matchReasons(tournament, answers, messages) }))
+      .filter((item) => item.matched)
+      .sort((a, b) => b.reasons.length - a.reasons.length)
+      .slice(0, 6);
     return (
       <SiteFrame locale={locale} messages={messages}>
-        <p className="text-sm font-semibold text-accent">{personality(answers, messages)}</p>
-        <h1 className="mt-2 text-4xl font-bold tracking-tight">{messages.quiz.resultTitle}</h1>
-        {result.items.length === 0 ? (
-          <p className="mt-6 text-sm text-foreground/70">{messages.quiz.empty}</p>
+        <h1 className="text-4xl font-bold tracking-tight">{messages.quiz.resultTitle}</h1>
+        {!result.ready ? (
+          <p className="mt-6 text-base text-foreground/80">{messages.discover.loadError}</p>
+        ) : matches.length === 0 ? (
+          <div className="mt-6 max-w-xl space-y-4">
+            <p className="text-base text-foreground/80">{messages.quiz.empty}</p>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Link href={localePath(locale, "/tournaments")} className="btn-primary inline-flex min-h-11 items-center justify-center rounded-full px-5 text-sm font-semibold">
+                {messages.quiz.browse}
+              </Link>
+              <Link href={localePath(locale, "/submit")} className="inline-flex min-h-11 items-center justify-center text-sm font-semibold text-accent underline-offset-2 hover:underline">
+                {messages.quiz.submit}
+              </Link>
+            </div>
+          </div>
         ) : (
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {result.items.map((tournament) => (
-              <TournamentCard key={tournament.id} tournament={tournament} locale={locale} messages={messages} />
+          <div className="mt-8 grid gap-6 md:grid-cols-2">
+            {matches.map(({ tournament, reasons }) => (
+              <div key={tournament.id} className="grid gap-3">
+                <TournamentCard tournament={tournament} locale={locale} messages={messages} />
+                {reasons.length > 0 ? (
+                  <div>
+                    <p className="text-sm font-semibold">{messages.quiz.because}</p>
+                    <ul className="mt-2 grid gap-1 text-sm text-foreground/80">
+                      {reasons.map((reason) => (
+                        <li key={reason} className="flex gap-2">
+                          <span aria-hidden="true">✓</span>
+                          <span>{reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </div>
             ))}
           </div>
         )}
-        <div className="mt-8 flex gap-4 text-sm font-semibold">
-          <Link href={localePath(locale, "/quiz")} className="text-accent hover:underline">
+        <div className="mt-8 flex flex-wrap gap-4 text-sm font-semibold">
+          <Link href={localePath(locale, "/quiz")} className="inline-flex min-h-11 items-center text-accent hover:underline">
             {messages.quiz.again}
           </Link>
-          <Link href={localePath(locale, "/tournaments")} className="text-accent hover:underline">
-            {messages.quiz.browse}
-          </Link>
+          {matches.length > 0 ? (
+            <Link href={localePath(locale, "/tournaments")} className="inline-flex min-h-11 items-center text-accent hover:underline">
+              {messages.quiz.browse}
+            </Link>
+          ) : null}
         </div>
       </SiteFrame>
     );
@@ -95,28 +128,3 @@ function one(value: string | string[] | undefined): string {
   return text ?? "";
 }
 
-function filtersFromAnswers(answers: { travel: string; format: string; surface: string; age: string; mood: string }): TournamentFilters {
-  const filters: TournamentFilters = { page: 1 };
-  if (answers.surface === "clay" || answers.surface === "hard" || answers.surface === "grass") {
-    filters.surface = answers.surface;
-  }
-  if (answers.format === "singles" || answers.format === "doubles") filters.discipline = answers.format;
-  if (answers.age === "40" || answers.age === "50" || answers.age === "u18") filters.age = answers.age;
-  if (answers.mood === "serious") filters.audience = "masters";
-  if (answers.mood === "social" || answers.mood === "holiday") filters.audience = "recreational";
-  if (answers.travel === "trip") filters.when = "next-weekend";
-  return filters;
-}
-
-function personality(
-  answers: { travel: string; format: string; surface: string; mood: string },
-  messages: ReturnType<typeof getMessages>,
-): string {
-  const names = messages.quiz.personalities;
-  if (answers.mood === "holiday") return names.aperol;
-  if (answers.surface === "clay") return names.clay;
-  if (answers.mood === "serious") return names.beast;
-  if (answers.format === "doubles" || answers.mood === "social") return names.social;
-  if (answers.travel === "anywhere" || answers.travel === "trip") return names.tourist;
-  return names.warrior;
-}

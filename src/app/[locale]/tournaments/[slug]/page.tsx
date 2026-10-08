@@ -23,6 +23,7 @@ import {
   surfaceLabel,
   translationFor,
 } from "@/lib/tournaments/present";
+import CheckedBadge from "@/components/CheckedBadge";
 import { RegistrationStatus } from "@/components/TournamentCard";
 import { getTournament } from "@/lib/tournaments/queries";
 
@@ -74,9 +75,7 @@ export default async function TournamentPage({
 
   const d = messages.discover;
   const translation = translationFor(tournament, locale);
-  const primaryHref = tournament.registrationUrl || tournament.officialUrl;
-  const primaryLabel = tournament.registrationUrl ? d.register : d.official;
-  const checked = tournament.lastVerifiedAt ? formatDay(tournament.lastVerifiedAt, locale) : null;
+  const sourceHref = tournament.officialUrl || tournament.sourceUrl || null;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SportsEvent",
@@ -111,28 +110,46 @@ export default async function TournamentPage({
         <h1 className="max-w-3xl text-4xl font-bold tracking-tight">{tournament.name}</h1>
         <SaveButton id={tournament.id} saveLabel={d.save} savedLabel={d.saved} unsaveLabel={d.unsave} />
       </div>
-      <p className="mt-3 text-sm font-bold uppercase tracking-wide text-accent">
-        {tournament.eventType === "PLAY_SESSION" ? "🎾" : "🏆"} {eventTypeLabel(tournament.eventType, messages)}
-      </p>
+      <p className="mt-3 text-sm font-bold uppercase tracking-wide text-accent">{eventTypeLabel(tournament.eventType, messages)}</p>
       <p className="mt-3 text-lg text-foreground/80">{placeLine(tournament, locale)}</p>
       <p className="mt-2 text-lg font-medium">
         {formatDateRange(tournament.startsOn, tournament.endsOn, locale)}
         {formatClock(tournament.startTime, tournament.endTime) ? ` · ${formatClock(tournament.startTime, tournament.endTime)}` : ""}
       </p>
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap items-center gap-3">
         <RegistrationStatus status={tournament.publicRegistration} messages={messages} />
+        {tournament.verificationStatus === "verified" ? (
+          <CheckedBadge verifiedAt={tournament.lastVerifiedAt} locale={locale} messages={messages} />
+        ) : null}
       </div>
 
-      {primaryHref ? (
-        <OutboundLink
-          href={primaryHref}
-          event={tournament.registrationUrl ? "registration_click" : "official_click"}
-          tournamentId={tournament.id}
-          className="btn-primary btn-glow mt-6 inline-flex rounded-full px-5 py-3 text-sm font-semibold"
-        >
-          {primaryLabel}
-        </OutboundLink>
-      ) : null}
+      <div className="mt-6 flex flex-col items-start gap-3">
+        {tournament.organizerName ? (
+          <p className="text-sm text-foreground/80">
+            {d.organizer}: {tournament.organizerName}
+          </p>
+        ) : null}
+        {tournament.registrationUrl ? (
+          <OutboundLink
+            href={tournament.registrationUrl}
+            event="registration_click"
+            tournamentId={tournament.id}
+            className="btn-primary inline-flex min-h-11 items-center rounded-full px-5 text-sm font-semibold"
+          >
+            {d.register}
+          </OutboundLink>
+        ) : null}
+        {sourceHref ? (
+          <OutboundLink
+            href={sourceHref}
+            event="official_click"
+            tournamentId={tournament.id}
+            className="text-sm font-semibold text-accent underline-offset-2 hover:underline"
+          >
+            {tournament.officialUrl ? d.official : d.officialSource} →
+          </OutboundLink>
+        ) : null}
+      </div>
 
       <dl className="mt-10 grid gap-4 sm:grid-cols-2">
         <Fact label={d.location} value={`${surfaceLabel(tournament.surface, messages)} · ${environmentLabel(tournament.environment, messages)}`} />
@@ -151,6 +168,8 @@ export default async function TournamentPage({
         ) : null}
       </dl>
 
+      {tournament.categories.length > 0 ? (
+      <>
       <h2 className="mt-10 text-2xl font-bold">{d.categories}</h2>
       <ul className="mt-4 grid gap-3">
         {tournament.categories.map((category) => (
@@ -169,6 +188,8 @@ export default async function TournamentPage({
           </li>
         ))}
       </ul>
+      </>
+      ) : null}
 
       {translation?.description ? <p className="mt-8 max-w-2xl leading-relaxed text-foreground/80">{translation.description}</p> : null}
       {tournament.prizeSummary ? <p className="mt-4 text-sm text-foreground/80">{tournament.prizeSummary}</p> : null}
@@ -186,31 +207,14 @@ export default async function TournamentPage({
         </p>
       ) : null}
 
-      <div className="mt-10 flex flex-wrap gap-4 text-sm">
-        {tournament.officialUrl && tournament.registrationUrl ? (
-          <OutboundLink href={tournament.officialUrl} event="official_click" tournamentId={tournament.id} className="font-semibold text-accent hover:underline">
-            {d.official}
-          </OutboundLink>
-        ) : null}
-        {tournament.contactEmail ? (
-          <a className="text-foreground/80 hover:text-foreground" href={`mailto:${tournament.contactEmail}`}>
+      {tournament.contactEmail ? (
+        <p className="mt-8 text-sm">
+          <a className="font-semibold text-foreground/80 hover:text-foreground" href={`mailto:${tournament.contactEmail}`}>
             {d.contact}
           </a>
-        ) : null}
-      </div>
-
-      <p className="mt-8 text-sm text-foreground/60">
-        {d.source}: {tournament.sourceName || tournament.sourceUrl}
-        {checked ? ` · ${d.checked} ${checked}` : ""}
-        {tournament.sourceUrl ? (
-          <>
-            {" · "}
-            <a href={tournament.sourceUrl} className="underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
-              {tournament.sourceUrl}
-            </a>
-          </>
-        ) : null}
-      </p>
+        </p>
+      ) : null}
+      {tournament.sourceName ? <p className="mt-4 text-sm text-foreground/60">{d.source}: {tournament.sourceName}</p> : null}
     </SiteFrame>
   );
 }

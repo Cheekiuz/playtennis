@@ -1,13 +1,15 @@
-import type { TournamentRecord } from "@/lib/tournaments/types";
+import { EVENT_TYPES, type PublicRegistration, type TournamentRecord } from "@/lib/tournaments/types";
 
-const MAIN_DURATIONS = new Set(["ONE_DAY", "WEEKEND"]);
+const PUBLIC_TYPES = new Set<string>(EVENT_TYPES);
 
-export function isMainFeed(event: Pick<TournamentRecord, "playAudience" | "eventType" | "publicRegistration" | "durationType" | "endsOn">, today: string): boolean {
+export function isMainFeed(event: Pick<TournamentRecord, "playAudience" | "eventType" | "endsOn">, today: string): boolean {
   if (event.playAudience !== "OPEN_AMATEURS") return false;
-  if (event.eventType !== "TOURNAMENT" && event.eventType !== "PLAY_SESSION") return false;
-  if (event.publicRegistration !== "OPEN" && event.publicRegistration !== "NOT_STARTED") return false;
-  if (!MAIN_DURATIONS.has(event.durationType)) return false;
+  if (!PUBLIC_TYPES.has(event.eventType)) return false;
   return event.endsOn >= today;
+}
+
+export function canStillEnter(status: PublicRegistration): boolean {
+  return status === "OPEN" || status === "NOT_STARTED" || status === "UNKNOWN";
 }
 
 export function dedupeKey(parts: {
