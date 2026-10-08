@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { COUNTRIES } from "@/lib/tournaments/countries";
+import { countryCodeFromName, regionName } from "@/lib/tournaments/countries";
+import type { Locale } from "@/lib/i18n";
 import { rangeForPreset, todayIso } from "@/lib/tournaments/dates";
 import { isMainFeed } from "@/lib/tournaments/feed";
 import type {
@@ -46,7 +47,10 @@ const EVENT_SELECT = `
   start_time, end_time, price_label, play_level, original_source_url, source_kind
 `;
 
-const PLAY_CITIES = ["vilnius", "kaunas", "klaipėda", "klaipeda", "palanga", "nida", "utena", "panevėžys", "panevezys"];
+export type EventPlaces = {
+  cities: string[];
+  countries: { code: string; name: string }[];
+};
 
 export type TournamentQueryResult = {
   items: TournamentRecord[];
@@ -180,6 +184,36 @@ export async function getAdminTournament(id: string): Promise<TournamentRecord |
   }
 }
 
+export async function listEventPlaces(locale: Locale): Promise<EventPlaces> {
+  const empty = { cities: [], countries: [] };
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("tournaments")
+      .select("city, country_code")
+      .eq("published", true)
+      .is("archived_at", null)
+      .gte("ends_on", todayIso())
+      .neq("audience", "professional")
+      .limit(1000);
+
+    if (error || !data) return empty;
+
+    const cities = [...new Set(data.map((row) => String(row.city ?? "").trim()).filter(Boolean))].sort((a, b) =>
+      a.localeCompare(b, locale === "lt" ? "lt" : "en"),
+    );
+    const codes = [...new Set(data.map((row) => String(row.country_code ?? "").trim().toLowerCase()).filter((code) => /^[a-z]{2}$/.test(code)))];
+    const countries = codes
+      .map((code) => ({ code, name: regionName(code, locale) }))
+      .sort((a, b) => a.name.localeCompare(b.name, locale === "lt" ? "lt" : "en"));
+
+    return { cities, countries };
+  } catch (error) {
+    console.error("listEventPlaces", error);
+    return empty;
+  }
+}
+
 export async function listSitemapTournaments(): Promise<{ slug: string; updatedAt: string }[]> {
   try {
     const supabase = createServerSupabaseClient();
@@ -258,16 +292,13 @@ function applyListFilters(query: ListQuery, filters: TournamentFilters): ListQue
   if (filters.country && /^[a-z]{2}$/.test(filters.country)) next = next.eq("country_code", filters.country);
   if (filters.surface) next = next.eq("surface", filters.surface);
   if (filters.environment) next = next.eq("environment", filters.environment);
-  if (filters.city && filters.city.toLowerCase() !== "other") next = next.ilike("city", `%${sanitizeLike(filters.city)}%`);
+  if (filters.city) next = next.ilike("city", `%${sanitizeLike(filters.city)}%`);
 
   if (filters.q) {
     const safe = sanitizeLike(filters.q);
-    const country = COUNTRIES.find((item) => {
-      const needle = filters.q!.toLowerCase();
-      return item.nameEn.toLowerCase().includes(needle) || item.nameLt.toLowerCase().includes(needle);
-    });
+    const country = countryCodeFromName(filters.q);
     const clauses = [`name.ilike.%${safe}%`, `city.ilike.%${safe}%`];
-    if (country) clauses.push(`country_code.eq.${country.code}`);
+    if (country) clauses.push(`country_code.eq.${country}`);
     next = next.or(clauses.join(","));
   }
 
@@ -303,10 +334,6 @@ function matchesEvent(tournament: TournamentRecord, filters: TournamentFilters):
   if (filters.registration === "closed" && tournament.publicRegistration !== "CLOSED") return false;
   if (filters.registration === "full" && tournament.publicRegistration !== "FULL") return false;
   if (filters.registration === "unknown" && tournament.publicRegistration !== "UNKNOWN") return false;
-  if (filters.city?.toLowerCase() === "other") {
-    const city = tournament.city.trim().toLowerCase();
-    if (PLAY_CITIES.includes(city)) return false;
-  }
   return true;
 }
 

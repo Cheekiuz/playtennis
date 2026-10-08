@@ -9,13 +9,14 @@ import TournamentFilters from "@/components/TournamentFilters";
 import type { Locale, Messages } from "@/lib/i18n";
 import { localePath } from "@/lib/i18n";
 import { canStillEnter } from "@/lib/tournaments/feed";
-import { listTournaments } from "@/lib/tournaments/queries";
+import { listEventPlaces, listTournaments } from "@/lib/tournaments/queries";
 import type { TournamentRecord } from "@/lib/tournaments/types";
 
 export default async function DiscoverHome({ locale, messages }: { locale: Locale; messages: Messages }) {
-  const [upcoming, weekend] = await Promise.all([
+  const [upcoming, weekend, places] = await Promise.all([
     listTournaments({ page: 1 }, 12),
     listTournaments({ when: "this-weekend", page: 1 }, 8),
+    listEventPlaces(locale),
   ]);
   const home = messages.home;
   const discover = messages.discover;
@@ -61,8 +62,9 @@ export default async function DiscoverHome({ locale, messages }: { locale: Local
           {hasEvents ? (
             <div id="find" className="mt-10 rounded-2xl border border-[#e2e2e2] bg-white p-4 sm:p-6">
               <h2 className="text-2xl font-bold tracking-tight text-[#111915]">{home.findTitle}</h2>
+              <p className="mt-1 text-sm text-[#434845]">{home.wherePrompt}</p>
               <div className="mt-4">
-                <TournamentFilters locale={locale} messages={messages} values={{}} appearance="paper" />
+                <TournamentFilters locale={locale} messages={messages} values={{}} places={places} appearance="paper" />
               </div>
             </div>
           ) : null}

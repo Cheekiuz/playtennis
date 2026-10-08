@@ -4,18 +4,21 @@ import { useEffect, useId, useState } from "react";
 import { track } from "@/lib/analytics";
 import type { Locale, Messages } from "@/lib/i18n";
 import { localePath } from "@/lib/i18n";
-import { COUNTRIES } from "@/lib/tournaments/countries";
+import { regionName } from "@/lib/tournaments/countries";
+import type { EventPlaces } from "@/lib/tournaments/queries";
 import { EVENT_TYPES, type TournamentFilters } from "@/lib/tournaments/types";
 
 export default function TournamentFilters({
   locale,
   messages,
   values,
+  places,
   appearance = "theme",
 }: {
   locale: Locale;
   messages: Messages;
   values: TournamentFilters;
+  places: EventPlaces;
   appearance?: "theme" | "paper";
 }) {
   const [open, setOpen] = useState(false);
@@ -43,6 +46,8 @@ export default function TournamentFilters({
   }, [open]);
 
   const advanced = advancedValues(values);
+  const cityListId = useId();
+  const cities = places.cities.includes(values.city ?? "") || !values.city ? places.cities : [values.city, ...places.cities];
 
   return (
     <form
@@ -74,24 +79,22 @@ export default function TournamentFilters({
             ["custom", d.custom],
           ]}
         />
-        <Select
-          label={d.city}
-          name="city"
-          defaultValue={values.city ?? ""}
-          fieldClass={fieldClass}
-          labelClass={labelClass}
-          options={[
-            ["", d.anyCity],
-            ["Vilnius", "Vilnius"],
-            ["Kaunas", "Kaunas"],
-            ["Klaipėda", "Klaipėda"],
-            ["Palanga", "Palanga"],
-            ["Nida", "Nida"],
-            ["Utena", "Utena"],
-            ["Panevėžys", "Panevėžys"],
-            ["other", d.otherCity],
-          ]}
-        />
+        <label className={labelClass}>
+          <span className="font-semibold">{d.city}</span>
+          <input
+            className={fieldClass}
+            name="city"
+            defaultValue={values.city ?? ""}
+            placeholder={d.anyCity}
+            list={cityListId}
+            autoComplete="off"
+          />
+          <datalist id={cityListId}>
+            {cities.map((city) => (
+              <option key={city} value={city} />
+            ))}
+          </datalist>
+        </label>
         <Select
           label={d.eventType}
           name="event"
@@ -263,7 +266,7 @@ export default function TournamentFilters({
                 defaultValue={values.country ?? ""}
                 fieldClass={fieldClass}
                 labelClass={labelClass}
-                options={countryOptions(locale, d.anyCountry)}
+                options={countryOptions(places, values.country, locale, d.anyCountry)}
               />
               <Select label={d.from} name="from" defaultValue={values.from ?? ""} fieldClass={fieldClass} labelClass={labelClass} options={[]} date />
               <Select label={d.to} name="to" defaultValue={values.to ?? ""} fieldClass={fieldClass} labelClass={labelClass} options={[]} date />
@@ -361,9 +364,10 @@ function Select({
   );
 }
 
-function countryOptions(locale: Locale, anyLabel: string): string[][] {
-  return [
-    ["", anyLabel],
-    ...COUNTRIES.map((country) => [country.code, locale === "lt" ? country.nameLt : country.nameEn] as [string, string]),
-  ];
+function countryOptions(places: EventPlaces, selected: string | undefined, locale: Locale, anyLabel: string): string[][] {
+  const countries = [...places.countries];
+  if (selected && !countries.some((country) => country.code === selected)) {
+    countries.push({ code: selected, name: regionName(selected, locale) });
+  }
+  return [["", anyLabel], ...countries.map((country) => [country.code, country.name] as [string, string])];
 }

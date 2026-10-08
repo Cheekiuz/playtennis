@@ -24,8 +24,54 @@ export const DESTINATION_CODES = ["es", "it", "hr", "se"] as const;
 
 export function countryName(code: string, locale: "lt" | "en"): string {
   const country = COUNTRIES.find((item) => item.code === code);
-  if (!country) return code.toUpperCase();
-  return locale === "lt" ? country.nameLt : country.nameEn;
+  if (country) return locale === "lt" ? country.nameLt : country.nameEn;
+  return regionName(code, locale);
+}
+
+export function regionName(code: string, locale: "lt" | "en"): string {
+  const normalized = code.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(normalized)) return code;
+  try {
+    const name = new Intl.DisplayNames([locale === "lt" ? "lt" : "en"], { type: "region" }).of(normalized);
+    if (name && name.toUpperCase() !== normalized) return name;
+  } catch {
+    // Ignore unsupported locales and fall through.
+  }
+  return normalized;
+}
+
+export function countryCodeFromName(query: string): string | null {
+  const needle = query.trim().toLowerCase();
+  if (needle.length < 4) return null;
+  const index = countryNameIndex();
+  const exact = index.get(needle);
+  if (exact) return exact;
+  for (const [name, code] of index) {
+    if (name.startsWith(needle)) return code;
+  }
+  return null;
+}
+
+let countryNames: Map<string, string> | null = null;
+
+function countryNameIndex(): Map<string, string> {
+  if (countryNames) return countryNames;
+  const names = new Map<string, string>();
+  const english = new Intl.DisplayNames(["en"], { type: "region" });
+  const lithuanian = new Intl.DisplayNames(["lt"], { type: "region" });
+  for (let first = 65; first <= 90; first += 1) {
+    for (let second = 65; second <= 90; second += 1) {
+      const code = String.fromCharCode(first, second);
+      const lower = code.toLowerCase();
+      for (const display of [english, lithuanian]) {
+        const name = display.of(code);
+        if (!name || name.toUpperCase() === code) continue;
+        names.set(name.toLowerCase(), lower);
+      }
+    }
+  }
+  countryNames = names;
+  return names;
 }
 
 export function flagEmoji(code: string): string {

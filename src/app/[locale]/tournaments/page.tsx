@@ -6,7 +6,7 @@ import TournamentFilters from "@/components/TournamentFilters";
 import TournamentMap from "@/components/TournamentMap";
 import { getMessages, isValidLocale, localePath, type Locale } from "@/lib/i18n";
 import { absoluteUrl, routeAlternates } from "@/lib/seo";
-import { filtersAreIndexable, listTournaments, parseFilters } from "@/lib/tournaments/queries";
+import { filtersAreIndexable, listEventPlaces, listTournaments, parseFilters } from "@/lib/tournaments/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +52,10 @@ export default async function TournamentsPage({
   const rawParams = await searchParams;
   const view = rawParams.view === "map" ? "map" : "list";
   const filters = parseFilters(rawParams);
-  const result = await listTournaments(filters, view === "map" ? 200 : PAGE_SIZE);
+  const [result, places] = await Promise.all([
+    listTournaments(filters, view === "map" ? 200 : PAGE_SIZE),
+    listEventPlaces(locale),
+  ]);
   const page = filters.page ?? 1;
   const pages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
   const base = localePath(locale, "/tournaments");
@@ -80,7 +83,7 @@ export default async function TournamentsPage({
         </Link>
       </p>
       <div className="mt-6">
-        <TournamentFilters locale={locale} messages={messages} values={filters} />
+        <TournamentFilters locale={locale} messages={messages} values={filters} places={places} />
       </div>
       <div className="mt-6 flex gap-3 text-sm font-semibold">
         <Link href={viewHref(base, filters, "list")} className={view === "list" ? "text-accent" : "text-foreground/70"} aria-current={view === "list" ? "page" : undefined}>
