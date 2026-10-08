@@ -79,8 +79,23 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
       <div className="grid gap-4 sm:grid-cols-3">
         <Select label="Surface" name="surface" defaultValue={tournament?.surface ?? "hard"} options={["clay", "hard", "grass", "carpet", "other"]} />
         <Select label="Indoor or outdoor" name="environment" defaultValue={tournament?.environment ?? "outdoor"} options={["indoor", "outdoor", "mixed"]} />
-        <Select label="Audience" name="audience" defaultValue={tournament?.audience ?? "recreational"} options={["recreational", "masters", "junior", "professional"]} />
+        <Select label="Legacy audience" name="audience" defaultValue={tournament?.audience ?? "recreational"} options={["recreational", "masters", "junior", "professional"]} />
       </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Select label="Event type" name="event_type" defaultValue={tournament?.eventType ?? "TOURNAMENT"} options={["TOURNAMENT", "PLAY_SESSION"]} />
+        <Select label="Format" name="event_format" defaultValue={tournament?.eventFormat ?? "MULTIPLE"} options={["SINGLES", "MEN_DOUBLES", "WOMEN_DOUBLES", "MIXED_DOUBLES", "MULTIPLE"]} />
+        <Select label="Duration" name="duration_type" defaultValue={tournament?.durationType ?? "ONE_DAY"} options={["ONE_DAY", "WEEKEND", "ONGOING", "LEAGUE"]} />
+        <Select label="Who can play" name="play_audience" defaultValue={tournament?.playAudience ?? "OPEN_AMATEURS"} options={["OPEN_AMATEURS", "CLUB_MEMBERS", "INVITATION_ONLY", "COMPANY", "PROFESSION_SPECIFIC", "JUNIORS"]} />
+        <Select label="Public registration" name="public_registration" defaultValue={tournament?.publicRegistration ?? "UNKNOWN"} options={["OPEN", "NOT_STARTED", "CLOSED", "FULL", "INVITATION_ONLY", "UNKNOWN"]} />
+        <Select label="Level" name="play_level" defaultValue={tournament?.playLevel ?? ""} options={["", "LIGHT", "MIDDLE", "ADVANCED", "NTRP", "OTHER"]} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Start time" name="start_time" type="time" defaultValue={tournament?.startTime ?? ""} />
+        <Field label="End time" name="end_time" type="time" defaultValue={tournament?.endTime ?? ""} />
+      </div>
+      <Field label="Price" name="price_label" defaultValue={tournament?.priceLabel ?? ""} />
+      <Field label="Original source URL" name="original_source_url" defaultValue={tournament?.originalSourceUrl ?? ""} />
+      <Select label="Source kind" name="source_kind" defaultValue={tournament?.sourceKind ?? "ORGANISER_WEBSITE"} options={["ORGANISER_WEBSITE", "FACEBOOK", "INSTAGRAM", "AGGREGATOR", "MUNICIPALITY", "VENUE", "OTHER"]} />
       <Select label="Type" name="tournament_type" defaultValue={tournament?.tournamentType ?? "recreational"} options={["club", "national", "masters", "recreational", "other"]} />
       <Field label="Series" name="series_name" defaultValue={tournament?.seriesName ?? ""} />
       <Field label="Organizer" name="organizer_name" defaultValue={tournament?.organizerName ?? ""} />

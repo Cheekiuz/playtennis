@@ -24,6 +24,22 @@ export type Level = (typeof LEVELS)[number];
 export type LifecycleStatus = (typeof LIFECYCLE)[number];
 export type RegistrationStatus = (typeof REGISTRATION)[number];
 
+export const EVENT_TYPES = ["TOURNAMENT", "PLAY_SESSION"] as const;
+export const EVENT_FORMATS = ["SINGLES", "MEN_DOUBLES", "WOMEN_DOUBLES", "MIXED_DOUBLES", "MULTIPLE"] as const;
+export const DURATION_TYPES = ["ONE_DAY", "WEEKEND", "ONGOING", "LEAGUE"] as const;
+export const PLAY_AUDIENCES = ["OPEN_AMATEURS", "CLUB_MEMBERS", "INVITATION_ONLY", "COMPANY", "PROFESSION_SPECIFIC", "JUNIORS"] as const;
+export const PUBLIC_REGISTRATION = ["OPEN", "NOT_STARTED", "CLOSED", "FULL", "INVITATION_ONLY", "UNKNOWN"] as const;
+export const REGISTRATION_METHODS = ["WEBSITE", "EXTERNAL_FORM", "EMAIL", "PHONE", "FACEBOOK", "OTHER"] as const;
+export const PLAY_LEVELS = ["LIGHT", "MIDDLE", "ADVANCED", "NTRP", "OTHER"] as const;
+export const SOURCE_KINDS = ["ORGANISER_WEBSITE", "FACEBOOK", "INSTAGRAM", "AGGREGATOR", "MUNICIPALITY", "VENUE", "OTHER"] as const;
+
+export type EventType = (typeof EVENT_TYPES)[number];
+export type EventFormat = (typeof EVENT_FORMATS)[number];
+export type DurationType = (typeof DURATION_TYPES)[number];
+export type PlayAudience = (typeof PLAY_AUDIENCES)[number];
+export type PublicRegistration = (typeof PUBLIC_REGISTRATION)[number];
+export type PlayLevel = (typeof PLAY_LEVELS)[number];
+
 export type TournamentCategory = {
   id: string;
   discipline: Discipline;
@@ -78,6 +94,17 @@ export type TournamentRecord = {
   lastVerifiedAt: string | null;
   published: boolean;
   updatedAt: string;
+  eventType: EventType;
+  eventFormat: EventFormat;
+  durationType: DurationType;
+  playAudience: PlayAudience;
+  publicRegistration: PublicRegistration;
+  startTime: string | null;
+  endTime: string | null;
+  priceLabel: string | null;
+  playLevel: PlayLevel | null;
+  originalSourceUrl: string | null;
+  sourceKind: string | null;
   translations: {
     locale: string;
     description: string | null;
@@ -102,5 +129,8 @@ export type TournamentFilters = {
   discipline?: string;
   level?: string;
   registration?: string;
+  event?: string;
+  format?: string;
+  playLevel?: string;
   page?: number;
 };

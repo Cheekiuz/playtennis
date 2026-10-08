@@ -10,20 +10,25 @@ import { localePath } from "@/lib/i18n";
 import { SURFACE_APRON } from "@/lib/court-draw";
 import { COUNTRIES } from "@/lib/tournaments/countries";
 import {
-  categorySummary,
-  countryLabel,
+  eventTypeLabel,
+  formatClock,
   formatDateRange,
-  lifecycleLabel,
+  formatLabel,
   lowestFee,
-  registrationLabel,
-  surfaceLabel,
+  playLevelLabel,
 } from "@/lib/tournaments/present";
+import { RegistrationStatus } from "@/components/TournamentCard";
+import OutboundLink from "@/components/OutboundLink";
 import { listTournaments } from "@/lib/tournaments/queries";
 import type { TournamentRecord } from "@/lib/tournaments/types";
 
 export default async function DiscoverHome({ locale, messages }: { locale: Locale; messages: Messages }) {
-  const upcoming = await listTournaments({ page: 1 }, 24);
-  const cards = upcoming.items.slice(0, 4);
+  const [upcoming, weekend] = await Promise.all([
+    listTournaments({ page: 1 }, 12),
+    listTournaments({ when: "this-weekend", page: 1 }, 4),
+  ]);
+  const weekendIds = new Set(weekend.items.map((event) => event.id));
+  const coming = upcoming.items.filter((event) => !weekendIds.has(event.id)).slice(0, 4);
   const cities = [...new Set(upcoming.items.map((tournament) => tournament.city).filter(Boolean))].slice(0, 8);
   const home = messages.home;
   const discover = messages.discover;
@@ -136,18 +141,16 @@ export default async function DiscoverHome({ locale, messages }: { locale: Local
                   {city}
                 </FilterChip>
               ))}
-              <FilterChip href={`${tournamentsHref}?audience=recreational`}>{discover.audiences.recreational}</FilterChip>
-              <FilterChip href={`${tournamentsHref}?audience=masters`}>{discover.audiences.masters}</FilterChip>
+              <FilterChip href={`${tournamentsHref}?event=TOURNAMENT`}>{discover.eventTypes.TOURNAMENT}</FilterChip>
+              <FilterChip href={`${tournamentsHref}?event=PLAY_SESSION`}>{discover.eventTypes.PLAY_SESSION}</FilterChip>
+              <FilterChip href={`${tournamentsHref}?registration=open`}>{discover.openNow}</FilterChip>
             </div>
-            {cards.length === 0 ? (
-              <p className="text-sm text-[#434845]">{discover.empty}</p>
-            ) : (
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-                {cards.map((tournament) => (
-                  <HomeTournamentCard key={tournament.id} tournament={tournament} locale={locale} messages={messages} />
-                ))}
-              </div>
-            )}
+            <EventGrid events={weekend.items} locale={locale} messages={messages} empty={discover.empty} />
+            <div className="border-t border-[#e2e2e2] pt-8">
+              <h2 className="text-[28px] font-bold tracking-tight text-[#111915] sm:text-[40px]">{home.comingTitle}</h2>
+              <p className="mt-1 text-[15px] leading-6 text-[#434845]">{home.comingSupport}</p>
+            </div>
+            <EventGrid events={coming} locale={locale} messages={messages} empty={discover.empty} />
           </div>
         </section>
 
@@ -265,6 +268,27 @@ function WhyPoint({ index, title, body }: { index: string; title: string; body: 
   );
 }
 
+function EventGrid({
+  events,
+  locale,
+  messages,
+  empty,
+}: {
+  events: TournamentRecord[];
+  locale: Locale;
+  messages: Messages;
+  empty: string;
+}) {
+  if (events.length === 0) return <p className="text-sm text-[#434845]">{empty}</p>;
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {events.map((tournament) => (
+        <HomeTournamentCard key={tournament.id} tournament={tournament} locale={locale} messages={messages} />
+      ))}
+    </div>
+  );
+}
+
 function HomeTournamentCard({
   tournament,
   locale,
@@ -275,21 +299,18 @@ function HomeTournamentCard({
   messages: Messages;
 }) {
   const href = localePath(locale, `/tournaments/${tournament.slug}`);
-  const fee = lowestFee(tournament.categories, locale, messages.discover.fromFee);
-  const summary = categorySummary(tournament.categories, messages);
-  const place = [tournament.city, countryLabel(tournament, locale), tournament.venueName].filter(Boolean).join(" · ");
-  const badge = SURFACE_APRON[tournament.surface as keyof typeof SURFACE_APRON] ?? "#2b2d2f";
-  const registration =
-    tournament.registrationStatus === "unknown"
-      ? lifecycleLabel(tournament.lifecycleStatus, messages)
-      : registrationLabel(tournament.registrationStatus, messages);
+  const d = messages.discover;
+  const fee = tournament.priceLabel || lowestFee(tournament.categories, locale, d.fromFee);
+  const place = [tournament.city, tournament.venueName].filter(Boolean).join(" · ");
+  const time = formatClock(tournament.startTime, tournament.endTime);
+  const canRegister = Boolean(tournament.registrationUrl) && (tournament.publicRegistration === "OPEN" || tournament.publicRegistration === "NOT_STARTED");
 
   return (
     <article className="flex h-full flex-col justify-between overflow-hidden rounded-xl border border-[#e2e2e2] bg-white">
       <div>
         <div className="flex items-center justify-between gap-3 border-b border-[#e2e2e2] bg-[#f3f4f3] p-4">
-          <span className="rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white" style={{ background: badge }}>
-            {surfaceLabel(tournament.surface, messages)}
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[#506600]">
+            {tournament.eventType === "PLAY_SESSION" ? "🎾" : "🏆"} {eventTypeLabel(tournament.eventType, messages)}
           </span>
           <span className="text-xs font-bold tabular-nums text-[#434845]">
             {formatDateRange(tournament.startsOn, tournament.endsOn, locale)}
@@ -298,12 +319,15 @@ function HomeTournamentCard({
         <div className="space-y-3 p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-[#434845]">{place}</p>
-              <h3 className="mt-1 text-xl font-bold tracking-tight">
+              <h3 className="text-xl font-bold tracking-tight">
                 <Link href={href} className="hover:text-[#506600]">
                   {tournament.name}
                 </Link>
               </h3>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-[#434845]">
+                {place}
+                {time ? ` · ${time}` : ""}
+              </p>
             </div>
             <SaveButton
               id={tournament.id}
@@ -313,18 +337,30 @@ function HomeTournamentCard({
               paper
             />
           </div>
-          {summary ? <p className="text-sm text-[#434845]">{summary}</p> : null}
-          <p className="text-sm text-[#1a1c1c]">{registration}</p>
+          {tournament.eventFormat !== "MULTIPLE" ? <p className="text-sm text-[#434845]">{formatLabel(tournament.eventFormat, messages)}</p> : null}
+          {tournament.playLevel ? <p className="text-sm text-[#434845]">{playLevelLabel(tournament.playLevel, messages)}</p> : null}
           {fee ? <p className="text-sm text-[#434845]">{fee}</p> : null}
+          <RegistrationStatus status={tournament.publicRegistration} messages={messages} />
         </div>
       </div>
       <div className="px-5 pb-5">
-        <Link
-          href={href}
-          className="flex w-full items-center justify-center rounded-lg border border-[#e2e2e2] bg-[#eeeeed] px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-[#1a1c1c] hover:border-[#111915] hover:bg-[#111915] hover:text-[#c1f100]"
-        >
-          {messages.discover.view}
-        </Link>
+        {canRegister ? (
+          <OutboundLink
+            href={tournament.registrationUrl!}
+            event="registration_click"
+            tournamentId={tournament.id}
+            className="flex w-full items-center justify-center rounded-lg border border-[#111915] bg-[#111915] px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-[#c1f100] hover:bg-[#506600]"
+          >
+            {d.register}
+          </OutboundLink>
+        ) : (
+          <Link
+            href={href}
+            className="flex w-full items-center justify-center rounded-lg border border-[#e2e2e2] bg-[#eeeeed] px-4 py-2.5 text-[10px] font-bold uppercase tracking-wider text-[#1a1c1c] hover:border-[#111915] hover:bg-[#111915] hover:text-[#c1f100]"
+          >
+            {d.view}
+          </Link>
+        )}
       </div>
     </article>
   );

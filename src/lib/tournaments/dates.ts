@@ -52,6 +52,12 @@ export function rangeForPreset(preset: string | undefined, from?: string, to?: s
     return { from: formatIso(saturday), to: formatIso(addDays(saturday, 1)) };
   }
 
+  if (preset === "this-month") {
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return { from: formatIso(start), to: formatIso(end) };
+  }
+
   if (preset === "next-month") {
     const start = new Date(today.getFullYear(), today.getMonth() + 1, 1);
     const end = new Date(today.getFullYear(), today.getMonth() + 2, 0);

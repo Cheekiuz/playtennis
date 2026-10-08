@@ -76,6 +76,31 @@ export function registrationLabel(status: string, messages: Messages): string {
   return labels[status] ?? status;
 }
 
+export function eventTypeLabel(type: string, messages: Messages): string {
+  const labels = messages.discover.eventTypes as Record<string, string>;
+  return labels[type] ?? type;
+}
+
+export function formatLabel(format: string, messages: Messages): string {
+  const labels = messages.discover.formats as Record<string, string>;
+  return labels[format] ?? format;
+}
+
+export function playLevelLabel(level: string, messages: Messages): string {
+  const labels = messages.discover.playLevels as Record<string, string>;
+  return labels[level] ?? level;
+}
+
+export function publicRegistrationLabel(status: string, messages: Messages): string {
+  const labels = messages.discover.publicRegistration as Record<string, string>;
+  return labels[status] ?? status;
+}
+
+export function formatClock(start: string | null, end: string | null): string | null {
+  if (!start) return null;
+  return end ? `${start}-${end}` : start;
+}
+
 export function categorySummary(categories: TournamentCategory[], messages: Messages): string {
   if (categories.length === 0) return "";
   const groups = new Map<string, Set<string>>();

@@ -4,7 +4,24 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, slugify } from "@/lib/tournaments/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { AUDIENCES, DISCIPLINES, ENVIRONMENTS, GENDERS, LEVELS, LIFECYCLE, REGISTRATION, SURFACES, TOURNAMENT_TYPES } from "@/lib/tournaments/types";
+import { dedupeKey } from "@/lib/tournaments/feed";
+import {
+  DISCIPLINES,
+  DURATION_TYPES,
+  ENVIRONMENTS,
+  EVENT_FORMATS,
+  EVENT_TYPES,
+  GENDERS,
+  LEVELS,
+  LIFECYCLE,
+  PLAY_AUDIENCES,
+  PLAY_LEVELS,
+  PUBLIC_REGISTRATION,
+  REGISTRATION,
+  SOURCE_KINDS,
+  SURFACES,
+  TOURNAMENT_TYPES,
+} from "@/lib/tournaments/types";
 
 export type AdminFormState = { error?: string };
 
@@ -106,7 +123,7 @@ export async function saveTournament(_prev: AdminFormState, formData: FormData):
       organizer_id: organizerId,
       series_name: text(formData, "series_name") || null,
       tournament_type: oneOf(text(formData, "tournament_type"), TOURNAMENT_TYPES, "recreational"),
-      audience: oneOf(text(formData, "audience"), AUDIENCES, "recreational"),
+      audience: legacyAudience(oneOf(text(formData, "play_audience"), PLAY_AUDIENCES, "OPEN_AMATEURS")),
       country_code: country,
       city,
       venue_id: venueId,
@@ -114,7 +131,25 @@ export async function saveTournament(_prev: AdminFormState, formData: FormData):
       ends_on: endsOn,
       timezone: text(formData, "timezone") || "Europe/Vilnius",
       registration_deadline: text(formData, "registration_deadline") || null,
-      registration_status: oneOf(text(formData, "registration_status"), REGISTRATION, "unknown"),
+      registration_status: legacyRegistration(oneOf(text(formData, "public_registration"), PUBLIC_REGISTRATION, "UNKNOWN")),
+      event_type: oneOf(text(formData, "event_type"), EVENT_TYPES, "TOURNAMENT"),
+      event_format: oneOf(text(formData, "event_format"), EVENT_FORMATS, "MULTIPLE"),
+      duration_type: oneOf(text(formData, "duration_type"), DURATION_TYPES, "ONE_DAY"),
+      play_audience: oneOf(text(formData, "play_audience"), PLAY_AUDIENCES, "OPEN_AMATEURS"),
+      public_registration: oneOf(text(formData, "public_registration"), PUBLIC_REGISTRATION, "UNKNOWN"),
+      start_time: text(formData, "start_time") || null,
+      end_time: text(formData, "end_time") || null,
+      price_label: text(formData, "price_label") || null,
+      play_level: text(formData, "play_level") ? oneOf(text(formData, "play_level"), PLAY_LEVELS, "OTHER") : null,
+      original_source_url: text(formData, "original_source_url") || null,
+      source_kind: oneOf(text(formData, "source_kind"), SOURCE_KINDS, "ORGANISER_WEBSITE"),
+      dedupe_key: dedupeKey({
+        name,
+        startsOn,
+        city,
+        format: oneOf(text(formData, "event_format"), EVENT_FORMATS, "MULTIPLE"),
+        organizer: text(formData, "organizer_name"),
+      }),
       registration_url: text(formData, "registration_url") || null,
       official_url: text(formData, "official_url") || null,
       source_id: sourceId,
@@ -138,7 +173,11 @@ export async function saveTournament(_prev: AdminFormState, formData: FormData):
       ? await supabase.from("tournaments").update(row).eq("id", id).select("id").single()
       : await supabase.from("tournaments").insert(row).select("id").single();
 
-    if (saved.error || !saved.data) return { error: saved.error?.message ?? "Could not save the tournament." };
+    if (saved.error || !saved.data) {
+      const message = saved.error?.message ?? "Could not save the event.";
+      if (/dedupe_key/i.test(message)) return { error: "This event is already listed." };
+      return { error: message };
+    }
     const tournamentId = saved.data.id as string;
 
     await supabase.from("tournament_categories").delete().eq("tournament_id", tournamentId);
@@ -233,6 +272,18 @@ function numberOrNull(value: string): number | null {
 
 function oneOf<T extends string>(value: string, allowed: readonly T[], fallback: T): T {
   return (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
+function legacyAudience(audience: string): "recreational" | "junior" | "professional" {
+  if (audience === "JUNIORS") return "junior";
+  if (audience === "OPEN_AMATEURS") return "recreational";
+  return "professional";
+}
+
+function legacyRegistration(status: string): "open" | "closed" | "unknown" {
+  if (status === "OPEN" || status === "NOT_STARTED") return "open";
+  if (status === "UNKNOWN") return "unknown";
+  return "closed";
 }
 
 function isRedirect(error: unknown): boolean {

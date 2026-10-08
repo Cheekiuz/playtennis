@@ -50,19 +50,52 @@ export default function TournamentFilters({
       ) : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Select label={d.country} name="country" defaultValue={values.country ?? ""} options={countryOptions(locale, d.anyCountry)} />
+        <Select
+          label={d.registrationLabel}
+          name="registration"
+          defaultValue={values.registration ?? ""}
+          options={[
+            ["", d.anyRegistration],
+            ["open", d.openNow],
+            ["soon", d.openingSoon],
+          ]}
+        />
+        <Select
+          label={d.eventType}
+          name="event"
+          defaultValue={values.event ?? ""}
+          options={[
+            ["", d.anyType],
+            ["TOURNAMENT", d.eventTypes.TOURNAMENT],
+            ["PLAY_SESSION", d.eventTypes.PLAY_SESSION],
+          ]}
+        />
         <Select
           label={d.date}
           name="when"
           defaultValue={values.when ?? ""}
           options={[
             ["", d.anyDate],
-            ["today", d.today],
-            ["this-week", d.thisWeek],
             ["this-weekend", d.thisWeekend],
             ["next-weekend", d.nextWeekend],
-            ["next-month", d.nextMonth],
+            ["this-month", d.thisMonth],
             ["custom", d.custom],
+          ]}
+        />
+        <Select
+          label={d.city}
+          name="city"
+          defaultValue={values.city ?? ""}
+          options={[
+            ["", d.anyCity],
+            ["Vilnius", "Vilnius"],
+            ["Kaunas", "Kaunas"],
+            ["Klaipėda", "Klaipėda"],
+            ["Palanga", "Palanga"],
+            ["Nida", "Nida"],
+            ["Utena", "Utena"],
+            ["Panevėžys", "Panevėžys"],
+            ["other", d.otherCity],
           ]}
         />
         <Select
@@ -109,10 +142,7 @@ export default function TournamentFilters({
       {allowMore ? (
       <div className={`${open ? "fixed inset-x-0 bottom-0 z-40 grid max-h-[70vh] overflow-auto" : "hidden"} gap-3 border border-border bg-card p-4 sm:static sm:z-auto sm:grid sm:max-h-none`}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="grid gap-1 text-sm">
-            <span className="font-semibold">{d.city}</span>
-            <input className={fieldClass} name="city" defaultValue={values.city ?? ""} />
-          </label>
+          <Select label={d.country} name="country" defaultValue={values.country ?? ""} options={countryOptions(locale, d.anyCountry)} />
           <Select label={d.from} name="from" defaultValue={values.from ?? ""} options={[]} date />
           <Select label={d.to} name="to" defaultValue={values.to ?? ""} options={[]} date />
           <Select
@@ -155,36 +185,28 @@ export default function TournamentFilters({
             ]}
           />
           <Select
-            label={d.discipline}
-            name="discipline"
-            defaultValue={values.discipline ?? ""}
+            label={d.format}
+            name="format"
+            defaultValue={values.format ?? ""}
             options={[
-              ["", d.anyDiscipline],
-              ["singles", d.disciplines.singles],
-              ["doubles", d.disciplines.doubles],
-              ["mixed_doubles", d.disciplines.mixed_doubles],
+              ["", d.anyFormat],
+              ["SINGLES", d.formats.SINGLES],
+              ["MEN_DOUBLES", d.formats.MEN_DOUBLES],
+              ["WOMEN_DOUBLES", d.formats.WOMEN_DOUBLES],
+              ["MIXED_DOUBLES", d.formats.MIXED_DOUBLES],
             ]}
           />
           <Select
-            label={d.level}
-            name="level"
-            defaultValue={values.level ?? ""}
+            label={d.playLevel}
+            name="playLevel"
+            defaultValue={values.playLevel ?? ""}
             options={[
-              ["", d.anyLevel],
-              ["recreational", d.levels.recreational],
-              ["club", d.levels.club],
-              ["competitive", d.levels.competitive],
-              ["national", d.levels.national],
-            ]}
-          />
-          <Select
-            label={d.registrationFilter}
-            name="registration"
-            defaultValue={values.registration ?? ""}
-            options={[
-              ["", d.anyRegistration],
-              ["open", d.registration.open],
-              ["closed", d.registration.closed],
+              ["", d.anyPlayLevel],
+              ["LIGHT", d.playLevels.LIGHT],
+              ["MIDDLE", d.playLevels.MIDDLE],
+              ["ADVANCED", d.playLevels.ADVANCED],
+              ["NTRP", d.playLevels.NTRP],
+              ["OTHER", d.playLevels.OTHER],
             ]}
           />
         </div>

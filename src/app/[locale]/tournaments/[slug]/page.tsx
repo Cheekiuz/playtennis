@@ -10,16 +10,20 @@ import {
   categorySummary,
   disciplineLabel,
   environmentLabel,
+  eventTypeLabel,
+  formatClock,
   formatDateRange,
   formatDay,
+  formatLabel,
   formatMoney,
   genderLabel,
   levelLabel,
-  lifecycleLabel,
   placeLine,
+  playLevelLabel,
   surfaceLabel,
   translationFor,
 } from "@/lib/tournaments/present";
+import { RegistrationStatus } from "@/components/TournamentCard";
 import { getTournament } from "@/lib/tournaments/queries";
 
 export const dynamic = "force-dynamic";
@@ -107,9 +111,17 @@ export default async function TournamentPage({
         <h1 className="max-w-3xl text-4xl font-bold tracking-tight">{tournament.name}</h1>
         <SaveButton id={tournament.id} saveLabel={d.save} savedLabel={d.saved} unsaveLabel={d.unsave} />
       </div>
+      <p className="mt-3 text-sm font-bold uppercase tracking-wide text-accent">
+        {tournament.eventType === "PLAY_SESSION" ? "🎾" : "🏆"} {eventTypeLabel(tournament.eventType, messages)}
+      </p>
       <p className="mt-3 text-lg text-foreground/80">{placeLine(tournament, locale)}</p>
-      <p className="mt-2 text-lg font-medium">{formatDateRange(tournament.startsOn, tournament.endsOn, locale)}</p>
-      <p className="mt-4 text-sm font-semibold text-accent">{lifecycleLabel(tournament.lifecycleStatus, messages)}</p>
+      <p className="mt-2 text-lg font-medium">
+        {formatDateRange(tournament.startsOn, tournament.endsOn, locale)}
+        {formatClock(tournament.startTime, tournament.endTime) ? ` · ${formatClock(tournament.startTime, tournament.endTime)}` : ""}
+      </p>
+      <div className="mt-4">
+        <RegistrationStatus status={tournament.publicRegistration} messages={messages} />
+      </div>
 
       {primaryHref ? (
         <OutboundLink
@@ -124,7 +136,13 @@ export default async function TournamentPage({
 
       <dl className="mt-10 grid gap-4 sm:grid-cols-2">
         <Fact label={d.location} value={`${surfaceLabel(tournament.surface, messages)} · ${environmentLabel(tournament.environment, messages)}`} />
+        {tournament.eventFormat !== "MULTIPLE" ? <Fact label={d.format} value={formatLabel(tournament.eventFormat, messages)} /> : null}
+        {tournament.playLevel ? <Fact label={d.playLevel} value={playLevelLabel(tournament.playLevel, messages)} /> : null}
+        {tournament.priceLabel ? <Fact label={d.fromFee} value={tournament.priceLabel} /> : null}
         {tournament.venueName ? <Fact label={d.venue} value={[tournament.venueName, tournament.venueAddress].filter(Boolean).join(", ")} /> : null}
+        {tournament.originalSourceUrl && tournament.originalSourceUrl !== tournament.sourceUrl ? (
+          <Fact label={d.source} value={tournament.sourceName || tournament.sourceUrl} />
+        ) : null}
         {tournament.registrationDeadline ? (
           <Fact label={d.deadline} value={formatDay(tournament.registrationDeadline, locale)} />
         ) : null}

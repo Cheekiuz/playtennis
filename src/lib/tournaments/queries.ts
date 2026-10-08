@@ -1,12 +1,19 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { COUNTRIES } from "@/lib/tournaments/countries";
 import { rangeForPreset, todayIso } from "@/lib/tournaments/dates";
+import { isMainFeed } from "@/lib/tournaments/feed";
 import type {
   Audience,
   Discipline,
+  DurationType,
   Environment,
+  EventFormat,
+  EventType,
   Gender,
   Level,
+  PlayAudience,
+  PlayLevel,
+  PublicRegistration,
   LifecycleStatus,
   RegistrationStatus,
   Surface,
@@ -32,6 +39,14 @@ const SELECT = `
   ),
   tournament_translations (locale, description, seo_title, seo_description)
 `;
+
+const EVENT_SELECT = `
+  ${SELECT},
+  event_type, event_format, duration_type, play_audience, public_registration,
+  start_time, end_time, price_label, play_level, original_source_url, source_kind
+`;
+
+const PLAY_CITIES = ["vilnius", "kaunas", "klaipėda", "klaipeda", "palanga", "nida", "utena", "panevėžys", "panevezys"];
 
 export type TournamentQueryResult = {
   items: TournamentRecord[];
@@ -64,6 +79,9 @@ export function parseFilters(raw: Record<string, string | string[] | undefined>)
     discipline: one("discipline"),
     level: one("level"),
     registration: one("registration"),
+    event: one("event"),
+    format: one("format"),
+    playLevel: one("playLevel"),
     page: Number.isFinite(page) && page > 0 ? page : 1,
   };
 }
@@ -74,58 +92,12 @@ export function filtersAreIndexable(filters: TournamentFilters): boolean {
 
 export async function listTournaments(filters: TournamentFilters, pageSize = 24): Promise<TournamentQueryResult> {
   try {
-    const supabase = createServerSupabaseClient();
-    let query = supabase
-      .from("tournaments")
-      .select(SELECT)
-      .eq("published", true)
-      .is("archived_at", null)
-      .order("starts_on", { ascending: true })
-      .limit(400);
-
-    if (filters.audience && isAudience(filters.audience)) {
-      query = query.eq("audience", filters.audience);
-    } else {
-      query = query.neq("audience", "professional");
-    }
-
-    if (!filters.when && !filters.from) {
-      query = query.gte("ends_on", todayIso());
-    }
-
-    const range = rangeForPreset(filters.when, filters.from, filters.to);
-    if (range) {
-      query = query.lte("starts_on", range.to).gte("ends_on", range.from);
-    }
-
-    if (filters.country && /^[a-z]{2}$/.test(filters.country)) {
-      query = query.eq("country_code", filters.country);
-    }
-    if (filters.surface) query = query.eq("surface", filters.surface);
-    if (filters.environment) query = query.eq("environment", filters.environment);
-    if (filters.registration) query = query.eq("registration_status", filters.registration);
-    if (filters.city) query = query.ilike("city", `%${sanitizeLike(filters.city)}%`);
-
-    if (filters.q) {
-      const safe = sanitizeLike(filters.q);
-      const country = COUNTRIES.find((item) => {
-        const needle = filters.q!.toLowerCase();
-        return item.nameEn.toLowerCase().includes(needle) || item.nameLt.toLowerCase().includes(needle);
-      });
-      const clauses = [`name.ilike.%${safe}%`, `city.ilike.%${safe}%`];
-      if (country) clauses.push(`country_code.eq.${country.code}`);
-      query = query.or(clauses.join(","));
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      console.error("listTournaments", error.message);
-      return { items: [], total: 0, ready: true };
-    }
-
-    const mapped = (data ?? [])
-      .map((row) => mapTournament(row as Record<string, unknown>))
-      .filter((tournament) => matchesCategories(tournament, filters));
+    const data = await loadPublished(filters);
+    const mapped = data
+      .map((row) => mapTournament(row))
+      .filter((tournament) => isMainFeed(tournament, todayIso()))
+      .filter((tournament) => matchesCategories(tournament, filters))
+      .filter((tournament) => matchesEvent(tournament, filters));
 
     const page = filters.page ?? 1;
     const start = (page - 1) * pageSize;
@@ -143,13 +115,9 @@ export async function listTournaments(filters: TournamentFilters, pageSize = 24)
 export async function getTournament(slug: string): Promise<TournamentRecord | null> {
   try {
     const supabase = createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from("tournaments")
-      .select(SELECT)
-      .eq("slug", slug)
-      .eq("published", true)
-      .is("archived_at", null)
-      .maybeSingle();
+    const { data, error } = await selectOne((select) =>
+      supabase.from("tournaments").select(select).eq("slug", slug).eq("published", true).is("archived_at", null).maybeSingle(),
+    );
 
     if (error) {
       console.error("getTournament", error.message);
@@ -168,12 +136,9 @@ export async function getTournamentsByIds(ids: string[]): Promise<TournamentReco
 
   try {
     const supabase = createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from("tournaments")
-      .select(SELECT)
-      .in("id", unique)
-      .eq("published", true)
-      .is("archived_at", null);
+    const { data, error } = await selectMany((select) =>
+      supabase.from("tournaments").select(select).in("id", unique).eq("published", true).is("archived_at", null),
+    );
 
     if (error || !data) return [];
     const byId = new Map(data.map((row) => {
@@ -193,12 +158,9 @@ export async function getTournamentsByIds(ids: string[]): Promise<TournamentReco
 export async function listAdminTournaments(): Promise<TournamentRecord[]> {
   try {
     const supabase = createServerSupabaseClient();
-    const { data, error } = await supabase
-      .from("tournaments")
-      .select(SELECT)
-      .is("archived_at", null)
-      .order("starts_on", { ascending: true })
-      .limit(200);
+    const { data, error } = await selectMany((select) =>
+      supabase.from("tournaments").select(select).is("archived_at", null).order("starts_on", { ascending: true }).limit(200),
+    );
     if (error || !data) return [];
     return data.map((row) => mapTournament(row as Record<string, unknown>));
   } catch (error) {
@@ -210,7 +172,7 @@ export async function listAdminTournaments(): Promise<TournamentRecord[]> {
 export async function getAdminTournament(id: string): Promise<TournamentRecord | null> {
   try {
     const supabase = createServerSupabaseClient();
-    const { data, error } = await supabase.from("tournaments").select(SELECT).eq("id", id).maybeSingle();
+    const { data, error } = await selectOne((select) => supabase.from("tournaments").select(select).eq("id", id).maybeSingle());
     if (error || !data) return null;
     return mapTournament(data as Record<string, unknown>);
   } catch {
@@ -249,6 +211,87 @@ function matchesCategories(tournament: TournamentRecord, filters: TournamentFilt
     if (filters.age && !matchesAge(category, filters.age)) return false;
     return true;
   });
+}
+
+async function loadPublished(filters: TournamentFilters): Promise<Record<string, unknown>[]> {
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await selectMany((select) => applyListFilters(supabase.from("tournaments").select(select), filters));
+  if (error) {
+    console.error("listTournaments", error.message);
+    return [];
+  }
+  return (data ?? []) as Record<string, unknown>[];
+}
+
+function applyListFilters<T extends { eq: Function; neq: Function; gte: Function; lte: Function; ilike: Function; or: Function; order: Function; limit: Function; is: Function }>(
+  query: T,
+  filters: TournamentFilters,
+): T {
+  let next = query.eq("published", true).is("archived_at", null).order("starts_on", { ascending: true }).limit(400);
+
+  if (filters.audience && isAudience(filters.audience)) {
+    next = next.eq("audience", filters.audience);
+  } else {
+    next = next.neq("audience", "professional");
+  }
+
+  if (!filters.when && !filters.from) {
+    next = next.gte("ends_on", todayIso());
+  }
+
+  const range = rangeForPreset(filters.when, filters.from, filters.to);
+  if (range) next = next.lte("starts_on", range.to).gte("ends_on", range.from);
+
+  if (filters.country && /^[a-z]{2}$/.test(filters.country)) next = next.eq("country_code", filters.country);
+  if (filters.surface) next = next.eq("surface", filters.surface);
+  if (filters.environment) next = next.eq("environment", filters.environment);
+  if (filters.city && filters.city.toLowerCase() !== "other") next = next.ilike("city", `%${sanitizeLike(filters.city)}%`);
+
+  if (filters.q) {
+    const safe = sanitizeLike(filters.q);
+    const country = COUNTRIES.find((item) => {
+      const needle = filters.q!.toLowerCase();
+      return item.nameEn.toLowerCase().includes(needle) || item.nameLt.toLowerCase().includes(needle);
+    });
+    const clauses = [`name.ilike.%${safe}%`, `city.ilike.%${safe}%`];
+    if (country) clauses.push(`country_code.eq.${country.code}`);
+    next = next.or(clauses.join(","));
+  }
+
+  return next;
+}
+
+async function selectMany(
+  build: (select: string) => PromiseLike<{ data: unknown[] | null; error: { message: string } | null }>,
+): Promise<{ data: unknown[] | null; error: { message: string } | null }> {
+  const full = await build(EVENT_SELECT);
+  if (!full.error || !missingEventColumns(full.error.message)) return full;
+  return build(SELECT);
+}
+
+async function selectOne(
+  build: (select: string) => PromiseLike<{ data: unknown | null; error: { message: string } | null }>,
+): Promise<{ data: unknown | null; error: { message: string } | null }> {
+  const full = await build(EVENT_SELECT);
+  if (!full.error || !missingEventColumns(full.error.message)) return full;
+  return build(SELECT);
+}
+
+function missingEventColumns(message: string): boolean {
+  return /event_type|public_registration|schema cache/i.test(message);
+}
+
+function matchesEvent(tournament: TournamentRecord, filters: TournamentFilters): boolean {
+  if (filters.event && tournament.eventType !== filters.event) return false;
+  if (filters.format && tournament.eventFormat !== filters.format) return false;
+  if (filters.playLevel && tournament.playLevel !== filters.playLevel) return false;
+  if (filters.registration === "open" && tournament.publicRegistration !== "OPEN") return false;
+  if (filters.registration === "soon" && tournament.publicRegistration !== "NOT_STARTED") return false;
+  if (filters.city?.toLowerCase() === "other") {
+    const city = tournament.city.trim().toLowerCase();
+    if (PLAY_CITIES.includes(city)) return false;
+  }
+  return true;
 }
 
 function matchesAge(category: TournamentCategory, age: string): boolean {
@@ -310,6 +353,17 @@ function mapTournament(row: Record<string, unknown>): TournamentRecord {
     lastVerifiedAt: text(row.last_verified_at),
     published: Boolean(row.published),
     updatedAt: String(row.updated_at ?? ""),
+    eventType: eventType(row.event_type),
+    eventFormat: eventFormat(row.event_format),
+    durationType: durationType(row.duration_type, String(row.starts_on), String(row.ends_on)),
+    playAudience: playAudience(row.play_audience, row.audience),
+    publicRegistration: publicRegistration(row.public_registration, row.registration_status),
+    startTime: clock(row.start_time),
+    endTime: clock(row.end_time),
+    priceLabel: text(row.price_label),
+    playLevel: playLevel(row.play_level),
+    originalSourceUrl: text(row.original_source_url),
+    sourceKind: text(row.source_kind),
     translations: translations.map((item) => ({
       locale: item.locale ?? "en",
       description: item.description ?? null,
@@ -369,4 +423,59 @@ function sanitizeLike(value: string): string {
 
 function isAudience(value: string): value is Audience {
   return value === "recreational" || value === "masters" || value === "junior" || value === "professional";
+}
+
+function eventType(value: unknown): EventType {
+  return value === "PLAY_SESSION" ? "PLAY_SESSION" : "TOURNAMENT";
+}
+
+function eventFormat(value: unknown): EventFormat {
+  if (value === "SINGLES" || value === "MEN_DOUBLES" || value === "WOMEN_DOUBLES" || value === "MIXED_DOUBLES" || value === "MULTIPLE") {
+    return value;
+  }
+  return "MULTIPLE";
+}
+
+function durationType(value: unknown, startsOn: string, endsOn: string): DurationType {
+  if (value === "ONE_DAY" || value === "WEEKEND" || value === "ONGOING" || value === "LEAGUE") return value;
+  if (!startsOn || startsOn === endsOn) return "ONE_DAY";
+  const start = Date.parse(startsOn);
+  const end = Date.parse(endsOn);
+  if (Number.isFinite(start) && Number.isFinite(end) && end - start <= 2 * 86400000) return "WEEKEND";
+  return "ONGOING";
+}
+
+function playAudience(value: unknown, legacy: unknown): PlayAudience {
+  if (
+    value === "OPEN_AMATEURS" ||
+    value === "CLUB_MEMBERS" ||
+    value === "INVITATION_ONLY" ||
+    value === "COMPANY" ||
+    value === "PROFESSION_SPECIFIC" ||
+    value === "JUNIORS"
+  ) {
+    return value;
+  }
+  if (legacy === "junior") return "JUNIORS";
+  if (legacy === "professional") return "PROFESSION_SPECIFIC";
+  return "OPEN_AMATEURS";
+}
+
+function publicRegistration(value: unknown, legacy: unknown): PublicRegistration {
+  if (value === "OPEN" || value === "NOT_STARTED" || value === "CLOSED" || value === "FULL" || value === "INVITATION_ONLY" || value === "UNKNOWN") {
+    return value;
+  }
+  if (legacy === "open" || legacy === "not_required") return "OPEN";
+  if (legacy === "closed") return "CLOSED";
+  return "UNKNOWN";
+}
+
+function playLevel(value: unknown): PlayLevel | null {
+  if (value === "LIGHT" || value === "MIDDLE" || value === "ADVANCED" || value === "NTRP" || value === "OTHER") return value;
+  return null;
+}
+
+function clock(value: unknown): string | null {
+  if (typeof value !== "string" || value.length < 4) return null;
+  return value.slice(0, 5);
 }
