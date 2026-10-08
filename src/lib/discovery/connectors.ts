@@ -1,3 +1,9 @@
+import {
+  fetchTournatedUpcoming,
+  mapTournatedItem,
+  TOURNATED_LT,
+  TOURNATED_LV,
+} from "@/lib/discovery/tournated-public";
 import type { RawObservation, SourceType } from "@/lib/discovery/types";
 
 /**
@@ -12,6 +18,7 @@ export type SourceConnector = {
   name: string;
   sourceType: SourceType;
   countryCode: string | null;
+  listUrl?: string;
   collect: () => Promise<RawObservation[]>;
 };
 
@@ -25,6 +32,34 @@ export const userSubmissionConnector: SourceConnector = {
     return [];
   },
 };
+
+/** Official LTS calendar via Tournated public GraphQL (play.tennis.lt). */
+export const ltsPlayTennisConnector: SourceConnector = {
+  id: "tournated_lt",
+  name: TOURNATED_LT.sourceName,
+  sourceType: "federation",
+  countryCode: "lt",
+  listUrl: `${TOURNATED_LT.siteOrigin}/tournaments`,
+  async collect() {
+    const items = await fetchTournatedUpcoming(TOURNATED_LT);
+    return items.map((item) => mapTournatedItem(item, TOURNATED_LT));
+  },
+};
+
+/** Official LTS calendar via Tournated public GraphQL (play.teniss.lat). */
+export const lvPlayTennisConnector: SourceConnector = {
+  id: "tournated_lv",
+  name: TOURNATED_LV.sourceName,
+  sourceType: "federation",
+  countryCode: "lv",
+  listUrl: `${TOURNATED_LV.siteOrigin}/tournaments`,
+  async collect() {
+    const items = await fetchTournatedUpcoming(TOURNATED_LV);
+    return items.map((item) => mapTournatedItem(item, TOURNATED_LV));
+  },
+};
+
+export const federationConnectors = [ltsPlayTennisConnector, lvPlayTennisConnector] as const;
 
 export function manualConnector(observations: RawObservation[]): SourceConnector {
   return {

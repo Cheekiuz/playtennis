@@ -55,6 +55,17 @@ export type RawObservation = {
   sourceType: SourceType;
   sourceConfidence?: Confidence | null;
   isTest?: boolean;
+  /** Optional division rows attached during federation ingest. Not shown publicly as-is. */
+  ingestCategories?: IngestCategory[];
+};
+
+export type IngestCategory = {
+  discipline: "singles" | "doubles" | "mixed_doubles";
+  gender: Gender;
+  ageLabel: string | null;
+  entryFeeAmount: number | null;
+  currency: string | null;
+  registrationStatus: "open" | "closed" | "unknown" | null;
 };
 
 export type NormalizedEvent = {
