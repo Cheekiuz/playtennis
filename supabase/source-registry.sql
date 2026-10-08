@@ -439,3 +439,19 @@ on conflict (id) do update set
   metadata = excluded.metadata,
   city = excluded.city,
   country_code = excluded.country_code;
+
+update public.sources
+set
+  scraping_method = 'tournated_graphql',
+  registry_source_type = 'OFFICIAL_FEDERATION',
+  priority = 95,
+  active = true
+where id = '00000000-0000-4000-8000-000000000010';
+
+update public.sources
+set
+  scraping_method = 'tournated_graphql',
+  registry_source_type = 'OFFICIAL_FEDERATION',
+  priority = 90,
+  active = true
+where id = '00000000-0000-4000-8000-000000000011';
