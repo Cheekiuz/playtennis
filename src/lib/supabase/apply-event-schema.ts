@@ -27,12 +27,22 @@ function connectionString(): string {
   throw new Error("Missing Postgres connection env vars on this deployment.");
 }
 
+function pgClientConfig(): pg.ClientConfig {
+  let url = connectionString();
+  if (!url.includes("sslmode=")) {
+    url += url.includes("?") ? "&sslmode=no-verify" : "?sslmode=no-verify";
+  } else {
+    url = url.replace(/sslmode=require/g, "sslmode=no-verify");
+  }
+  return {
+    connectionString: url,
+    ssl: { rejectUnauthorized: false },
+  };
+}
+
 export async function applyEventSchema(): Promise<{ applied: string[] }> {
   const root = process.cwd();
-  const client = new pg.Client({
-    connectionString: connectionString(),
-    ssl: { rejectUnauthorized: false },
-  });
+  const client = new pg.Client(pgClientConfig());
 
   const applied: string[] = [];
   await client.connect();
