@@ -51,6 +51,53 @@ comment on column public.sources.registry_source_type is
 comment on column public.sources.scraping_method is
   'Adapter key: tournated_graphql, facebook_graph, http_site, wordpress_events, manual.';
 
+-- Federation feeds (Tournated public GraphQL).
+insert into public.sources (
+  id, kind, name, url, ingestion, source_type, registry_source_type, country_code, trust_level,
+  active, priority, scraping_method, metadata, terms_note
+)
+values
+  (
+    '00000000-0000-4000-8000-000000000010',
+    'import',
+    'Lietuvos teniso sąjunga (play.tennis.lt)',
+    'https://play.tennis.lt/tournaments',
+    'feed',
+    'federation',
+    'OFFICIAL_FEDERATION',
+    'LT',
+    'high',
+    true,
+    95,
+    'tournated_graphql',
+    '{"platform":"lt"}'::jsonb,
+    'Official LTS calendar via Tournated.'
+  ),
+  (
+    '00000000-0000-4000-8000-000000000011',
+    'import',
+    'Latvijas Tenisa Savienība (play.teniss.lat)',
+    'https://play.teniss.lat/tournaments',
+    'feed',
+    'federation',
+    'OFFICIAL_FEDERATION',
+    'LV',
+    'high',
+    true,
+    90,
+    'tournated_graphql',
+    '{"platform":"lv"}'::jsonb,
+    'Official LTS LV calendar via Tournated.'
+  )
+on conflict (id) do update set
+  name = excluded.name,
+  url = excluded.url,
+  scraping_method = excluded.scraping_method,
+  registry_source_type = excluded.registry_source_type,
+  priority = excluded.priority,
+  active = excluded.active,
+  metadata = excluded.metadata;
+
 -- Lithuania ecosystem sources (URLs are entry points; adapters resolve page/group ids from metadata when needed).
 insert into public.sources (
   id, kind, name, url, ingestion, source_type, registry_source_type, country_code, city, trust_level,
