@@ -213,9 +213,25 @@ function matchesCategories(tournament: TournamentRecord, filters: TournamentFilt
   });
 }
 
+type FilterValue = string | number | boolean | null;
+
+type ListQuery = PromiseLike<{ data: unknown[] | null; error: { message: string } | null }> & {
+  eq: (column: string, value: FilterValue) => ListQuery;
+  neq: (column: string, value: FilterValue) => ListQuery;
+  gte: (column: string, value: FilterValue) => ListQuery;
+  lte: (column: string, value: FilterValue) => ListQuery;
+  ilike: (column: string, pattern: string) => ListQuery;
+  or: (filters: string) => ListQuery;
+  order: (column: string, options: { ascending: boolean }) => ListQuery;
+  limit: (count: number) => ListQuery;
+  is: (column: string, value: null) => ListQuery;
+};
+
 async function loadPublished(filters: TournamentFilters): Promise<Record<string, unknown>[]> {
   const supabase = createServerSupabaseClient();
-  const { data, error } = await selectMany((select) => applyListFilters(supabase.from("tournaments").select(select), filters));
+  const { data, error } = await selectMany((select) =>
+    applyListFilters(supabase.from("tournaments").select(select) as unknown as ListQuery, filters),
+  );
   if (error) {
     console.error("listTournaments", error.message);
     return [];
@@ -223,10 +239,7 @@ async function loadPublished(filters: TournamentFilters): Promise<Record<string,
   return (data ?? []) as Record<string, unknown>[];
 }
 
-function applyListFilters<T extends { eq: Function; neq: Function; gte: Function; lte: Function; ilike: Function; or: Function; order: Function; limit: Function; is: Function }>(
-  query: T,
-  filters: TournamentFilters,
-): T {
+function applyListFilters(query: ListQuery, filters: TournamentFilters): ListQuery {
   let next = query.eq("published", true).is("archived_at", null).order("starts_on", { ascending: true }).limit(400);
 
   if (filters.audience && isAudience(filters.audience)) {
