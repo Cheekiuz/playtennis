@@ -26,14 +26,28 @@ function loadEnvFile(relativePath) {
 loadEnvFile(".env.local");
 loadEnvFile(".env.production.local");
 
-const connectionString =
-  process.env.POSTGRES_URL_NON_POOLING ??
-  process.env.POSTGRES_URL ??
-  process.env.DATABASE_URL;
+function connectionString() {
+  const direct =
+    process.env.POSTGRES_URL_NON_POOLING ??
+    process.env.POSTGRES_URL ??
+    process.env.DATABASE_URL;
+  if (direct && !direct.includes("[SENSITIVE]")) return direct;
 
-if (!connectionString || connectionString.includes("[SENSITIVE]")) {
+  const password = process.env.POSTGRES_PASSWORD;
+  const host = process.env.POSTGRES_HOST;
+  const user = process.env.POSTGRES_USER ?? "postgres";
+  const database = process.env.POSTGRES_DATABASE ?? "postgres";
+  if (password && host && !password.includes("[SENSITIVE]")) {
+    return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(password)}@${host}:5432/${database}?sslmode=require`;
+  }
+
+  return null;
+}
+
+const url = connectionString();
+if (!url) {
   console.error(
-    "Set POSTGRES_URL_NON_POOLING (or POSTGRES_URL) in .env.local with your Supabase direct connection string.",
+    "Set POSTGRES_URL_NON_POOLING or POSTGRES_HOST + POSTGRES_PASSWORD in .env.local, or run: npx vercel env run --environment production -- node scripts/apply-supabase-schema.mjs",
   );
   process.exit(1);
 }
@@ -45,7 +59,7 @@ const files = [
   "supabase/discovery.sql",
 ];
 
-const client = new pg.Client({ connectionString, ssl: { rejectUnauthorized: false } });
+const client = new pg.Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
 
 try {
   await client.connect();
