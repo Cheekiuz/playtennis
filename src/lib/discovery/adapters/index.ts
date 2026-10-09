@@ -1,5 +1,6 @@
 import { collectFromHttpSite } from "@/lib/discovery/adapters/http-site";
 import { extractFromFacebookText } from "@/lib/discovery/facebook/extract";
+import { fetchFacebookPageEvents } from "@/lib/discovery/facebook/graph-events";
 import { fetchFacebookPosts } from "@/lib/discovery/facebook/graph";
 import { FACEBOOK_SAMPLE_POSTS } from "@/lib/discovery/facebook/samples";
 import {
@@ -34,12 +35,21 @@ export async function collectFromRegistrySource(source: RegistrySource): Promise
       break;
     }
     case "facebook_graph": {
+      const pageEvents = await fetchFacebookPageEvents(source);
+      if (pageEvents.error && pageEvents.events.length === 0) errors.push(pageEvents.error);
+      observations = [...pageEvents.events];
+
       const fb = await fetchFacebookPosts(source);
       if (fb.error) errors.push(fb.error);
-      requiresManualHandling = fb.requiresManualHandling;
-      observations = fb.posts
+      requiresManualHandling = fb.requiresManualHandling && pageEvents.events.length === 0;
+      const fromPosts = fb.posts
         .map((post) => extractFromFacebookText(source, post))
         .filter((item): item is RawObservation => Boolean(item));
+      for (const row of fromPosts) {
+        if (!observations.some((existing) => existing.sourceUrl === row.sourceUrl)) {
+          observations.push(row);
+        }
+      }
 
       if (process.env.DISCOVERY_VERIFY_FACEBOOK_SAMPLES === "true") {
         const samples = samplePostsForSource(source);

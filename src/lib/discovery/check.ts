@@ -82,7 +82,10 @@ export function runDiscoveryChecks(): string[] {
   check("the same title in another city stays a separate event", elsewhere.action === "create");
 
   const socialDecision = preparePublication([], DISCOVERY_FIXTURES.find((item) => item.sourceType === "social_media") as RawObservation);
-  check("social media stays in review", socialDecision.action === "create" && socialDecision.publish === false && socialDecision.reviewStatus === "needs_review");
+  check(
+    "social media lists when parsed but stays unverified",
+    socialDecision.action === "create" && socialDecision.publish === true && socialDecision.reviewStatus === "needs_review",
+  );
   check("social media event was normalised", social?.sourceConfidence === "low");
 
   const live = preparePublication([], { ...official, isTest: false });

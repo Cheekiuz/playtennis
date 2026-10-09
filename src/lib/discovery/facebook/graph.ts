@@ -8,10 +8,10 @@ export type FacebookFetchResult = {
   requiresManualHandling: boolean;
 };
 
+import { facebookAccessToken } from "@/lib/discovery/facebook/graph-events";
+
 function accessToken(): string | null {
-  const token = process.env.FACEBOOK_ACCESS_TOKEN?.trim();
-  if (!token || token.includes("SENSITIVE")) return null;
-  return token;
+  return facebookAccessToken();
 }
 
 function facebookTargetId(source: RegistrySource): string | null {

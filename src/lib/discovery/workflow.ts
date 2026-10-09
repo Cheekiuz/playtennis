@@ -81,8 +81,21 @@ export function isUpcoming(event: { endDate: string; isTest?: boolean }, today: 
 
 function createDecision(event: NormalizedEvent): Decision {
   const quality = scoreQuality(event);
-  const publish = !event.isTest && quality.decision === "publish";
-  const reviewStatus: ReviewStatus = publish ? "unknown" : "needs_review";
+  let publish = !event.isTest && quality.decision === "publish";
+  let reviewStatus: ReviewStatus = publish ? "unknown" : "needs_review";
+
+  // Facebook discoveries list publicly but stay unverified until an admin checks them.
+  if (
+    !event.isTest &&
+    event.sourceType === "social_media" &&
+    event.title &&
+    event.startDate &&
+    (event.city || event.venue)
+  ) {
+    publish = true;
+    reviewStatus = "needs_review";
+  }
+
   return { action: "create", event, reviewStatus, publish };
 }
 
