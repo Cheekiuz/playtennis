@@ -108,7 +108,7 @@ values
     '00000000-0000-4000-8000-000000000020',
     'import',
     'Tenisininkai',
-    'https://www.facebook.com/groups/tenisininkai',
+    'https://www.facebook.com/groups/119063918172498',
     'feed',
     'social_media',
     'FACEBOOK_GROUP',
@@ -116,11 +116,11 @@ values
     null,
     'medium',
     true,
-    90,
+    92,
     'facebook_graph',
-    'https://www.facebook.com/groups/tenisininkai',
-    '{"slug":"tenisininkai"}'::jsonb,
-    'Facebook group: adult amateur tennis community.'
+    'https://www.facebook.com/groups/119063918172498',
+    '{"groupId":"119063918172498","feedLimit":50}'::jsonb,
+    'Facebook group: adult amateur tennis community (Tenisininkai).'
   ),
   (
     '00000000-0000-4000-8000-000000000021',
@@ -455,3 +455,12 @@ set
   priority = 90,
   active = true
 where id = '00000000-0000-4000-8000-000000000011';
+
+update public.sources
+set
+  url = 'https://www.facebook.com/groups/119063918172498',
+  facebook_url = 'https://www.facebook.com/groups/119063918172498',
+  metadata = coalesce(metadata, '{}'::jsonb) || '{"groupId":"119063918172498","feedLimit":50}'::jsonb,
+  priority = 92,
+  active = true
+where id = '00000000-0000-4000-8000-000000000020';

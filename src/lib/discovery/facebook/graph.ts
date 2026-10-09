@@ -21,11 +21,20 @@ function facebookTargetId(source: RegistrySource): string | null {
   if (typeof meta.groupId === "string" && meta.groupId) return meta.groupId;
 
   const url = source.facebookUrl ?? source.url;
+  const numericGroup = url.match(/facebook\.com\/groups\/(\d+)/i);
+  if (numericGroup) return numericGroup[1];
   const slugMatch = url.match(/facebook\.com\/(?:groups|pages|events)\/([^/?#]+)/i);
   return slugMatch ? slugMatch[1] : null;
 }
 
-export async function fetchFacebookPosts(source: RegistrySource, limit = 15): Promise<FacebookFetchResult> {
+export async function fetchFacebookPosts(source: RegistrySource, limit?: number): Promise<FacebookFetchResult> {
+  const defaultLimit =
+    source.registrySourceType === "FACEBOOK_GROUP"
+      ? typeof source.metadata.feedLimit === "number"
+        ? source.metadata.feedLimit
+        : 50
+      : 15;
+  const pageSize = limit ?? defaultLimit;
   const token = accessToken();
   if (!token) {
     return {
@@ -52,7 +61,7 @@ export async function fetchFacebookPosts(source: RegistrySource, limit = 15): Pr
 
   const url = new URL(path);
   url.searchParams.set("fields", "id,message,permalink_url,created_time,attachments{target{id}}");
-  url.searchParams.set("limit", String(limit));
+  url.searchParams.set("limit", String(pageSize));
   url.searchParams.set("access_token", token);
 
   try {
@@ -71,21 +80,27 @@ export async function fetchFacebookPosts(source: RegistrySource, limit = 15): Pr
         message?: string;
         permalink_url?: string;
         created_time?: string;
-        attachments?: { data?: Array<{ target?: { id?: string } }> };
+        attachments?: {
+          data?: Array<{ target?: { id?: string }; media_type?: string; title?: string; description?: string }>;
+        };
       }>;
     };
 
     const posts: FacebookPostInput[] = (json.data ?? [])
-      .filter((row) => row.message?.trim())
-      .map((row) => ({
+      .filter((row) => row.message?.trim() || row.attachments?.data?.some((item) => item.target?.id))
+      .map((row) => {
+        const attachment = row.attachments?.data?.[0];
+        const fallbackText = [attachment?.title, attachment?.description].filter(Boolean).join("\n");
+        return {
         id: row.id,
-        message: row.message ?? "",
+        message: row.message?.trim() || fallbackText || "",
         permalink: row.permalink_url ?? `https://www.facebook.com/${row.id}`,
         createdTime: row.created_time ?? null,
-        eventLink: row.attachments?.data?.[0]?.target?.id
-          ? `https://www.facebook.com/events/${row.attachments.data[0].target.id}`
+        eventLink: attachment?.target?.id
+          ? `https://www.facebook.com/events/${attachment.target.id}`
           : null,
-      }));
+      };
+      });
 
     return { posts, error: null, requiresManualHandling: false };
   } catch (error) {

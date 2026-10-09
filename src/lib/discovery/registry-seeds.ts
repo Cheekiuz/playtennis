@@ -2,7 +2,15 @@ import type { RegistrySource } from "@/lib/discovery/registry-types";
 
 /** Fallback registry when DB columns are not migrated yet. Mirrors supabase/source-registry.sql. */
 export const REGISTRY_SEEDS: RegistrySource[] = [
-  fb("00000000-0000-4000-8000-000000000020", "Tenisininkai", "FACEBOOK_GROUP", "https://www.facebook.com/groups/tenisininkai", 90),
+  fb(
+    "00000000-0000-4000-8000-000000000020",
+    "Tenisininkai",
+    "FACEBOOK_GROUP",
+    "https://www.facebook.com/groups/119063918172498",
+    92,
+    null,
+    { groupId: "119063918172498", feedLimit: 50 },
+  ),
   fb("00000000-0000-4000-8000-000000000021", "TENISO TURNYRAI", "FACEBOOK_GROUP", "https://www.facebook.com/groups/tenisoturnyrai", 90),
   fb("00000000-0000-4000-8000-000000000022", "Lietuvos teniso mėgėjų čempionatas", "FACEBOOK_PAGE", "https://www.facebook.com/LTAmateurTennisChampionship", 85),
   fb("00000000-0000-4000-8000-000000000023", "Lauko tenisas Elektrėnuose", "FACEBOOK_PAGE", "https://www.facebook.com/laukoteniselektrenuose", 70, "Elektrėnai"),
@@ -46,6 +54,7 @@ function fb(
   url: string,
   priority: number,
   city: string | null = null,
+  metadata: Record<string, unknown> = {},
 ): RegistrySource {
   return {
     id,
@@ -62,7 +71,7 @@ function fb(
     scrapingMethod: "facebook_graph",
     lastChecked: null,
     lastSuccessfulScrape: null,
-    metadata: {},
+    metadata,
   };
 }
 

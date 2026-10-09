@@ -1,6 +1,6 @@
 import { collectFromHttpSite } from "@/lib/discovery/adapters/http-site";
 import { extractFromFacebookText } from "@/lib/discovery/facebook/extract";
-import { fetchFacebookPageEvents } from "@/lib/discovery/facebook/graph-events";
+import { fetchFacebookGroupEvents, fetchFacebookPageEvents } from "@/lib/discovery/facebook/graph-events";
 import { fetchFacebookPosts } from "@/lib/discovery/facebook/graph";
 import { FACEBOOK_SAMPLE_POSTS } from "@/lib/discovery/facebook/samples";
 import {
@@ -39,9 +39,20 @@ export async function collectFromRegistrySource(source: RegistrySource): Promise
       if (pageEvents.error && pageEvents.events.length === 0) errors.push(pageEvents.error);
       observations = [...pageEvents.events];
 
+      const groupEvents = await fetchFacebookGroupEvents(source);
+      if (groupEvents.error && groupEvents.events.length === 0 && source.registrySourceType === "FACEBOOK_GROUP") {
+        errors.push(groupEvents.error);
+      }
+      for (const row of groupEvents.events) {
+        if (!observations.some((existing) => existing.sourceUrl === row.sourceUrl)) {
+          observations.push(row);
+        }
+      }
+
       const fb = await fetchFacebookPosts(source);
       if (fb.error) errors.push(fb.error);
-      requiresManualHandling = fb.requiresManualHandling && pageEvents.events.length === 0;
+      requiresManualHandling =
+        fb.requiresManualHandling && pageEvents.events.length === 0 && groupEvents.events.length === 0;
       const fromPosts = fb.posts
         .map((post) => extractFromFacebookText(source, post))
         .filter((item): item is RawObservation => Boolean(item));

@@ -223,8 +223,13 @@ async function touchSourceScrape(
 }
 
 function externalIdFrom(raw: RawObservation): string | null {
-  const match = raw.sourceUrl.match(/\/tournaments\/(\d+)/);
-  return match ? match[1] : null;
+  const tournated = raw.sourceUrl.match(/\/tournaments\/(\d+)/);
+  if (tournated) return tournated[1];
+  const facebookEvent = raw.sourceUrl.match(/\/events\/(\d+)/);
+  if (facebookEvent) return `fb-event-${facebookEvent[1]}`;
+  const facebookPost = raw.sourceUrl.match(/\/posts\/(\d+)/);
+  if (facebookPost) return `fb-post-${facebookPost[1]}`;
+  return null;
 }
 
 type EnsureSourceResult = { id: string | null; error?: string };
