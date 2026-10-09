@@ -2,6 +2,7 @@ import { collectFromHttpSite } from "@/lib/discovery/adapters/http-site";
 import { extractFromFacebookText } from "@/lib/discovery/facebook/extract";
 import { fetchFacebookGroupEvents, fetchFacebookPageEvents } from "@/lib/discovery/facebook/graph-events";
 import { fetchFacebookPosts } from "@/lib/discovery/facebook/graph";
+import { fetchPublicFacebookEventUrls } from "@/lib/discovery/facebook/public-event-page";
 import { FACEBOOK_SAMPLE_POSTS } from "@/lib/discovery/facebook/samples";
 import {
   fetchTournatedUpcoming,
@@ -60,6 +61,17 @@ export async function collectFromRegistrySource(source: RegistrySource): Promise
         if (!observations.some((existing) => existing.sourceUrl === row.sourceUrl)) {
           observations.push(row);
         }
+      }
+
+      const manualEvents = await fetchPublicFacebookEventUrls(source);
+      if (manualEvents.errors.length > 0) errors.push(...manualEvents.errors);
+      for (const row of manualEvents.observations) {
+        if (!observations.some((existing) => existing.sourceUrl === row.sourceUrl)) {
+          observations.push(row);
+        }
+      }
+      if (manualEvents.observations.length > 0) {
+        requiresManualHandling = false;
       }
 
       if (process.env.DISCOVERY_VERIFY_FACEBOOK_SAMPLES === "true") {

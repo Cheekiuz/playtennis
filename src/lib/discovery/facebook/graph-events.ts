@@ -122,10 +122,7 @@ export async function fetchFacebookPageEvents(
 ): Promise<{ events: RawObservation[]; error: string | null }> {
   const token = facebookAccessToken();
   if (!token) {
-    return {
-      events: [],
-      error: "Set FACEBOOK_ACCESS_TOKEN on Vercel (Meta Graph API token with events access).",
-    };
+    return { events: [], error: null };
   }
 
   if (source.registrySourceType !== "FACEBOOK_PAGE" && source.registrySourceType !== "FACEBOOK_EVENT") {
@@ -157,10 +154,7 @@ export async function fetchFacebookGroupEvents(
 ): Promise<{ events: RawObservation[]; error: string | null }> {
   const token = facebookAccessToken();
   if (!token) {
-    return {
-      events: [],
-      error: "Set FACEBOOK_ACCESS_TOKEN on Vercel for group event ingestion.",
-    };
+    return { events: [], error: null };
   }
 
   if (source.registrySourceType !== "FACEBOOK_GROUP") {

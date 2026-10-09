@@ -9,6 +9,11 @@ export type FacebookFetchResult = {
 };
 
 import { facebookAccessToken } from "@/lib/discovery/facebook/graph-events";
+import { manualEventUrls } from "@/lib/discovery/facebook/public-event-page";
+
+function manualEventUrlsFallback(source: RegistrySource): boolean {
+  return manualEventUrls(source).length === 0;
+}
 
 function accessToken(): string | null {
   return facebookAccessToken();
@@ -39,8 +44,8 @@ export async function fetchFacebookPosts(source: RegistrySource, limit?: number)
   if (!token) {
     return {
       posts: [],
-      error: "FACEBOOK_ACCESS_TOKEN is not set. Facebook Graph API access is required for live group/page scraping.",
-      requiresManualHandling: true,
+      error: null,
+      requiresManualHandling: manualEventUrlsFallback(source),
     };
   }
 

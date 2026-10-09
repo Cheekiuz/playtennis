@@ -38,7 +38,22 @@ LT and LV federation calendars use Tournated public GraphQL. Registry-driven dis
 
 Run `npx tsx scripts/discovery-test.ts` for a live adapter report. Apply `supabase/source-registry.sql` after the other event SQL files.
 
-Set `FACEBOOK_ACCESS_TOKEN` for live Facebook Graph ingestion (groups/pages otherwise stay in manual/API mode).
+Set `FACEBOOK_ACCESS_TOKEN` for automatic group/page ingestion via Meta Graph API.
+
+**Without a Meta developer account** (e.g. SMS verification fails): add public Facebook Event links to the source in Supabase, then run ingest. Example for [Tenisininkai](https://www.facebook.com/groups/119063918172498):
+
+```sql
+update public.sources
+set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
+  'eventUrls',
+  jsonb_build_array(
+    'https://www.facebook.com/events/PASTE_EVENT_ID_HERE'
+  )
+)
+where id = '00000000-0000-4000-8000-000000000020';
+```
+
+Copy each event link from the group in your browser (Share → copy link). Ingest reads public event page metadata; no API token required for those URLs. You can also use **Submit an event** on PlayTennis for one-off posts.
 
 ## Getting started
 
