@@ -1,4 +1,6 @@
 import { shouldExcludeRaw } from "@/lib/discovery/adult-filter";
+import { extractEventUrlsFromSearchHtml } from "@/lib/discovery/facebook/event-search";
+import { shouldExcludeTableTennis } from "@/lib/discovery/tennis-sport";
 import { CONFLICTING_SOURCE, DISCOVERY_FIXTURES, DUPLICATE_SOURCE } from "@/lib/discovery/fixtures";
 import { normalizeObservation, registrationFromSource, standardiseLevel } from "@/lib/discovery/normalize";
 import { isPubliclyChecked } from "@/lib/discovery/review";
@@ -58,6 +60,17 @@ export function runDiscoveryChecks(): string[] {
   check(
     "adult open tournaments are not treated as junior",
     vilniusRaw != null && shouldExcludeRaw(vilniusRaw) === null,
+  );
+  check(
+    "table tennis announcements are excluded",
+    shouldExcludeTableTennis({ title: "Stalo teniso turnyras Kaune", description: null }) &&
+      !shouldExcludeTableTennis({ title: "Lauko teniso turnyras Kaune", description: null }),
+  );
+  check(
+    "facebook search html event links are parsed when present",
+    extractEventUrlsFromSearchHtml('href="https://www.facebook.com/events/823720397466259"').includes(
+      "https://www.facebook.com/events/823720397466259",
+    ),
   );
   const past = normalizeObservation({ ...(DISCOVERY_FIXTURES.find((item) => item.city === "Hamburg") as RawObservation), isTest: false });
   const future = normalizeObservation({ ...official, isTest: false });

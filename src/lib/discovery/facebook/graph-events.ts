@@ -196,7 +196,7 @@ export async function fetchFacebookGroupEvents(
   }
 }
 
-function mapGraphEvent(source: RegistrySource, event: GraphEvent): RawObservation | null {
+export function mapGraphEvent(source: RegistrySource, event: GraphEvent): RawObservation | null {
   const start = event.start_time?.slice(0, 10);
   if (!start || !event.name?.trim()) return null;
   const end = event.end_time?.slice(0, 10) ?? start;

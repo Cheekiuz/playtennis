@@ -2,7 +2,9 @@ import { collectFromHttpSite } from "@/lib/discovery/adapters/http-site";
 import { extractFromFacebookText } from "@/lib/discovery/facebook/extract";
 import { fetchFacebookGroupEvents, fetchFacebookPageEvents } from "@/lib/discovery/facebook/graph-events";
 import { fetchFacebookPosts } from "@/lib/discovery/facebook/graph";
+import { facebookEventSearchEnabled, fetchFacebookEventSearch } from "@/lib/discovery/facebook/event-search";
 import { fetchPublicFacebookEventUrls } from "@/lib/discovery/facebook/public-event-page";
+import { shouldExcludeTableTennis } from "@/lib/discovery/tennis-sport";
 import { FACEBOOK_SAMPLE_POSTS } from "@/lib/discovery/facebook/samples";
 import {
   fetchTournatedUpcoming,
@@ -74,6 +76,19 @@ export async function collectFromRegistrySource(source: RegistrySource): Promise
         requiresManualHandling = false;
       }
 
+      if (facebookEventSearchEnabled(source)) {
+        const searchEvents = await fetchFacebookEventSearch(source);
+        if (searchEvents.errors.length > 0) errors.push(...searchEvents.errors);
+        for (const row of searchEvents.observations) {
+          if (!observations.some((existing) => existing.sourceUrl === row.sourceUrl)) {
+            observations.push(row);
+          }
+        }
+        if (searchEvents.observations.length > 0) {
+          requiresManualHandling = false;
+        }
+      }
+
       if (process.env.DISCOVERY_VERIFY_FACEBOOK_SAMPLES === "true") {
         const samples = samplePostsForSource(source);
         for (const post of samples) {
@@ -100,13 +115,15 @@ export async function collectFromRegistrySource(source: RegistrySource): Promise
       requiresManualHandling = true;
   }
 
-  observations = observations.map((row) => ({
-    ...row,
-    registrySourceType: source.registrySourceType,
-    sourceType: row.sourceType ?? mapRegistryToSourceType(source.registrySourceType),
-    countryCode: row.countryCode ?? source.countryCode ?? "lt",
-    city: row.city ?? source.city,
-  }));
+  observations = observations
+    .filter((row) => !shouldExcludeTableTennis(row))
+    .map((row) => ({
+      ...row,
+      registrySourceType: source.registrySourceType,
+      sourceType: row.sourceType ?? mapRegistryToSourceType(source.registrySourceType),
+      countryCode: row.countryCode ?? source.countryCode ?? "lt",
+      city: row.city ?? source.city,
+    }));
 
   return {
     sourceId: source.id,

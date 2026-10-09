@@ -55,6 +55,8 @@ where id = '00000000-0000-4000-8000-000000000020';
 
 Copy each event link from the group in your browser (Share → copy link). Ingest reads public event page metadata; no API token required for those URLs. You can also use **Submit an event** on PlayTennis for one-off posts.
 
+**Facebook event search**: source `00000000-0000-4000-8000-000000000024` runs several queries (`teniso turnyras`, `lauko tenis`, `tennis tournament`, …) with **no geo radius** when `FACEBOOK_ACCESS_TOKEN` is set. Table tennis / stalo tenis is filtered out. Optional metadata `searchUseGeo: true` plus `searchLat`, `searchLng`, `searchDistanceM` restores a local radius. Without a token, Facebook’s search HTML usually has no event IDs for server fetch; use manual `eventUrls` or a token.
+
 ## Getting started
 
 Install dependencies:

@@ -23,7 +23,7 @@ export async function fetchPublicFacebookEventUrls(
 
   for (const url of urls) {
     try {
-      const parsed = await fetchPublicFacebookEventPage(source, url);
+      const parsed = await fetchPublicFacebookEventFromUrl(source, url);
       if (parsed) observations.push(parsed);
       else errors.push(`Could not read public data from ${url} (Facebook may require login for this event).`);
     } catch (error) {
@@ -34,7 +34,7 @@ export async function fetchPublicFacebookEventUrls(
   return { observations, errors };
 }
 
-async function fetchPublicFacebookEventPage(
+export async function fetchPublicFacebookEventFromUrl(
   source: RegistrySource,
   eventUrl: string,
 ): Promise<RawObservation | null> {

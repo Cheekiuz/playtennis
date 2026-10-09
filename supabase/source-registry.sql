@@ -159,6 +159,24 @@ values
     'Facebook page: national amateur championship.'
   ),
   (
+    '00000000-0000-4000-8000-000000000024',
+    'import',
+    'Facebook event search (tennis)',
+    'https://www.facebook.com/events/search?q=teniso+turnyras',
+    'feed',
+    'social_media',
+    'FACEBOOK_EVENT',
+    'LT',
+    null,
+    'medium',
+    true,
+    88,
+    'facebook_graph',
+    'https://www.facebook.com/events/search?q=teniso+turnyras',
+    '{"facebookEventSearchQueries":["teniso turnyras","teniso","lauko tenis","tennis tournament","tennis turnyras"],"searchUseGeo":false,"searchLimit":50,"searchMaxPages":3}'::jsonb,
+    'Facebook event search for lawn tennis tournaments worldwide (no geo radius; table tennis filtered out).'
+  ),
+  (
     '00000000-0000-4000-8000-000000000023',
     'import',
     'Lauko tenisas Elektrėnuose',
@@ -474,3 +492,12 @@ set metadata = jsonb_set(
 )
 where id = '00000000-0000-4000-8000-000000000020'
   and not coalesce(metadata->'eventUrls', '[]'::jsonb) @> '["https://www.facebook.com/events/823720397466259"]'::jsonb;
+
+update public.sources
+set
+  name = 'Facebook event search (tennis)',
+  url = 'https://www.facebook.com/events/search?q=teniso+turnyras',
+  facebook_url = 'https://www.facebook.com/events/search?q=teniso+turnyras',
+  metadata = '{"facebookEventSearchQueries":["teniso turnyras","teniso","lauko tenis","tennis tournament","tennis turnyras"],"searchUseGeo":false,"searchLimit":50,"searchMaxPages":3}'::jsonb,
+  terms_note = 'Facebook event search for lawn tennis tournaments worldwide (no geo radius; table tennis filtered out).'
+where id = '00000000-0000-4000-8000-000000000024';

@@ -9,6 +9,7 @@ import {
   type TournatedPlatformConfig,
 } from "@/lib/discovery/tournated-public";
 import { adultOnlyCategories, shouldExcludeRaw } from "@/lib/discovery/adult-filter";
+import { shouldExcludeTableTennis } from "@/lib/discovery/tennis-sport";
 import { tournamentSourceKind, type RegistrySource } from "@/lib/discovery/registry-types";
 import type { DuplicateCandidate, RawObservation, ReviewStatus } from "@/lib/discovery/types";
 import { preparePublication } from "@/lib/discovery/workflow";
@@ -152,6 +153,10 @@ async function ingestObservations(observations: RawObservation[], source: Source
     try {
       const excluded = shouldExcludeRaw(raw);
       if (excluded) {
+        summary.rejected += 1;
+        continue;
+      }
+      if (shouldExcludeTableTennis(raw)) {
         summary.rejected += 1;
         continue;
       }

@@ -1,5 +1,6 @@
 import type { RawObservation } from "@/lib/discovery/types";
 import { mapRegistryToSourceType, type RegistrySource } from "@/lib/discovery/registry-types";
+import { shouldExcludeTableTennis } from "@/lib/discovery/tennis-sport";
 
 export type FacebookPostInput = {
   id: string;
@@ -45,6 +46,7 @@ export function extractFromFacebookText(
 ): RawObservation | null {
   const text = post.message?.trim();
   if (!text || text.length < 12) return null;
+  if (shouldExcludeTableTennis({ title: text, description: text })) return null;
   if (!looksLikeTournamentAnnouncement(text)) return null;
 
   const title = extractTitle(text);
