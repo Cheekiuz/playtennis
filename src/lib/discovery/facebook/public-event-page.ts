@@ -159,19 +159,20 @@ function decodeHtml(value: string): string {
     .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(Number(num)));
 }
 
-const MONTHS_LT = [
-  "sausio",
-  "vasario",
-  "kovo",
-  "balandžio",
-  "gegužės",
-  "birželio",
-  "liepos",
-  "rugpjūčio",
-  "rugsėjo",
-  "spalio",
-  "lapkričio",
-  "gruodžio",
+/** Genitive and nominative month names (Facebook LT descriptions use both). */
+const MONTHS_LT: Array<{ patterns: string[]; month: number }> = [
+  { patterns: ["sausio", "sausis"], month: 1 },
+  { patterns: ["vasario", "vasaris"], month: 2 },
+  { patterns: ["kovo", "kovas"], month: 3 },
+  { patterns: ["balandžio", "balandis"], month: 4 },
+  { patterns: ["gegužės", "gegužė", "geguze"], month: 5 },
+  { patterns: ["birželio", "birzelio", "birželis", "birzelis"], month: 6 },
+  { patterns: ["liepos", "liepa"], month: 7 },
+  { patterns: ["rugpjūčio", "rugpjucio", "rugpjūtis", "rugpjtis"], month: 8 },
+  { patterns: ["rugsėjo", "rugsejo", "rugsėjis", "rugsejis"], month: 9 },
+  { patterns: ["spalio", "spalis"], month: 10 },
+  { patterns: ["lapkričio", "lapkricio", "lapkritis", "lapkritis"], month: 11 },
+  { patterns: ["gruodžio", "gruodzio", "gruodis"], month: 12 },
 ];
 
 function parseFacebookDescription(raw: string | null): {
@@ -186,13 +187,16 @@ function parseFacebookDescription(raw: string | null): {
   let startDate: string | null = null;
   const yearMatch = lower.match(/\b(20\d{2})\b/);
   const year = yearMatch ? Number(yearMatch[1]) : new Date().getFullYear();
-  for (let i = 0; i < MONTHS_LT.length; i += 1) {
-    const re = new RegExp(`\\b${MONTHS_LT[i]}\\s+(\\d{1,2})(?:\\s+d\\.?)?(?:\\s|,|$)`, "i");
-    const m = lower.match(re);
-    if (m) {
-      startDate = `${year}-${String(i + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
-      break;
+  for (const entry of MONTHS_LT) {
+    for (const monthName of entry.patterns) {
+      const re = new RegExp(`\\b${monthName}\\s+(\\d{1,2})(?:\\s+d\\.?)?(?:\\s|,|$)`, "i");
+      const m = lower.match(re);
+      if (m) {
+        startDate = `${year}-${String(entry.month).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+        break;
+      }
     }
+    if (startDate) break;
   }
 
   const cityMatch = text.match(/vieta:\s*([^,]+)/i);
