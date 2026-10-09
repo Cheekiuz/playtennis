@@ -1,9 +1,27 @@
+import { isJuniorPublicTournament } from "@/lib/tournaments/junior-exclusion";
 import { EVENT_TYPES, type PublicRegistration, type TournamentRecord } from "@/lib/tournaments/types";
 
 const PUBLIC_TYPES = new Set<string>(EVENT_TYPES);
 
-export function isMainFeed(event: Pick<TournamentRecord, "playAudience" | "eventType" | "endsOn" | "isTest">, today: string): boolean {
+export function isMainFeed(
+  event: Pick<
+    TournamentRecord,
+    | "playAudience"
+    | "eventType"
+    | "endsOn"
+    | "isTest"
+    | "name"
+    | "startsOn"
+    | "audience"
+    | "ageGroup"
+    | "originalLevel"
+    | "eventGender"
+    | "categories"
+  >,
+  today: string,
+): boolean {
   if (event.isTest) return false;
+  if (isJuniorPublicTournament(event)) return false;
   if (event.playAudience !== "OPEN_AMATEURS") return false;
   if (!PUBLIC_TYPES.has(event.eventType)) return false;
   return event.endsOn >= today;

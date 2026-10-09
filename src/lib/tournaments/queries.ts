@@ -3,6 +3,7 @@ import { countryCodeFromName, regionName } from "@/lib/tournaments/countries";
 import type { Locale } from "@/lib/i18n";
 import { rangeForPreset, todayIso } from "@/lib/tournaments/dates";
 import { isMainFeed } from "@/lib/tournaments/feed";
+import { adultPublicCategories, isJuniorPublicTournament } from "@/lib/tournaments/junior-exclusion";
 import type {
   Audience,
   Discipline,
@@ -107,6 +108,7 @@ export async function listTournaments(filters: TournamentFilters, pageSize = 24)
     const data = await loadPublished(filters);
     const mapped = data
       .map((row) => mapTournament(row))
+      .map(stripJuniorFromPublicRecord)
       .filter((tournament) => isMainFeed(tournament, todayIso()))
       .filter((tournament) => matchesCategories(tournament, filters))
       .filter((tournament) => matchesEvent(tournament, filters));
@@ -135,7 +137,9 @@ export async function getTournament(slug: string): Promise<TournamentRecord | nu
       console.error("getTournament", error.message);
       return null;
     }
-    return data ? mapTournament(data as Record<string, unknown>) : null;
+    if (!data) return null;
+    const tournament = stripJuniorFromPublicRecord(mapTournament(data as Record<string, unknown>));
+    return isJuniorPublicTournament(tournament) ? null : tournament;
   } catch (error) {
     console.error("getTournament", error);
     return null;
@@ -159,7 +163,8 @@ export async function getTournamentsByIds(ids: string[]): Promise<TournamentReco
     }));
     return unique.flatMap((id) => {
       const tournament = byId.get(id);
-      return tournament ? [tournament] : [];
+      if (!tournament || isJuniorPublicTournament(tournament)) return [];
+      return [stripJuniorFromPublicRecord(tournament)];
     });
   } catch (error) {
     console.error("getTournamentsByIds", error);
@@ -255,6 +260,7 @@ export async function listSitemapTournaments(): Promise<{ slug: string; updatedA
       .gte("ends_on", todayIso())
       .neq("lifecycle_status", "cancelled")
       .neq("audience", "professional")
+      .neq("audience", "junior")
       .limit(5000);
 
     const data = !rich.error
@@ -269,6 +275,7 @@ export async function listSitemapTournaments(): Promise<{ slug: string; updatedA
               .gte("ends_on", todayIso())
               .neq("lifecycle_status", "cancelled")
               .neq("audience", "professional")
+              .neq("audience", "junior")
               .limit(5000)
           ).data
         : null;
@@ -334,7 +341,7 @@ function applyListFilters(query: ListQuery, filters: TournamentFilters): ListQue
   if (filters.audience && isAudience(filters.audience)) {
     next = next.eq("audience", filters.audience);
   } else {
-    next = next.neq("audience", "professional");
+    next = next.neq("audience", "professional").neq("audience", "junior");
   }
 
   if (!filters.when && !filters.from) {
@@ -412,6 +419,12 @@ function matchesAge(category: TournamentCategory, age: string): boolean {
   const minOk = category.ageMin == null || category.ageMin <= years;
   const maxOk = category.ageMax == null || category.ageMax >= years;
   return minOk && maxOk;
+}
+
+function stripJuniorFromPublicRecord(tournament: TournamentRecord): TournamentRecord {
+  const categories = adultPublicCategories(tournament.categories);
+  if (categories.length === tournament.categories.length) return tournament;
+  return { ...tournament, categories };
 }
 
 function mapTournament(row: Record<string, unknown>): TournamentRecord {

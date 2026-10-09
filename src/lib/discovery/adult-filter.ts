@@ -4,6 +4,7 @@ import { fold } from "@/lib/discovery/text";
 const JUNIOR_PATTERNS = [
   /\bu\s?(7|8|9|10|11|12|13|14|15|16|17|18)\b/i,
   /\b(u7|u8|u9|u10|u11|u12|u13|u14|u15|u16|u17|u18)\b/i,
+  /\bu\d{1,2}\b/i,
   /\b(7|8|9|10|11|12|13|14|15|16|17|18)\s?m(?:et(?:u|ai)?)?\b/i,
   /\bjaun(?:imas|i|imo)\b/i,
   /\bjunior\b/i,

@@ -159,8 +159,17 @@ async function ingestObservations(observations: RawObservation[], source: Source
       const externalId = externalIdFrom(raw);
       const prior = externalId ? await findByExternalId(supabase, sourceId, externalId) : null;
       if (prior) {
-        if (!dryRun) await refreshExisting(supabase, prior.id, raw, sourceId, source.slugPrefix);
-        summary.updated += 1;
+        if (!dryRun) {
+          if (shouldExcludeRaw(raw)) {
+            await supabase.from("tournaments").update({ published: false, updated_at: new Date().toISOString() }).eq("id", prior.id);
+            summary.rejected += 1;
+          } else {
+            await refreshExisting(supabase, prior.id, raw, sourceId, source.slugPrefix);
+            summary.updated += 1;
+          }
+        } else {
+          summary.updated += 1;
+        }
         continue;
       }
 
