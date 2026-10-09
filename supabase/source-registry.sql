@@ -464,3 +464,13 @@ set
   priority = 92,
   active = true
 where id = '00000000-0000-4000-8000-000000000020';
+
+update public.sources
+set metadata = jsonb_set(
+  coalesce(metadata, '{}'::jsonb),
+  '{eventUrls}',
+  coalesce(metadata->'eventUrls', '[]'::jsonb) || '["https://www.facebook.com/events/823720397466259"]'::jsonb,
+  true
+)
+where id = '00000000-0000-4000-8000-000000000020'
+  and not coalesce(metadata->'eventUrls', '[]'::jsonb) @> '["https://www.facebook.com/events/823720397466259"]'::jsonb;

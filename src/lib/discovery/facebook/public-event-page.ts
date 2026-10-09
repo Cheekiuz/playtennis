@@ -49,14 +49,16 @@ async function fetchPublicFacebookEventPage(
   const jsonLd = readJsonLdEvent(html);
 
   const title = jsonLd?.name ?? meta["og:title"] ?? meta["twitter:title"];
+  const description = jsonLd?.description ?? meta["og:description"] ?? meta.description ?? null;
+  const hints = parseFacebookDescription(description);
+
   const startRaw = jsonLd?.startDate ?? meta["event:start_time"] ?? meta["og:updated_time"];
-  const startDate = startRaw ? toDateOnly(startRaw) : null;
+  const startDate = startRaw ? toDateOnly(startRaw) : hints.startDate;
   if (!title?.trim() || !startDate) return null;
 
   const endRaw = jsonLd?.endDate ?? meta["event:end_time"];
   const endDateParsed = endRaw ? toDateOnly(endRaw) : null;
   const endDate = endDateParsed && endDateParsed >= startDate ? endDateParsed : startDate;
-  const description = jsonLd?.description ?? meta["og:description"] ?? null;
   const place = jsonLd?.location;
 
   return {
@@ -65,11 +67,13 @@ async function fetchPublicFacebookEventPage(
     startDate,
     endDate,
     countryCode: source.countryCode ?? "lt",
-    city: typeof place === "object" && place && "address" in place
-      ? (place as { address?: { addressLocality?: string } }).address?.addressLocality ?? source.city
-      : source.city,
+    city:
+      hints.city ??
+      (typeof place === "object" && place && "address" in place
+        ? (place as { address?: { addressLocality?: string } }).address?.addressLocality ?? source.city
+        : source.city),
     venue: typeof place === "object" && place && "name" in place ? String((place as { name?: string }).name ?? "") : null,
-    organiser: source.sourceName,
+    organiser: hints.organiser ?? source.sourceName,
     officialEventUrl: normalized,
     description: description ? decodeHtml(description.trim()) : null,
     registrationStatus: "unknown",
@@ -150,5 +154,53 @@ function decodeHtml(value: string): string {
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&#39;/g, "'")
-    .replace(/&quot;/g, '"');
+    .replace(/&quot;/g, '"')
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(Number.parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, num) => String.fromCharCode(Number(num)));
+}
+
+const MONTHS_LT = [
+  "sausio",
+  "vasario",
+  "kovo",
+  "balandžio",
+  "gegužės",
+  "birželio",
+  "liepos",
+  "rugpjūčio",
+  "rugsėjo",
+  "spalio",
+  "lapkričio",
+  "gruodžio",
+];
+
+function parseFacebookDescription(raw: string | null): {
+  startDate: string | null;
+  city: string | null;
+  organiser: string | null;
+} {
+  if (!raw) return { startDate: null, city: null, organiser: null };
+  const text = decodeHtml(raw);
+  const lower = text.toLowerCase();
+
+  let startDate: string | null = null;
+  const yearMatch = lower.match(/\b(20\d{2})\b/);
+  const year = yearMatch ? Number(yearMatch[1]) : new Date().getFullYear();
+  for (let i = 0; i < MONTHS_LT.length; i += 1) {
+    const re = new RegExp(`\\b${MONTHS_LT[i]}\\s+(\\d{1,2})(?:\\s+d\\.?)?(?:\\s|,|$)`, "i");
+    const m = lower.match(re);
+    if (m) {
+      startDate = `${year}-${String(i + 1).padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+      break;
+    }
+  }
+
+  const cityMatch = text.match(/vieta:\s*([^,]+)/i);
+  const organiserMatch = text.match(/reng[eė]jas:\s*([^,]+)/i);
+
+  return {
+    startDate,
+    city: cityMatch ? cityMatch[1].trim() : null,
+    organiser: organiserMatch ? organiserMatch[1].trim() : null,
+  };
 }
