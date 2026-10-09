@@ -8,7 +8,7 @@ import {
   TOURNATED_PLATFORMS,
   type TournatedPlatformConfig,
 } from "@/lib/discovery/tournated-public";
-import { shouldExcludeRaw } from "@/lib/discovery/adult-filter";
+import { adultOnlyCategories, shouldExcludeRaw } from "@/lib/discovery/adult-filter";
 import { tournamentSourceKind, type RegistrySource } from "@/lib/discovery/registry-types";
 import type { DuplicateCandidate, RawObservation, ReviewStatus } from "@/lib/discovery/types";
 import { preparePublication } from "@/lib/discovery/workflow";
@@ -520,9 +520,10 @@ async function createTournament(
 }
 
 async function replaceCategories(supabase: ReturnType<typeof createServerSupabaseClient>, tournamentId: string, raw: RawObservation) {
-  if (!raw.ingestCategories?.length) return;
+  const categories = adultOnlyCategories(raw.ingestCategories);
+  if (!categories?.length) return;
   await supabase.from("tournament_categories").delete().eq("tournament_id", tournamentId);
-  const rows = raw.ingestCategories.map((category, index) => ({
+  const rows = categories.map((category, index) => ({
     tournament_id: tournamentId,
     discipline: category.discipline,
     gender: category.gender,
