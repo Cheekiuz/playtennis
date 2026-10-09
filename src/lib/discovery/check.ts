@@ -51,8 +51,14 @@ export function runDiscoveryChecks(): string[] {
   check("women, boys, and senior age labels are kept", stockholm?.gender === "women" && melbourne?.gender === "boys" && melbourne.ageGroup === "U12" && london?.ageGroup === "40+");
   const melbourneRaw = DISCOVERY_FIXTURES.find((item) => item.city === "Melbourne");
   const vilniusRaw = DISCOVERY_FIXTURES.find((item) => item.city === "Vilnius");
-  check("under-18 tournaments are not ingested", melbourneRaw && shouldExcludeRaw(melbourneRaw) === "junior_only");
-  check("adult open tournaments are not treated as junior", vilniusRaw && shouldExcludeRaw(vilniusRaw) === null);
+  check(
+    "under-18 tournaments are not ingested",
+    melbourneRaw != null && shouldExcludeRaw(melbourneRaw) === "junior_only",
+  );
+  check(
+    "adult open tournaments are not treated as junior",
+    vilniusRaw != null && shouldExcludeRaw(vilniusRaw) === null,
+  );
   const past = normalizeObservation({ ...(DISCOVERY_FIXTURES.find((item) => item.city === "Hamburg") as RawObservation), isTest: false });
   const future = normalizeObservation({ ...official, isTest: false });
   check("past events stay addressable but leave the upcoming set", past.endDate < TODAY && isUpcoming(past, TODAY) === false);
