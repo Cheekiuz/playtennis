@@ -9,7 +9,11 @@ export const REGISTRY_SEEDS: RegistrySource[] = [
     "https://www.facebook.com/groups/119063918172498",
     92,
     null,
-    { groupId: "119063918172498", feedLimit: 50 },
+    {
+      groupId: "119063918172498",
+      feedLimit: 50,
+      eventUrls: ["https://www.facebook.com/events/823720397466259"],
+    },
   ),
   fb("00000000-0000-4000-8000-000000000021", "TENISO TURNYRAI", "FACEBOOK_GROUP", "https://www.facebook.com/groups/tenisoturnyrai", 90),
   fb("00000000-0000-4000-8000-000000000022", "Lietuvos teniso mėgėjų čempionatas", "FACEBOOK_PAGE", "https://www.facebook.com/LTAmateurTennisChampionship", 85),

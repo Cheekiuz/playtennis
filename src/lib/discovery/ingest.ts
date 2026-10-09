@@ -196,6 +196,7 @@ async function ingestObservations(observations: RawObservation[], source: Source
         decision.publish,
         source.slugPrefix,
         sourceKind,
+        decision.reviewStatus,
       );
       if (created) {
         summary.created += 1;
@@ -436,6 +437,7 @@ async function createTournament(
   publish: boolean,
   slugPrefix: string,
   sourceKind = "ORGANISER_WEBSITE",
+  reviewStatus: ReviewStatus = "unknown",
 ) {
   const country = event.countryCode ?? slugPrefix;
   await ensureCountry(supabase, country);
@@ -477,7 +479,7 @@ async function createTournament(
     }),
     lifecycle_status: "upcoming",
     verification_status: "needs_verification",
-    review_status: publish ? "unknown" : "needs_review",
+    review_status: publish ? reviewStatus : "needs_review",
     source_confidence: event.sourceConfidence,
     quality_score: quality.score,
     original_level: event.originalLevel,
