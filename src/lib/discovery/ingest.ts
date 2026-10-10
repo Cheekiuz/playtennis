@@ -12,6 +12,7 @@ import { adultOnlyCategories, shouldExcludeRaw } from "@/lib/discovery/adult-fil
 import { shouldExcludeTableTennis } from "@/lib/discovery/tennis-sport";
 import { tournamentSourceKind, type RegistrySource } from "@/lib/discovery/registry-types";
 import type { DuplicateCandidate, RawObservation, ReviewStatus } from "@/lib/discovery/types";
+import { publicListingDecision } from "@/lib/discovery/public-listing";
 import { preparePublication } from "@/lib/discovery/workflow";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { dedupeKey } from "@/lib/tournaments/feed";
@@ -376,6 +377,7 @@ async function refreshExisting(
 ) {
   const event = normalizeObservation(raw);
   const quality = scoreQuality(event);
+  const listing = publicListingDecision(event);
   const patch = {
     starts_on: event.startDate,
     ends_on: event.endDate,
@@ -389,6 +391,7 @@ async function refreshExisting(
     price_currency: event.currency,
     source_confidence: event.sourceConfidence,
     quality_score: quality.score,
+    ...(listing.publish ? { published: true, review_status: listing.reviewStatus } : {}),
     updated_at: new Date().toISOString(),
   };
   await supabase.from("tournaments").update(patch).eq("id", id);

@@ -1,4 +1,5 @@
 import { parseLtHeadingDates } from "@/lib/discovery/adapters/lt-dates";
+import { publicListingDecision } from "@/lib/discovery/public-listing";
 import { shouldExcludeRaw } from "@/lib/discovery/adult-filter";
 import { extractEventUrlsFromSearchHtml } from "@/lib/discovery/facebook/event-search";
 import { shouldExcludeTableTennis } from "@/lib/discovery/tennis-sport";
@@ -79,6 +80,23 @@ export function runDiscoveryChecks(): string[] {
       parseLtHeadingDates("GERUMO TAŠKAI. 2026 10 26")?.startDate === "2026-10-26" &&
       parseLtHeadingDates("Mouratoglou Tennis Center, 2026 11 16-29d.")?.endDate === "2026-11-29",
   );
+  const websiteListing = publicListingDecision(
+    normalizeObservation({
+      title: "BABE tennis cup",
+      startDate: "2026-10-17",
+      endDate: "2026-10-17",
+      countryCode: "lt",
+      city: "Vilnius",
+      venue: "Teniso erdvė",
+      organiser: "TennisPassion",
+      officialEventUrl: "https://www.tennispassion.lt/turnyrai/",
+      sourceName: "TennisPassion",
+      sourceUrl: "https://www.tennispassion.lt/turnyrai/",
+      sourceType: "tournament_organiser",
+      sourceConfidence: "high",
+    }),
+  );
+  check("scraped organizer websites list publicly when location is known", websiteListing.publish === true);
   const past = normalizeObservation({ ...(DISCOVERY_FIXTURES.find((item) => item.city === "Hamburg") as RawObservation), isTest: false });
   const future = normalizeObservation({ ...official, isTest: false });
   check("past events stay addressable but leave the upcoming set", past.endDate < TODAY && isUpcoming(past, TODAY) === false);

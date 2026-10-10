@@ -21,12 +21,13 @@ export function scoreQuality(event: Pick<
   | "longitude"
   | "sourceConfidence"
   | "sourceType"
->): QualityResult {
+> & { venue?: string | null }): QualityResult {
   let score = 0;
   if (event.officialEventUrl) score += 20;
   if (event.registrationUrl) score += 10;
   if (event.startDate) score += 15;
   if (event.city) score += 10;
+  else if (event.venue) score += 6;
   if (event.countryCode) score += 10;
   if (event.organiser) score += 10;
   if (event.timezone) score += 10;
@@ -48,7 +49,8 @@ export function scoreQuality(event: Pick<
     event.sourceType === "user_submission" ||
     event.sourceType === "public_calendar";
 
-  if (discoveryOnly || !event.startDate || !event.city || !event.countryCode || !event.officialEventUrl) {
+  const hasLocation = Boolean(event.city || event.venue);
+  if (discoveryOnly || !event.startDate || !hasLocation || !event.countryCode || !event.officialEventUrl) {
     return { score, decision: "review" };
   }
   if (score >= 70) return { score, decision: "publish" };

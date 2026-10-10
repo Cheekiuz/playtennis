@@ -4,14 +4,20 @@ import { discoveryIsEnabled, runRegistryDiscovery } from "@/lib/discovery/discov
 import { ingestAllEnabled, ingestIsEnabled } from "@/lib/discovery/ingest";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 export async function POST(request: Request) {
   if (!isCronAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!ingestIsEnabled()) {
+  const federationEnabled = ingestIsEnabled();
+  const registryEnabled = discoveryIsEnabled();
+
+  // GitHub Actions cron is trusted: always sync registry sources (LT websites, Facebook, etc.).
+  const runRegistry = registryEnabled || federationEnabled;
+
+  if (!runRegistry && !federationEnabled) {
     return NextResponse.json({
       skipped: true,
       reason: "Set INGEST_ENABLED=true (or INGEST_LTS_ENABLED=true) on the deployment.",
@@ -19,25 +25,31 @@ export async function POST(request: Request) {
   }
 
   try {
-    if (discoveryIsEnabled()) {
-      const report = await runRegistryDiscovery();
-      return NextResponse.json(report);
+    const payload: Record<string, unknown> = {};
+
+    if (runRegistry) {
+      payload.registry = await runRegistryDiscovery();
     }
 
-    const results = await ingestAllEnabled();
-    const totals = Object.values(results).reduce(
-      (acc, item) => ({
-        collected: acc.collected + item.collected,
-        created: acc.created + item.created,
-        updated: acc.updated + item.updated,
-        attached: acc.attached + item.attached,
-        review: acc.review + item.review,
-        rejected: acc.rejected + item.rejected,
-        errors: [...acc.errors, ...item.errors],
-      }),
-      { collected: 0, created: 0, updated: 0, attached: 0, review: 0, rejected: 0, errors: [] as string[] },
-    );
-    return NextResponse.json({ platforms: results, totals });
+    // LTS/LV-only flag: still pull federation calendars when full registry ingest is off.
+    if (federationEnabled && !registryEnabled) {
+      const results = await ingestAllEnabled();
+      const totals = Object.values(results).reduce(
+        (acc, item) => ({
+          collected: acc.collected + item.collected,
+          created: acc.created + item.created,
+          updated: acc.updated + item.updated,
+          attached: acc.attached + item.attached,
+          review: acc.review + item.review,
+          rejected: acc.rejected + item.rejected,
+          errors: [...acc.errors, ...item.errors],
+        }),
+        { collected: 0, created: 0, updated: 0, attached: 0, review: 0, rejected: 0, errors: [] as string[] },
+      );
+      payload.federation = { platforms: results, totals };
+    }
+
+    return NextResponse.json(payload);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Ingest failed.";
     return NextResponse.json({ error: message }, { status: 500 });

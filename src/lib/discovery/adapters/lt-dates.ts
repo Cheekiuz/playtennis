@@ -65,6 +65,15 @@ function toIsoDate(year: number, month: number, day: number): string | null {
   return iso;
 }
 
+export function inferLtCity(venue: string | null | undefined, fallback: string | null | undefined): string | null {
+  const text = `${venue ?? ""} ${fallback ?? ""}`.toLowerCase();
+  if (/vilni|gineiti|nemėž|nemez|žirg|zirg|saltoni|ginduliai arim/.test(text)) return "Vilnius";
+  if (/klaip|gindul/.test(text)) return "Klaipėda";
+  if (/kaun/.test(text)) return "Kaunas";
+  if (/nida|nidos/.test(text)) return "Nida";
+  return fallback?.trim() || null;
+}
+
 export function stripHtml(html: string): string {
   return html
     .replace(/<br\s*\/?>/gi, "\n")

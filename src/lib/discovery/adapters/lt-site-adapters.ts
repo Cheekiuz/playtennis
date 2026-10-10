@@ -1,4 +1,4 @@
-import { parseLtHeadingDates, stripHtml } from "@/lib/discovery/adapters/lt-dates";
+import { inferLtCity, parseLtHeadingDates, stripHtml } from "@/lib/discovery/adapters/lt-dates";
 import { politeFetch } from "@/lib/discovery/http";
 import type { HttpSiteResult } from "@/lib/discovery/adapters/http-site";
 import { shouldExcludeRaw } from "@/lib/discovery/adult-filter";
@@ -64,12 +64,13 @@ function parseTennisPassionUpcoming(html: string, source: RegistrySource): RawOb
       if (!dates) continue;
       const title = line.replace(/,\s*20\d{2}[\s\S]*$/i, "").replace(/\.\s*20\d{2}[\s\S]*$/i, "").trim();
 
+      const city = inferLtCity(venue, source.city);
       observations.push({
         title: title || line,
         startDate: dates.startDate,
         endDate: dates.endDate,
         countryCode: source.countryCode ?? "lt",
-        city: venue?.includes("Vilni") ? "Vilnius" : source.city,
+        city,
         venue,
         organiser: source.sourceName,
         organiserUrl: source.url,
@@ -77,7 +78,7 @@ function parseTennisPassionUpcoming(html: string, source: RegistrySource): RawOb
         registrationUrl,
         description: venue ? `Vieta: ${venue}` : null,
         sourceName: source.sourceName,
-        sourceUrl: TENNIS_PASSION_PUBLIC,
+        sourceUrl: `${TENNIS_PASSION_PUBLIC}&event=${encodeURIComponent(title || line)}`,
         sourceType: mapRegistryToSourceType(source.registrySourceType),
         sourceConfidence: "high",
         registrationStatus: "unknown",
@@ -135,7 +136,7 @@ export async function collectWidenArenaGames(source: RegistrySource): Promise<Ht
 
       observations.push({
         title: groupName,
-        eventType: /MEET&PLAY/i.test(groupName) ? "social" : "tournament",
+        eventType: /MEET&PLAY/i.test(groupName) ? "SOCIAL" : "TOURNAMENT",
         startDate,
         endDate,
         startTime: starts[0].slice(11, 16),
@@ -278,7 +279,7 @@ function mapBalzekasEvent(event: BalzekasEvent, source: RegistrySource, city: st
     sourceType: mapRegistryToSourceType(source.registrySourceType),
     sourceConfidence: "high",
     registrationStatus: "unknown",
-    eventType: event.kind === "tournament" ? "tournament" : null,
+    eventType: event.kind === "tournament" ? "TOURNAMENT" : "PLAY_SESSION",
   };
 }
 

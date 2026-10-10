@@ -1,6 +1,7 @@
 import { collectFromRegistrySource } from "@/lib/discovery/adapters";
 import { runDiscoveryPipeline, type PipelineSummary } from "@/lib/discovery/discovery-pipeline";
 import { ingestObservationsFromRegistry } from "@/lib/discovery/ingest";
+import { reconcileRegistryPublicListings } from "@/lib/discovery/reconcile-registry-listings";
 import { loadActiveRegistrySources } from "@/lib/discovery/registry";
 import type { RegistrySource } from "@/lib/discovery/registry-types";
 
@@ -113,6 +114,10 @@ export async function runRegistryDiscovery(options?: { dryRun?: boolean }): Prom
   report.totals.excludedClosedPrivate = report.pipeline.closedOrInvitation;
   report.totals.excludedOther = report.pipeline.excludedOther;
   report.totals.published = report.pipeline.published;
+
+  if (!dryRun) {
+    await reconcileRegistryPublicListings();
+  }
 
   return report;
 }
