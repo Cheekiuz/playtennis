@@ -19,7 +19,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const useRegistry = process.env.DISCOVERY_ENABLED === "true";
+    const useRegistry =
+      process.env.DISCOVERY_ENABLED === "true" ||
+      process.env.INGEST_ENABLED === "true" ||
+      ingestIsEnabled();
+
     if (useRegistry) {
       const report = await runRegistryDiscovery();
       return NextResponse.json(report);

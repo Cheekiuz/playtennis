@@ -119,7 +119,17 @@ export async function runRegistryDiscovery(options?: { dryRun?: boolean }): Prom
     await reconcileRegistryPublicListings();
   }
 
-  return report;
+  return {
+    ...report,
+    ingestSummary: report.sources.map((source) => ({
+      sourceName: source.sourceName,
+      discovered: source.discovered,
+      created: source.ingested.created,
+      updated: source.ingested.updated,
+      rejected: source.ingested.rejected,
+      error: source.errors[0] ?? null,
+    })),
+  };
 }
 
 export async function runRegistryDiscoveryForSource(source: RegistrySource) {
