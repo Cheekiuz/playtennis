@@ -26,13 +26,13 @@ export async function loadActiveRegistrySources(): Promise<RegistrySource[]> {
       return REGISTRY_SEEDS.filter((source) => source.active);
     }
 
-    return data.map(mapRow).filter((source) => source.active);
+    return data.map(mapRegistrySourceRow).filter((source) => source.active);
   } catch {
     return REGISTRY_SEEDS.filter((source) => source.active);
   }
 }
 
-function mapRow(row: Record<string, unknown>): RegistrySource {
+export function mapRegistrySourceRow(row: Record<string, unknown>): RegistrySource {
   const registryType = (row.registry_source_type as RegistrySourceType | null) ?? "OTHER";
   return {
     id: String(row.id),

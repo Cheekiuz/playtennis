@@ -1,3 +1,4 @@
+import { collectFromLtSiteAdapter, resolveLtSiteAdapter } from "@/lib/discovery/adapters/lt-site-adapters";
 import { politeFetch } from "@/lib/discovery/http";
 import type { RawObservation } from "@/lib/discovery/types";
 import { mapRegistryToSourceType, type RegistrySource } from "@/lib/discovery/registry-types";
@@ -8,6 +9,11 @@ export type HttpSiteResult = {
 };
 
 export async function collectFromHttpSite(source: RegistrySource): Promise<HttpSiteResult> {
+  const ltAdapter = resolveLtSiteAdapter(source.metadata);
+  if (ltAdapter) {
+    return collectFromLtSiteAdapter(ltAdapter, source);
+  }
+
   const base = source.url.replace(/\/$/, "");
   const eventsPath = typeof source.metadata.eventsPath === "string" ? source.metadata.eventsPath : "/";
   const target = `${base}${eventsPath}`;

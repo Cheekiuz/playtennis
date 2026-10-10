@@ -252,7 +252,7 @@ values
     '00000000-0000-4000-8000-000000000033',
     'import',
     'TennisPassion',
-    'https://tennispassion.lt',
+    'https://www.tennispassion.lt',
     'feed',
     'tournament_organiser',
     'ORGANIZER_WEBSITE',
@@ -263,8 +263,8 @@ values
     75,
     'http_site',
     null,
-    '{}'::jsonb,
-    'Organizer.'
+    '{"adapter":"tennispassion_turnyrai","eventsPath":"/turnyrai/#busimi-turnyrai"}'::jsonb,
+    'Organizer turnyrai page (WP JSON).'
   ),
   (
     '00000000-0000-4000-8000-000000000034',
@@ -371,8 +371,26 @@ values
     75,
     'http_site',
     null,
-    '{}'::jsonb,
-    'Venue (host, not always organiser).'
+    '{"adapter":"widenarena_games","eventsPath":"/games"}'::jsonb,
+    'Venue games API (tennis sessions grouped).'
+  ),
+  (
+    '00000000-0000-4000-8000-00000000003e',
+    'import',
+    'Balzekas Tennis',
+    'https://balzekastennis.lt',
+    'feed',
+    'club',
+    'CLUB',
+    'LT',
+    null,
+    'medium',
+    true,
+    72,
+    'http_site',
+    null,
+    '{"adapter":"balzekas_renginiai","eventsPath":"/renginiai"}'::jsonb,
+    'Renginiai page + rezervacijos events API.'
   ),
   (
     '00000000-0000-4000-8000-00000000003a',

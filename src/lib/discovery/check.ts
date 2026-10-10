@@ -1,3 +1,4 @@
+import { parseLtHeadingDates } from "@/lib/discovery/adapters/lt-dates";
 import { shouldExcludeRaw } from "@/lib/discovery/adult-filter";
 import { extractEventUrlsFromSearchHtml } from "@/lib/discovery/facebook/event-search";
 import { shouldExcludeTableTennis } from "@/lib/discovery/tennis-sport";
@@ -71,6 +72,12 @@ export function runDiscoveryChecks(): string[] {
     extractEventUrlsFromSearchHtml('href="https://www.facebook.com/events/823720397466259"').includes(
       "https://www.facebook.com/events/823720397466259",
     ),
+  );
+  check(
+    "lithuanian organizer heading dates parse consistently",
+    parseLtHeadingDates("BABE tennis cup'26, 2026 spalio 10")?.startDate === "2026-10-10" &&
+      parseLtHeadingDates("GERUMO TAŠKAI. 2026 10 26")?.startDate === "2026-10-26" &&
+      parseLtHeadingDates("Mouratoglou Tennis Center, 2026 11 16-29d.")?.endDate === "2026-11-29",
   );
   const past = normalizeObservation({ ...(DISCOVERY_FIXTURES.find((item) => item.city === "Hamburg") as RawObservation), isTest: false });
   const future = normalizeObservation({ ...official, isTest: false });
