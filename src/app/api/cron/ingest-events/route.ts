@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ingestItfMastersCalendar } from "@/lib/collectors/itf/ingest";
 import { isCronAuthorized } from "@/lib/cron-auth";
 import { discoveryIsEnabled, runRegistryDiscovery } from "@/lib/discovery/discover";
 import { ingestAllEnabled, ingestIsEnabled } from "@/lib/discovery/ingest";
@@ -13,14 +14,15 @@ export async function POST(request: Request) {
 
   const federationEnabled = ingestIsEnabled();
   const registryEnabled = discoveryIsEnabled();
+  const itfEnabled = process.env.INGEST_ITF_ENABLED === "true" || federationEnabled;
 
   // GitHub Actions cron is trusted: always sync registry sources (LT websites, Facebook, etc.).
   const runRegistry = registryEnabled || federationEnabled;
 
-  if (!runRegistry && !federationEnabled) {
+  if (!runRegistry && !federationEnabled && !itfEnabled) {
     return NextResponse.json({
       skipped: true,
-      reason: "Set INGEST_ENABLED=true (or INGEST_LTS_ENABLED=true) on the deployment.",
+      reason: "Set INGEST_ENABLED=true (or INGEST_ITF_ENABLED=true) on the deployment.",
     });
   }
 
@@ -47,6 +49,10 @@ export async function POST(request: Request) {
         { collected: 0, created: 0, updated: 0, attached: 0, review: 0, rejected: 0, errors: [] as string[] },
       );
       payload.federation = { platforms: results, totals };
+    }
+
+    if (itfEnabled) {
+      payload.itf = await ingestItfMastersCalendar();
     }
 
     return NextResponse.json(payload);

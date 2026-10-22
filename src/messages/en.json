@@ -149,7 +149,37 @@
     "philosophy": "Philosophy",
     "menu": "Menu",
     "close": "Close",
-    "submit": "Submit an event"
+    "submit": "Submit an event",
+    "lithuania": "Lithuania",
+    "baltics": "Baltics",
+    "itf": "ITF"
+  },
+  "catalog": {
+    "sectionsNav": "Tournament sections",
+    "upcoming": "Upcoming",
+    "past": "Past",
+    "emptyUpcoming": "No upcoming tournaments in this section yet.",
+    "emptyPast": "No past tournaments in this section yet.",
+    "sections": {
+      "lithuania": "Lithuania",
+      "baltics": "Baltic States",
+      "itf": "ITF Masters"
+    },
+    "lithuania": {
+      "title": "Lithuania",
+      "description": "Adult amateur tennis tournaments in Lithuania from Facebook events and TenisoNamai one-day events.",
+      "sourceNote": "Listings link to the original organiser or Facebook event. Closed and cancelled events are omitted."
+    },
+    "baltics": {
+      "title": "Baltic States",
+      "description": "Adult amateur tennis tournaments in Latvia and Estonia, sourced from Facebook events.",
+      "sourceNote": "Lithuania has its own section. Listings link to the original Facebook event when available."
+    },
+    "itf": {
+      "title": "ITF World Tennis Masters Tour",
+      "description": "Tournaments from the official ITF World Tennis Masters Tour calendar (ages 30+).",
+      "sourceNote": "Source: ITF World Tennis Masters Tour calendar. Always confirm details on the official ITF page before registering. Closed and cancelled events are omitted."
+    }
   },
   "discover": {
     "brand": "PlayTennis.lt",

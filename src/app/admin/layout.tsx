@@ -20,6 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </Link>
         <nav className="flex gap-4 text-sm font-semibold">
           <Link href="/admin/new">New tournament</Link>
+          <Link href="/admin/facebook">Facebook paste</Link>
           <Link href="/lt">View site</Link>
         </nav>
       </header>

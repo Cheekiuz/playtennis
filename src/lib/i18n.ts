@@ -10,7 +10,7 @@ export type Messages = typeof en;
 
 const messages: Record<Locale, Messages> = { en, lt };
 
-const CANONICAL_SEGMENTS = ["tournaments", "saved", "about", "play", "quiz", "submit"] as const;
+const CANONICAL_SEGMENTS = ["tournaments", "saved", "about", "play", "quiz", "submit", "lithuania", "baltics", "itf"] as const;
 
 const PUBLIC_SEGMENT: Record<Locale, Record<string, string>> = {
   lt: {
@@ -20,6 +20,9 @@ const PUBLIC_SEGMENT: Record<Locale, Record<string, string>> = {
     play: "zaidimas",
     quiz: "kvizas",
     submit: "pateikti",
+    lithuania: "lietuva",
+    baltics: "baltija",
+    itf: "itf",
   },
   en: {
     tournaments: "tournaments",
@@ -28,6 +31,9 @@ const PUBLIC_SEGMENT: Record<Locale, Record<string, string>> = {
     play: "play",
     quiz: "quiz",
     submit: "submit",
+    lithuania: "lithuania",
+    baltics: "baltics",
+    itf: "itf",
   },
 };
 
@@ -44,6 +50,11 @@ const SEGMENT_TO_CANONICAL: Record<string, string> = {
   quiz: "quiz",
   pateikti: "submit",
   submit: "submit",
+  lietuva: "lithuania",
+  lithuania: "lithuania",
+  baltija: "baltics",
+  baltics: "baltics",
+  itf: "itf",
 };
 
 export function isValidLocale(value: string): value is Locale {

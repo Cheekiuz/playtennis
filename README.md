@@ -27,20 +27,39 @@ A smarter way to find tennis partners, organize matches, track results, and disc
 
 Signups appear in **Supabase → Table Editor → waitlist**.
 
-## Events and federation ingest
+## Tournament catalog (Lithuania / Baltics / ITF)
 
-1. In the Supabase SQL Editor, run (in order): `supabase/tournaments.sql`, `supabase/events.sql`, `supabase/event-submissions.sql`, `supabase/discovery.sql`.  
-   Or, with a direct Postgres URL in `.env.local` (`POSTGRES_URL_NON_POOLING`), run `node scripts/apply-supabase-schema.mjs`.
-2. On Vercel, set `INGEST_ENABLED=true` (and keep `CRON_SECRET` plus Supabase service keys). Redeploy after changing env vars.
-3. Trigger a sync: GitHub Actions → **Ingest federation events** → Run workflow, or `POST /api/cron/ingest-events` with `Authorization: Bearer $CRON_SECRET`.
+Public browse sections (upcoming and past):
 
-LT and LV federation calendars use Tournated public GraphQL. Registry-driven discovery (Facebook groups/pages, LT organizers, venues) runs when `DISCOVERY_ENABLED=true` via `POST /api/cron/discover-events` or the ingest cron when discovery is enabled.
+- `/lithuania` (LT: ` /lt/lietuva`) — Lithuania amateur events
+- `/baltics` (LT: `/lt/baltija`) — Latvia + Estonia only
+- `/itf` — ITF World Tennis Masters Tour calendar
 
-Run `npx tsx scripts/discovery-test.ts` for a live adapter report. Apply `supabase/source-registry.sql` after the other event SQL files.
+### Schema
 
-Set `FACEBOOK_ACCESS_TOKEN` for automatic group/page ingestion via Meta Graph API.
+In the Supabase SQL Editor, run in order: `tournaments.sql`, `events.sql`, `event-submissions.sql`, `discovery.sql`, `source-registry.sql`, **`catalog-sections.sql`**.  
+Or, with `POSTGRES_URL_NON_POOLING` in `.env.local`, run `node scripts/apply-supabase-schema.mjs`.
 
-**Without a Meta developer account** (e.g. SMS verification fails): add public Facebook Event links to the source in Supabase, then run ingest. Example for [Tenisininkai](https://www.facebook.com/groups/119063918172498):
+`catalog-sections.sql` adds `catalog_section`, `is_closed`, `itf_category`, and `ingest_runs`.
+
+### Ingest
+
+1. On Vercel, set `INGEST_ENABLED=true` and/or `INGEST_ITF_ENABLED=true` (plus `CRON_SECRET` and Supabase service keys). Redeploy after changing env vars.
+2. Trigger sync:
+   - GitHub Actions → **Ingest federation events** or **Ingest ITF Masters calendar**
+   - `POST /api/cron/ingest-events` or `POST /api/cron/ingest-itf` with `Authorization: Bearer $CRON_SECRET`
+
+**ITF:** uses the public calendar JSON at `itftennis.com` with `circuitCode=VT` (Masters Tour, not Men’s World Tennis Tour `MT`). Closed and cancelled events are skipped. Always attribute and link back to ITF.
+
+**Facebook:** Meta Groups API access is not available for normal apps. MVP path is admin-pasted public event URLs (see below). Do not rely on unrestricted Graph API group event listing.
+
+**TenisoNamai / LT sites:** registry discovery when `DISCOVERY_ENABLED=true`. Prefer one-day tournaments for the Lithuania section.
+
+### Facebook event URLs (no Graph token required)
+
+Admin: sign in → **Facebook paste** (`/admin/facebook`), paste one event URL per line, save and ingest.
+
+Or SQL for [Tenisininkai](https://www.facebook.com/groups/tenisininkai):
 
 ```sql
 update public.sources
@@ -53,9 +72,7 @@ set metadata = coalesce(metadata, '{}'::jsonb) || jsonb_build_object(
 where id = '00000000-0000-4000-8000-000000000020';
 ```
 
-Copy each event link from the group in your browser (Share → copy link). Ingest reads public event page metadata; no API token required for those URLs. You can also use **Submit an event** on PlayTennis for one-off posts.
-
-**Facebook event search**: source `00000000-0000-4000-8000-000000000024` runs several queries (`teniso turnyras`, `lauko tenis`, `tennis tournament`, …) with **no geo radius** when `FACEBOOK_ACCESS_TOKEN` is set. Table tennis / stalo tenis is filtered out. Optional metadata `searchUseGeo: true` plus `searchLat`, `searchLng`, `searchDistanceM` restores a local radius. Without a token, Facebook’s search HTML usually has no event IDs for server fetch; use manual `eventUrls` or a token.
+Copy each event link from the group (Share → copy link). Ingest reads public event page metadata.
 
 ## Getting started
 

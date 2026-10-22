@@ -32,6 +32,7 @@ export const PUBLIC_REGISTRATION = ["OPEN", "NOT_STARTED", "CLOSED", "FULL", "IN
 export const REGISTRATION_METHODS = ["WEBSITE", "EXTERNAL_FORM", "EMAIL", "PHONE", "FACEBOOK", "OTHER"] as const;
 export const PLAY_LEVELS = ["LIGHT", "MIDDLE", "ADVANCED", "NTRP", "OTHER"] as const;
 export const SOURCE_KINDS = ["ORGANISER_WEBSITE", "FACEBOOK", "INSTAGRAM", "AGGREGATOR", "MUNICIPALITY", "VENUE", "OTHER"] as const;
+export const CATALOG_SECTIONS = ["lithuania", "baltics", "itf"] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];
 export type EventFormat = (typeof EVENT_FORMATS)[number];
@@ -39,6 +40,8 @@ export type DurationType = (typeof DURATION_TYPES)[number];
 export type PlayAudience = (typeof PLAY_AUDIENCES)[number];
 export type PublicRegistration = (typeof PUBLIC_REGISTRATION)[number];
 export type PlayLevel = (typeof PLAY_LEVELS)[number];
+export type CatalogSection = (typeof CATALOG_SECTIONS)[number];
+export type CatalogWhen = "upcoming" | "past";
 
 export type TournamentCategory = {
   id: string;
@@ -116,6 +119,9 @@ export type TournamentRecord = {
   reviewStatus: "verified" | "checked" | "needs_review" | "conflicting" | "expired" | "unknown";
   qualityScore: number | null;
   isTest: boolean;
+  catalogSection: CatalogSection | null;
+  itfCategory: string | null;
+  isClosed: boolean;
   translations: {
     locale: string;
     description: string | null;
@@ -144,5 +150,7 @@ export type TournamentFilters = {
   event?: string;
   format?: string;
   playLevel?: string;
+  catalogSection?: CatalogSection;
+  catalogWhen?: CatalogWhen;
   page?: number;
 };

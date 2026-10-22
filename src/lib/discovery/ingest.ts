@@ -15,9 +15,11 @@ import type { DuplicateCandidate, RawObservation, ReviewStatus } from "@/lib/dis
 import { publicListingDecision } from "@/lib/discovery/public-listing";
 import { preparePublication } from "@/lib/discovery/workflow";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { catalogSectionForCountry } from "@/lib/tournaments/catalog";
 import { dedupeKey } from "@/lib/tournaments/feed";
 import { regionName } from "@/lib/tournaments/countries";
 import { slugify } from "@/lib/tournaments/admin";
+import type { CatalogSection } from "@/lib/tournaments/types";
 
 export type IngestSummary = {
   collected: number;
@@ -109,7 +111,7 @@ function platformsToIngest(): TournatedPlatformConfig[] {
   return TOURNATED_PLATFORMS.filter((platform) => wanted.has(platform.id));
 }
 
-type SourceMeta = {
+export type SourceMeta = {
   sourceKey: string;
   sourceId?: string;
   sourceName: string;
@@ -121,7 +123,7 @@ type SourceMeta = {
   slugPrefix: string;
 };
 
-async function ingestObservations(observations: RawObservation[], source: SourceMeta): Promise<IngestSummary> {
+export async function ingestObservations(observations: RawObservation[], source: SourceMeta): Promise<IngestSummary> {
   const summary: IngestSummary = {
     collected: observations.length,
     created: 0,
@@ -185,9 +187,16 @@ async function ingestObservations(observations: RawObservation[], source: Source
         continue;
       }
       if (decision.action === "review") {
-        summary.review += 1;
         if (decision.eventId && !dryRun) {
           await flagReview(supabase, decision.eventId, decision.reviewStatus);
+          if (decision.reviewStatus === "needs_review") {
+            await refreshExisting(supabase, decision.eventId, raw, sourceId, source.slugPrefix);
+            summary.updated += 1;
+          } else {
+            summary.review += 1;
+          }
+        } else {
+          summary.review += 1;
         }
         continue;
       }
@@ -239,12 +248,15 @@ async function touchSourceScrape(
 }
 
 function externalIdFrom(raw: RawObservation): string | null {
+  if (raw.sourceExternalId?.trim()) return raw.sourceExternalId.trim();
   const tournated = raw.sourceUrl.match(/\/tournaments\/(\d+)/);
   if (tournated) return tournated[1];
   const facebookEvent = raw.sourceUrl.match(/\/events\/(\d+)/);
   if (facebookEvent) return `fb-event-${facebookEvent[1]}`;
   const facebookPost = raw.sourceUrl.match(/\/posts\/(\d+)/);
   if (facebookPost) return `fb-post-${facebookPost[1]}`;
+  const itfKey = raw.sourceUrl.match(/\/([a-z0-9-]+-\d{4}-\d{3})\/?$/i);
+  if (itfKey) return itfKey[1].toUpperCase();
   return null;
 }
 
@@ -378,6 +390,7 @@ async function refreshExisting(
   const event = normalizeObservation(raw);
   const quality = scoreQuality(event);
   const listing = publicListingDecision(event);
+  const section = resolveCatalogSection(raw, event.countryCode);
   const patch = {
     starts_on: event.startDate,
     ends_on: event.endDate,
@@ -390,6 +403,9 @@ async function refreshExisting(
     price_amount: event.priceAmount,
     price_currency: event.currency,
     source_confidence: event.sourceConfidence,
+    catalog_section: section ?? undefined,
+    itf_category: raw.itfCategory ?? undefined,
+    is_closed: raw.isClosed === true,
     quality_score: quality.score,
     ...(listing.publish ? { published: true, review_status: listing.reviewStatus } : {}),
     updated_at: new Date().toISOString(),
@@ -456,11 +472,12 @@ async function createTournament(
   sourceKind = "ORGANISER_WEBSITE",
   reviewStatus: ReviewStatus = "unknown",
 ) {
-  const country = event.countryCode ?? slugPrefix;
+  const country = (event.countryCode && event.countryCode.length === 2 ? event.countryCode : null) ?? (slugPrefix.length === 2 ? slugPrefix : "xx");
   await ensureCountry(supabase, country);
   const slug = await uniqueSlug(supabase, `${slugPrefix}-${externalId ?? slugify(event.title).slice(0, 40)}`);
   const quality = scoreQuality(event);
   const now = new Date().toISOString();
+  const section = resolveCatalogSection(raw, country);
   const row = {
     slug,
     name: event.title,
@@ -505,12 +522,17 @@ async function createTournament(
     price_currency: event.currency,
     age_group: event.ageGroup,
     event_gender: event.gender,
+    catalog_section: section,
+    itf_category: raw.itfCategory ?? null,
+    is_closed: raw.isClosed === true,
+    audience: raw.catalogSection === "itf" ? "masters" : "recreational",
+    tournament_type: raw.catalogSection === "itf" ? "masters" : "recreational",
     published: publish,
     updated_at: now,
   };
 
   let saved = await supabase.from("tournaments").insert(row).select("id").single();
-  if (saved.error && /review_status|source_confidence|quality_score|original_level|standardised_level|price_amount|price_currency|age_group|event_gender|discovery_stage|start_time|end_time|schema cache/i.test(saved.error.message)) {
+  if (saved.error && /review_status|source_confidence|quality_score|original_level|standardised_level|price_amount|price_currency|age_group|event_gender|discovery_stage|start_time|end_time|catalog_section|itf_category|is_closed|schema cache/i.test(saved.error.message)) {
     const {
       review_status: _a,
       source_confidence: _b,
@@ -524,6 +546,9 @@ async function createTournament(
       discovery_stage: _j,
       start_time: _k,
       end_time: _l,
+      catalog_section: _m,
+      itf_category: _n,
+      is_closed: _o,
       ...legacy
     } = row;
     saved = await supabase.from("tournaments").insert(legacy).select("id").single();
@@ -580,6 +605,13 @@ async function uniqueSlug(supabase: ReturnType<typeof createServerSupabaseClient
     slug = `${base.slice(0, 70)}-${i}`;
   }
   return `${base.slice(0, 60)}-${Date.now()}`;
+}
+
+function resolveCatalogSection(raw: RawObservation, countryCode: string | null | undefined): CatalogSection | null {
+  if (raw.catalogSection === "lithuania" || raw.catalogSection === "baltics" || raw.catalogSection === "itf") {
+    return raw.catalogSection;
+  }
+  return catalogSectionForCountry(countryCode);
 }
 
 function toCandidate(id: string, event: ReturnType<typeof normalizeObservation>, raw: RawObservation): DuplicateCandidate {

@@ -8,6 +8,7 @@ const SCHEMA_FILES = [
   "supabase/event-submissions.sql",
   "supabase/discovery.sql",
   "supabase/source-registry.sql",
+  "supabase/catalog-sections.sql",
 ];
 
 function connectionString(): string {

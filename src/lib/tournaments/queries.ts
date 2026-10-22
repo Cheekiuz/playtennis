@@ -4,8 +4,11 @@ import type { Locale } from "@/lib/i18n";
 import { rangeForPreset, todayIso } from "@/lib/tournaments/dates";
 import { isMainFeed } from "@/lib/tournaments/feed";
 import { adultPublicCategories, isJuniorPublicTournament } from "@/lib/tournaments/junior-exclusion";
+import { isCatalogSection } from "@/lib/tournaments/catalog";
 import type {
   Audience,
+  CatalogSection,
+  CatalogWhen,
   Discipline,
   DurationType,
   Environment,
@@ -51,7 +54,8 @@ const EVENT_SELECT = `
 const DISCOVERY_SELECT = `
   ${EVENT_SELECT},
   region, original_level, standardised_level, price_amount, price_currency,
-  source_confidence, review_status, quality_score, is_test, age_group, event_gender
+  source_confidence, review_status, quality_score, is_test, age_group, event_gender,
+  catalog_section, itf_category, is_closed
 `;
 
 export type EventPlaces = {
@@ -76,10 +80,14 @@ export function parseFilters(raw: Record<string, string | string[] | undefined>)
   };
   const page = Number(one("page") ?? "1");
 
+  const whenRaw = one("when");
+  const catalogWhen = whenRaw === "past" || whenRaw === "upcoming" ? whenRaw : undefined;
+
   return {
     q: one("q"),
     country: one("country")?.toLowerCase(),
-    when: one("when"),
+    // Keep date-preset when separate from section upcoming/past.
+    when: catalogWhen ? undefined : whenRaw,
     from: one("from"),
     to: one("to"),
     audience: one("audience"),
@@ -95,6 +103,11 @@ export function parseFilters(raw: Record<string, string | string[] | undefined>)
     event: one("event"),
     format: one("format"),
     playLevel: one("playLevel"),
+    catalogSection: (() => {
+      const value = one("section") ?? one("catalogSection");
+      return isCatalogSection(value) ? value : undefined;
+    })(),
+    catalogWhen,
     page: Number.isFinite(page) && page > 0 ? page : 1,
   };
 }
@@ -106,10 +119,16 @@ export function filtersAreIndexable(filters: TournamentFilters): boolean {
 export async function listTournaments(filters: TournamentFilters, pageSize = 24): Promise<TournamentQueryResult> {
   try {
     const data = await loadPublished(filters);
+    const today = todayIso();
     const mapped = data
       .map((row) => mapTournament(row))
       .map(stripJuniorFromPublicRecord)
-      .filter((tournament) => isMainFeed(tournament, todayIso()))
+      .filter((tournament) => matchesCatalogSection(tournament, filters))
+      .filter((tournament) => matchesCatalogWhen(tournament, filters, today))
+      .filter((tournament) => {
+        if (filters.catalogSection) return isSectionFeed(tournament);
+        return isMainFeed(tournament, today);
+      })
       .filter((tournament) => matchesCategories(tournament, filters))
       .filter((tournament) => matchesEvent(tournament, filters));
 
@@ -124,6 +143,25 @@ export async function listTournaments(filters: TournamentFilters, pageSize = 24)
     console.error("listTournaments", error);
     return EMPTY;
   }
+}
+
+/** Dedicated browse views: Lithuania, Baltics (LV+EE), ITF. */
+export async function listSectionTournaments(
+  section: CatalogSection,
+  when: CatalogWhen = "upcoming",
+  pageSize = 24,
+  page = 1,
+): Promise<TournamentQueryResult> {
+  return listTournaments(
+    {
+      catalogSection: section,
+      catalogWhen: when,
+      // Avoid the generic when-range path colliding with upcoming/past.
+      when: undefined,
+      page,
+    },
+    pageSize,
+  );
 }
 
 export async function getTournament(slug: string): Promise<TournamentRecord | null> {
@@ -316,6 +354,7 @@ type ListQuery = PromiseLike<{ data: unknown[] | null; error: { message: string 
   neq: (column: string, value: FilterValue) => ListQuery;
   gte: (column: string, value: FilterValue) => ListQuery;
   lte: (column: string, value: FilterValue) => ListQuery;
+  lt: (column: string, value: FilterValue) => ListQuery;
   ilike: (column: string, pattern: string) => ListQuery;
   or: (filters: string) => ListQuery;
   order: (column: string, options: { ascending: boolean }) => ListQuery;
@@ -328,15 +367,33 @@ async function loadPublished(filters: TournamentFilters): Promise<Record<string,
   const { data, error } = await selectMany((select) =>
     applyListFilters(supabase.from("tournaments").select(select) as unknown as ListQuery, filters),
   );
-  if (error) {
-    console.error("listTournaments", error.message);
+  if (!error) return (data ?? []) as Record<string, unknown>[];
+
+  // Before catalog-sections.sql is applied, drop SQL section filter and match in memory.
+  if (filters.catalogSection && /catalog_section|schema cache/i.test(error.message)) {
+    const retry = await selectMany((select) =>
+      applyListFilters(supabase.from("tournaments").select(select) as unknown as ListQuery, {
+        ...filters,
+        catalogSection: undefined,
+        catalogWhen: filters.catalogWhen,
+      }),
+    );
+    if (!retry.error) return (retry.data ?? []) as Record<string, unknown>[];
+    console.error("listTournaments", retry.error.message);
     return [];
   }
-  return (data ?? []) as Record<string, unknown>[];
+
+  console.error("listTournaments", error.message);
+  return [];
 }
 
 function applyListFilters(query: ListQuery, filters: TournamentFilters): ListQuery {
-  let next = query.eq("published", true).is("archived_at", null).order("starts_on", { ascending: true }).limit(400);
+  const pastFirst = filters.catalogWhen === "past";
+  let next = query
+    .eq("published", true)
+    .is("archived_at", null)
+    .order("starts_on", { ascending: !pastFirst })
+    .limit(400);
 
   if (filters.audience && isAudience(filters.audience)) {
     next = next.eq("audience", filters.audience);
@@ -344,7 +401,15 @@ function applyListFilters(query: ListQuery, filters: TournamentFilters): ListQue
     next = next.neq("audience", "professional").neq("audience", "junior");
   }
 
-  if (!filters.when && !filters.from) {
+  if (filters.catalogSection) {
+    next = next.eq("catalog_section", filters.catalogSection);
+  }
+
+  if (filters.catalogWhen === "upcoming") {
+    next = next.gte("ends_on", todayIso()).neq("lifecycle_status", "cancelled");
+  } else if (filters.catalogWhen === "past") {
+    next = next.lt("ends_on", todayIso());
+  } else if (!filters.when && !filters.from) {
     next = next.gte("ends_on", todayIso());
   }
 
@@ -391,7 +456,38 @@ async function selectWithFallback<T>(
 }
 
 function missingDiscoveryColumns(message: string): boolean {
-  return /region|original_level|standardised_level|price_amount|price_currency|source_confidence|review_status|quality_score|is_test|age_group|event_gender|schema cache/i.test(message);
+  return /region|original_level|standardised_level|price_amount|price_currency|source_confidence|review_status|quality_score|is_test|age_group|event_gender|catalog_section|itf_category|is_closed|schema cache/i.test(
+    message,
+  );
+}
+
+function matchesCatalogSection(tournament: TournamentRecord, filters: TournamentFilters): boolean {
+  if (!filters.catalogSection) return true;
+  if (tournament.catalogSection === filters.catalogSection) return true;
+  // Fallback before migration: derive from country.
+  if (filters.catalogSection === "lithuania") return tournament.countryCode.toLowerCase() === "lt";
+  if (filters.catalogSection === "baltics") {
+    const code = tournament.countryCode.toLowerCase();
+    return code === "lv" || code === "ee";
+  }
+  return false;
+}
+
+function matchesCatalogWhen(tournament: TournamentRecord, filters: TournamentFilters, today: string): boolean {
+  if (!filters.catalogWhen) return true;
+  if (filters.catalogWhen === "upcoming") return tournament.endsOn >= today;
+  return tournament.endsOn < today;
+}
+
+/** Section feeds allow past rows and ITF masters; still hide juniors/tests/closed/cancelled. */
+function isSectionFeed(tournament: TournamentRecord): boolean {
+  if (tournament.isTest) return false;
+  if (tournament.isClosed) return false;
+  if (tournament.lifecycleStatus === "cancelled") return false;
+  if (isJuniorPublicTournament(tournament)) return false;
+  if (tournament.catalogSection === "itf") return true;
+  if (tournament.playAudience && tournament.playAudience !== "OPEN_AMATEURS") return false;
+  return true;
 }
 
 function missingEventColumns(message: string): boolean {
@@ -498,6 +594,9 @@ function mapTournament(row: Record<string, unknown>): TournamentRecord {
     reviewStatus: reviewStatus(row.review_status),
     qualityScore: numberOrNull(row.quality_score),
     isTest: row.is_test === true,
+    catalogSection: catalogSection(row.catalog_section, String(row.country_code ?? "")),
+    itfCategory: text(row.itf_category),
+    isClosed: row.is_closed === true,
     translations: translations.map((item) => ({
       locale: item.locale ?? "en",
       description: item.description ?? null,
@@ -646,4 +745,12 @@ function matchesAgeGroup(label: string | null, age: string): boolean {
 function clock(value: unknown): string | null {
   if (typeof value !== "string" || value.length < 4) return null;
   return value.slice(0, 5);
+}
+
+function catalogSection(value: unknown, countryCode: string): CatalogSection | null {
+  if (isCatalogSection(typeof value === "string" ? value : "")) return value as CatalogSection;
+  const code = countryCode.toLowerCase();
+  if (code === "lt") return "lithuania";
+  if (code === "lv" || code === "ee") return "baltics";
+  return null;
 }

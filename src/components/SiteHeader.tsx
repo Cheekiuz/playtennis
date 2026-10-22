@@ -16,6 +16,9 @@ export default function SiteHeader({ courtHome = false }: { courtHome?: boolean 
   const [savedCount, setSavedCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const home = localePath(locale, "/");
+  const lithuania = localePath(locale, "/lithuania");
+  const baltics = localePath(locale, "/baltics");
+  const itf = localePath(locale, "/itf");
   const tournaments = localePath(locale, "/tournaments");
   const play = localePath(locale, "/play");
   const quiz = localePath(locale, "/quiz");
@@ -34,7 +37,10 @@ export default function SiteHeader({ courtHome = false }: { courtHome?: boolean 
   }, []);
 
   const items = [
-    { href: tournaments, label: messages.nav.tournaments, primary: true },
+    { href: lithuania, label: messages.nav.lithuania, primary: true },
+    { href: baltics, label: messages.nav.baltics, primary: true },
+    { href: itf, label: messages.nav.itf, primary: true },
+    { href: tournaments, label: messages.nav.tournaments, primary: false },
     { href: play, label: messages.nav.play, primary: false },
     { href: quiz, label: messages.nav.quiz, primary: false },
     { href: about, label: messages.nav.about, primary: false },

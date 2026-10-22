@@ -149,7 +149,37 @@
     "philosophy": "Filosofija",
     "menu": "Meniu",
     "close": "Uždaryti",
-    "submit": "Pateikti renginį"
+    "submit": "Pateikti renginį",
+    "lithuania": "Lietuva",
+    "baltics": "Baltija",
+    "itf": "ITF"
+  },
+  "catalog": {
+    "sectionsNav": "Turnyrų skyriai",
+    "upcoming": "Artėjantys",
+    "past": "Praėję",
+    "emptyUpcoming": "Šiame skyriuje dar nėra artėjančių turnyrų.",
+    "emptyPast": "Šiame skyriuje dar nėra praėjusių turnyrų.",
+    "sections": {
+      "lithuania": "Lietuva",
+      "baltics": "Baltijos šalys",
+      "itf": "ITF Masters"
+    },
+    "lithuania": {
+      "title": "Lietuva",
+      "description": "Suaugusiųjų mėgėjų teniso turnyrai Lietuvoje iš Facebook renginių ir TenisoNamai vienos dienos turnyrų.",
+      "sourceNote": "Nuorodos veda į originalų organizatoriaus ar Facebook renginį. Uždaryti ir atšaukti turnyrai nerodomi."
+    },
+    "baltics": {
+      "title": "Baltijos šalys",
+      "description": "Suaugusiųjų mėgėjų teniso turnyrai Latvijoje ir Estijoje iš Facebook renginių.",
+      "sourceNote": "Lietuva turi atskirą skyrių. Nuorodos veda į originalų Facebook renginį, kai jis prieinamas."
+    },
+    "itf": {
+      "title": "ITF World Tennis Masters Tour",
+      "description": "Turnyrai iš oficialaus ITF World Tennis Masters Tour kalendoriaus (nuo 30 m.).",
+      "sourceNote": "Šaltinis: ITF World Tennis Masters Tour kalendorius. Prieš registruodamiesi patikrinkite detales oficialiame ITF puslapyje. Uždaryti ir atšaukti turnyrai nerodomi."
+    }
   },
   "discover": {
     "brand": "PlayTennis.lt",

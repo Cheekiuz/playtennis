@@ -40,5 +40,19 @@ export function publicListingDecision(event: NormalizedEvent): { publish: boolea
     reviewStatus = quality.decision === "publish" ? "checked" : "needs_review";
   }
 
+  // Official ITF calendar JSON (circuitCode=VT) is high-trust listing data.
+  if (
+    !event.isTest &&
+    event.sourceType === "public_calendar" &&
+    event.sourceConfidence === "high" &&
+    event.title &&
+    event.startDate &&
+    event.officialEventUrl &&
+    hasDiscoveryLocation(event)
+  ) {
+    publish = true;
+    reviewStatus = "checked";
+  }
+
   return { publish, reviewStatus };
 }

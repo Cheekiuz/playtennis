@@ -44,10 +44,15 @@ export function scoreQuality(event: Pick<
     return { score, decision: "review" };
   }
 
-  const discoveryOnly =
-    event.sourceConfidence === "low" ||
-    event.sourceType === "user_submission" ||
-    event.sourceType === "public_calendar";
+  if (event.sourceType === "public_calendar" && event.sourceConfidence === "high") {
+    const hasLocation = Boolean(event.city || event.venue);
+    if (event.startDate && event.title && hasLocation && event.officialEventUrl) {
+      return { score: Math.max(score, 80), decision: "publish" };
+    }
+    return { score, decision: "review" };
+  }
+
+  const discoveryOnly = event.sourceConfidence === "low" || event.sourceType === "user_submission";
 
   const hasLocation = Boolean(event.city || event.venue);
   if (discoveryOnly || !event.startDate || !hasLocation || !event.countryCode || !event.officialEventUrl) {

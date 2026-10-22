@@ -62,6 +62,11 @@ export type RawObservation = {
   discoveryStage?: string | null;
   registrySourceType?: string | null;
   visibility?: "public" | "closed" | "invitation" | null;
+  /** Stable id from the upstream system when known (ITF tournamentKey, FB event id). */
+  sourceExternalId?: string | null;
+  catalogSection?: "lithuania" | "baltics" | "itf" | null;
+  itfCategory?: string | null;
+  isClosed?: boolean | null;
 };
 
 export type IngestCategory = {

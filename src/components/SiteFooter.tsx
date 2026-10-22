@@ -14,8 +14,10 @@ export default function SiteFooter({
 }) {
   const paper = variant === "editorial";
   const links = [
+    { href: localePath(locale, "/lithuania"), label: messages.nav.lithuania },
+    { href: localePath(locale, "/baltics"), label: messages.nav.baltics },
+    { href: localePath(locale, "/itf"), label: messages.nav.itf },
     { href: localePath(locale, "/tournaments"), label: messages.nav.tournaments },
-    { href: localePath(locale, "/quiz"), label: messages.nav.quiz },
     { href: localePath(locale, "/submit"), label: messages.nav.submit },
     { href: localePath(locale, "/about"), label: messages.nav.about },
     { href: `${localePath(locale, "/about")}#contact`, label: messages.footer.contact },
