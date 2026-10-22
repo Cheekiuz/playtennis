@@ -52,28 +52,33 @@ export async function fetchItfMastersCalendar(options?: {
   allowSeedFallback?: boolean;
 }): Promise<ItfFetchResult> {
   const live = await fetchItfMastersCalendarLive(options);
-  if (live.fetched > 0 || live.observations.length > 0) return live;
-
+  const blocked = live.errors.some((error) => /incapsula|html instead of json|bot protection/i.test(error));
   const allowSeed = options?.allowSeedFallback !== false;
-  if (!allowSeed) return live;
 
-  const seed = await loadItfMastersSeed();
-  if (!seed) {
-    return {
-      ...live,
-      errors: [...live.errors, "ITF live calendar blocked or empty, and no local seed file was found."],
-    };
+  // Prefer the bundled seed whenever Imperva blocks the live API, even if a partial
+  // page count was recorded before the challenge page appeared.
+  if (allowSeed && (blocked || live.observations.length === 0)) {
+    const seed = await loadItfMastersSeed();
+    if (seed) {
+      return {
+        observations: seed.observations,
+        fetched: seed.fetched,
+        skipped: seed.skipped,
+        errors: [
+          ...live.errors,
+          "ITF live calendar blocked or empty. Used bundled seed data/itf-masters-calendar.json.",
+        ],
+      };
+    }
+    if (blocked || live.observations.length === 0) {
+      return {
+        ...live,
+        errors: [...live.errors, "ITF live calendar blocked or empty, and no local seed file was found."],
+      };
+    }
   }
 
-  return {
-    observations: seed.observations,
-    fetched: seed.fetched,
-    skipped: seed.skipped,
-    errors: [
-      ...live.errors,
-      "ITF live calendar blocked (Incapsula/HTML). Used bundled seed data/itf-masters-calendar.json.",
-    ],
-  };
+  return live;
 }
 
 async function fetchItfMastersCalendarLive(options?: {
