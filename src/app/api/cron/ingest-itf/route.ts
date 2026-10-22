@@ -18,7 +18,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const result = await ingestItfMastersCalendar();
+    const url = new URL(request.url);
+    const offset = Number(url.searchParams.get("offset") ?? "0");
+    const limit = Number(url.searchParams.get("limit") ?? "75");
+    const result = await ingestItfMastersCalendar({
+      offset: Number.isFinite(offset) ? offset : 0,
+      limit: Number.isFinite(limit) ? limit : 75,
+    });
     return NextResponse.json({ itf: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : "ITF ingest failed.";

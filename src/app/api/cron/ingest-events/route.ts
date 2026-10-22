@@ -52,7 +52,8 @@ export async function POST(request: Request) {
     }
 
     if (itfEnabled) {
-      payload.itf = await ingestItfMastersCalendar();
+      // Batched: full calendar is continued by the dedicated ingest-itf workflow.
+      payload.itf = await ingestItfMastersCalendar({ offset: 0, limit: 75 });
     }
 
     return NextResponse.json(payload);
