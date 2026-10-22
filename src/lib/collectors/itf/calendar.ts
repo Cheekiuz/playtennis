@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { politeFetch, sleep } from "@/lib/discovery/http";
 import type { RawObservation } from "@/lib/discovery/types";
 import { countryCodeFromName } from "@/lib/tournaments/countries";
@@ -8,6 +10,7 @@ const ITF_SITE = "https://www.itftennis.com";
 export const ITF_MASTERS_CIRCUIT = "VT";
 export const ITF_SOURCE_ID = "00000000-0000-4000-8000-000000000050";
 export const ITF_SOURCE_KEY = "itf_masters_calendar";
+const SEED_PATH = path.join(process.cwd(), "data", "itf-masters-calendar.json");
 
 export type ItfCalendarItem = {
   tournamentName?: string;
@@ -46,6 +49,38 @@ export async function fetchItfMastersCalendar(options?: {
   dateTo?: string;
   pageSize?: number;
   maxPages?: number;
+  allowSeedFallback?: boolean;
+}): Promise<ItfFetchResult> {
+  const live = await fetchItfMastersCalendarLive(options);
+  if (live.fetched > 0 || live.observations.length > 0) return live;
+
+  const allowSeed = options?.allowSeedFallback !== false;
+  if (!allowSeed) return live;
+
+  const seed = await loadItfMastersSeed();
+  if (!seed) {
+    return {
+      ...live,
+      errors: [...live.errors, "ITF live calendar blocked or empty, and no local seed file was found."],
+    };
+  }
+
+  return {
+    observations: seed.observations,
+    fetched: seed.fetched,
+    skipped: seed.skipped,
+    errors: [
+      ...live.errors,
+      "ITF live calendar blocked (Incapsula/HTML). Used bundled seed data/itf-masters-calendar.json.",
+    ],
+  };
+}
+
+async function fetchItfMastersCalendarLive(options?: {
+  dateFrom?: string;
+  dateTo?: string;
+  pageSize?: number;
+  maxPages?: number;
 }): Promise<ItfFetchResult> {
   const pageSize = options?.pageSize ?? 100;
   const maxPages = options?.maxPages ?? 30;
@@ -74,15 +109,23 @@ export async function fetchItfMastersCalendar(options?: {
     try {
       const response = await politeFetch(url.toString(), {
         headers: {
-          Accept: "application/json",
+          Accept: "application/json, text/plain, */*",
           Referer: `${ITF_SITE}/en/tournament-calendar/world-tennis-masters-tour-calendar/`,
+          Origin: ITF_SITE,
+          "user-agent":
+            "Mozilla/5.0 (compatible; PlayTennisBot/1.0; +https://www.playtennis.lt; amateur tournament aggregator)",
         },
       });
       if (!response.ok) {
         errors.push(`ITF calendar HTTP ${response.status} at skip=${skip}`);
         break;
       }
-      json = (await response.json()) as CalendarResponse;
+      const text = await response.text();
+      if (looksLikeIncapsulaHtml(text)) {
+        errors.push("ITF calendar returned Incapsula/HTML instead of JSON (bot protection).");
+        break;
+      }
+      json = JSON.parse(text) as CalendarResponse;
     } catch (error) {
       errors.push(error instanceof Error ? error.message : "ITF calendar fetch failed");
       break;
@@ -106,6 +149,32 @@ export async function fetchItfMastersCalendar(options?: {
   }
 
   return { observations, fetched, skipped, errors };
+}
+
+async function loadItfMastersSeed(): Promise<{ observations: RawObservation[]; fetched: number; skipped: number } | null> {
+  try {
+    const raw = await readFile(SEED_PATH, "utf8");
+    const json = JSON.parse(raw) as { items?: ItfCalendarItem[] };
+    const items = json.items ?? [];
+    const observations: RawObservation[] = [];
+    let skipped = 0;
+    for (const item of items) {
+      const mapped = mapItfItem(item);
+      if (!mapped) {
+        skipped += 1;
+        continue;
+      }
+      observations.push(mapped);
+    }
+    return { observations, fetched: items.length, skipped };
+  } catch {
+    return null;
+  }
+}
+
+function looksLikeIncapsulaHtml(text: string): boolean {
+  const head = text.slice(0, 200).toLowerCase();
+  return head.includes("<html") || head.includes("incapsula") || head.includes("<!doctype");
 }
 
 export function mapItfItem(item: ItfCalendarItem): RawObservation | null {

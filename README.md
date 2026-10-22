@@ -51,6 +51,8 @@ Or, with `POSTGRES_URL_NON_POOLING` in `.env.local`, run `node scripts/apply-sup
 
 **ITF:** uses the public calendar JSON at `itftennis.com` with `circuitCode=VT` (Masters Tour, not Men’s World Tennis Tour `MT`). Closed and cancelled events are skipped. Always attribute and link back to ITF.
 
+If Imperva/Incapsula blocks the live API from Vercel, ingest falls back to the bundled seed `data/itf-masters-calendar.json` (refresh periodically).
+
 **Facebook:** Meta Groups API access is not available for normal apps. MVP path is admin-pasted public event URLs (see below). Do not rely on unrestricted Graph API group event listing.
 
 **TenisoNamai / LT sites:** registry discovery when `DISCOVERY_ENABLED=true`. Prefer one-day tournaments for the Lithuania section.
