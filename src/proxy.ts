@@ -13,6 +13,7 @@ import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/config";
 function withLocale(request: NextRequest, locale: Locale) {
   const headers = new Headers(request.headers);
   headers.set("x-locale", locale);
+  headers.set("x-pathname", request.nextUrl.pathname);
   return headers;
 }
 

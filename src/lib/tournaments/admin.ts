@@ -1,10 +1,12 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionUser } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export async function requireAdmin() {
+  const nextPath = await adminReturnPath();
   const user = await getSessionUser();
-  if (!user) redirect("/auth/login?next=/admin");
+  if (!user) redirect(`/auth/login?next=${encodeURIComponent(nextPath)}`);
 
   const allow = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
@@ -18,10 +20,21 @@ export async function requireAdmin() {
     const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
     if (data?.role === "admin") return user;
   } catch {
-    redirect("/lt");
+    redirect(`/auth/admin-required?email=${encodeURIComponent(user.email ?? "")}`);
   }
 
-  redirect("/lt");
+  redirect(`/auth/admin-required?email=${encodeURIComponent(user.email ?? "")}`);
+}
+
+async function adminReturnPath(): Promise<string> {
+  try {
+    const headerList = await headers();
+    const path = headerList.get("x-pathname");
+    if (path?.startsWith("/admin")) return path;
+  } catch {
+    // headers() unavailable in some contexts
+  }
+  return "/admin";
 }
 
 export function slugify(value: string): string {
