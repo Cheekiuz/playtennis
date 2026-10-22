@@ -14,7 +14,8 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           SITE_URL: ${{ secrets.SITE_URL }}
         run: |
-          if [ -z "$CRON_SECRET" ]; then
+          set -euo pipefail
+          if [ -z "${CRON_SECRET:-}" ]; then
             echo "Missing CRON_SECRET repository secret"
             exit 1
           fi
@@ -22,6 +23,7 @@ jobs:
           BASE="${SITE_URL:-https://www.playtennis.lt}"
           OFFSET=0
           LIMIT=75
+
           for i in 1 2 3 4 5 6 7 8; do
             echo "=== batch offset=${OFFSET} limit=${LIMIT} ==="
             response=$(curl -sS -w "\n%{http_code}" -X POST \
@@ -39,17 +41,7 @@ jobs:
               exit 1
             fi
 
-            NEXT=$(python3 - <<'PY' "$body"
-import json,sys
-raw=sys.argv[1]
-try:
-  data=json.loads(raw)
-  nxt=data.get("itf",{}).get("nextOffset")
-  print("" if nxt is None else nxt)
-except Exception:
-  print("")
-PY
-)
+            NEXT=$(printf '%s' "$body" | python3 -c 'import json,sys; data=json.load(sys.stdin); nxt=data.get("itf",{}).get("nextOffset"); print("" if nxt is None else nxt)')
             if [ -z "$NEXT" ]; then
               echo "No further batches."
               break
