@@ -29,6 +29,14 @@ export type DiscoveryRunReport = {
   };
   facebookManualHandling: string[];
   failedSources: Array<{ sourceName: string; reason: string }>;
+  ingestSummary?: Array<{
+    sourceName: string;
+    discovered: number;
+    created: number;
+    updated: number;
+    rejected: number;
+    error: string | null;
+  }>;
 };
 
 export function discoveryIsEnabled(): boolean {
