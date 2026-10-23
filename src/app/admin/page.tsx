@@ -20,31 +20,23 @@ export default async function AdminPage({
   const params = await searchParams;
   const section = parseSection(params.section);
   const tournaments = await listAdminTournaments({ section });
+  const title =
+    section === "lithuania"
+      ? "Lithuania"
+      : section === "baltics"
+        ? "Baltics"
+        : section === "itf"
+          ? "ITF"
+          : section === "all"
+            ? "All tournaments"
+            : "Local tournaments";
 
   return (
     <div>
-      <h1 className="text-3xl font-bold">Tournaments</h1>
+      <h1 className="text-3xl font-bold">{title}</h1>
       <p className="mt-2 max-w-2xl text-sm text-foreground/70">
         Select events to archive in bulk, or open Edit to change details. Unpublish hides an event without archiving it.
       </p>
-
-      <div className="mt-6 flex flex-wrap gap-2 text-sm font-semibold">
-        <SectionLink href="/admin?section=local" active={section === "local"}>
-          Local (LT + Baltics)
-        </SectionLink>
-        <SectionLink href="/admin?section=lithuania" active={section === "lithuania"}>
-          Lithuania
-        </SectionLink>
-        <SectionLink href="/admin?section=baltics" active={section === "baltics"}>
-          Baltics
-        </SectionLink>
-        <SectionLink href="/admin?section=itf" active={section === "itf"}>
-          ITF
-        </SectionLink>
-        <SectionLink href="/admin?section=all" active={section === "all"}>
-          All
-        </SectionLink>
-      </div>
 
       {tournaments.length === 0 ? (
         <p className="mt-8 text-sm text-foreground/70">
@@ -77,20 +69,5 @@ export default async function AdminPage({
         />
       )}
     </div>
-  );
-}
-
-function SectionLink({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      className={
-        active
-          ? "rounded-full bg-accent px-3 py-1.5 text-[#0f172a]"
-          : "rounded-full border border-border px-3 py-1.5 text-foreground/80 hover:border-accent"
-      }
-    >
-      {children}
-    </Link>
   );
 }
