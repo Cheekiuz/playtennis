@@ -4,39 +4,63 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { importFacebookEventFromBrowser } from "@/app/admin/facebook/actions";
 
+type Payload = {
+  title?: string;
+  startDate?: string;
+  endDate?: string;
+  city?: string;
+  venue?: string;
+  description?: string;
+  url?: string;
+};
+
 type Status =
   | { kind: "idle" }
   | { kind: "working"; title: string }
   | { kind: "done"; ok: boolean; title: string; created: number; updated: number; errors: string[] }
   | { kind: "error"; message: string };
 
+function readPayloadFromHash(): { payload: Payload | null; error: string | null } {
+  const hash = window.location.hash.replace(/^#/, "");
+  if (!hash.startsWith("fb=")) {
+    return {
+      payload: null,
+      error: "No Facebook event data found. Use the bookmarklet from a Facebook event page.",
+    };
+  }
+
+  try {
+    const encoded = hash.slice(3).replace(/-/g, "+").replace(/_/g, "/");
+    const padded = encoded + "=".repeat((4 - (encoded.length % 4)) % 4);
+    const json = decodeURIComponent(escape(atob(padded)));
+    return { payload: JSON.parse(json) as Payload, error: null };
+  } catch {
+    return { payload: null, error: "Could not read Facebook event data from the bookmarklet." };
+  }
+}
+
 export default function FacebookBookmarkletCatch() {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   useEffect(() => {
-    const hash = window.location.hash.replace(/^#/, "");
-    if (!hash.startsWith("fb=")) {
-      setStatus({ kind: "error", message: "No Facebook event data found. Use the bookmarklet from a Facebook event page." });
-      return;
-    }
-
     let cancelled = false;
+
     (async () => {
+      // Defer so setState is not synchronous inside the effect body (eslint react-hooks/set-state-in-effect).
+      await Promise.resolve();
+      if (cancelled) return;
+
+      const { payload, error } = readPayloadFromHash();
+      if (!payload) {
+        setStatus({
+          kind: "error",
+          message: error ?? "No Facebook event data found. Use the bookmarklet from a Facebook event page.",
+        });
+        return;
+      }
+
+      setStatus({ kind: "working", title: payload.title ?? "Facebook event" });
       try {
-        const encoded = hash.slice(3).replace(/-/g, "+").replace(/_/g, "/");
-        const padded = encoded + "=".repeat((4 - (encoded.length % 4)) % 4);
-        const json = decodeURIComponent(escape(atob(padded)));
-        const payload = JSON.parse(json) as {
-          title?: string;
-          startDate?: string;
-          endDate?: string;
-          city?: string;
-          venue?: string;
-          description?: string;
-          url?: string;
-        };
-        if (cancelled) return;
-        setStatus({ kind: "working", title: payload.title ?? "Facebook event" });
         const result = await importFacebookEventFromBrowser(payload);
         if (cancelled) return;
         setStatus({
@@ -48,11 +72,11 @@ export default function FacebookBookmarkletCatch() {
           errors: result.errors,
         });
         history.replaceState(null, "", window.location.pathname);
-      } catch (error) {
+      } catch (err) {
         if (cancelled) return;
         setStatus({
           kind: "error",
-          message: error instanceof Error ? error.message : "Could not import this Facebook event.",
+          message: err instanceof Error ? err.message : "Could not import this Facebook event.",
         });
       }
     })();
@@ -78,8 +102,8 @@ export default function FacebookBookmarkletCatch() {
           </p>
           {status.errors.length > 0 ? (
             <ul className="list-disc pl-5 text-foreground/80">
-              {status.errors.map((error) => (
-                <li key={error}>{error}</li>
+              {status.errors.map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           ) : null}
