@@ -210,13 +210,43 @@ export async function getTournamentsByIds(ids: string[]): Promise<TournamentReco
   }
 }
 
-export async function listAdminTournaments(): Promise<TournamentRecord[]> {
+export async function listAdminTournaments(options?: {
+  section?: CatalogSection | "all" | "local";
+}): Promise<TournamentRecord[]> {
+  const section = options?.section ?? "local";
   try {
     const supabase = createServerSupabaseClient();
-    const { data, error } = await selectMany((select) =>
-      supabase.from("tournaments").select(select).is("archived_at", null).order("starts_on", { ascending: true }).limit(200),
-    );
-    if (error || !data) return [];
+    const { data, error } = await selectMany((select) => {
+      let query = supabase.from("tournaments").select(select).is("archived_at", null).order("starts_on", { ascending: true }).limit(300);
+      if (section === "lithuania" || section === "baltics" || section === "itf") {
+        query = query.eq("catalog_section", section);
+      } else if (section === "local") {
+        query = query.in("catalog_section", ["lithuania", "baltics"]);
+      }
+      return query;
+    });
+    if (error || !data) {
+      // Older DBs without catalog_section: fall back and filter in memory.
+      if (section !== "all" && error && /catalog_section|schema cache/i.test(error.message)) {
+        const fallback = await selectMany((select) =>
+          supabase.from("tournaments").select(select).is("archived_at", null).order("starts_on", { ascending: true }).limit(500),
+        );
+        if (!fallback.data) return [];
+        return fallback.data
+          .map((row) => mapTournament(row as Record<string, unknown>))
+          .filter((tournament) => {
+            if (section === "local") return tournament.countryCode.toLowerCase() === "lt" || tournament.countryCode.toLowerCase() === "lv" || tournament.countryCode.toLowerCase() === "ee";
+            if (section === "lithuania") return tournament.countryCode.toLowerCase() === "lt";
+            if (section === "baltics") {
+              const code = tournament.countryCode.toLowerCase();
+              return code === "lv" || code === "ee";
+            }
+            if (section === "itf") return false;
+            return true;
+          });
+      }
+      return [];
+    }
     return data.map((row) => mapTournament(row as Record<string, unknown>));
   } catch (error) {
     console.error("listAdminTournaments", error);

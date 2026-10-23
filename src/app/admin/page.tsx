@@ -1,20 +1,66 @@
 import Link from "next/link";
 import { setTournamentStatus } from "@/app/admin/actions";
 import { listAdminTournaments } from "@/lib/tournaments/queries";
+import type { CatalogSection } from "@/lib/tournaments/types";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
-  const tournaments = await listAdminTournaments();
+type AdminSection = CatalogSection | "all" | "local";
+
+function parseSection(value: string | undefined): AdminSection {
+  if (value === "all" || value === "lithuania" || value === "baltics" || value === "itf" || value === "local") return value;
+  return "local";
+}
+
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ section?: string }>;
+}) {
+  const params = await searchParams;
+  const section = parseSection(params.section);
+  const tournaments = await listAdminTournaments({ section });
 
   return (
     <div>
       <h1 className="text-3xl font-bold">Tournaments</h1>
       <p className="mt-2 max-w-2xl text-sm text-foreground/70">
-        Run supabase/tournaments.sql before the first save. Publish only after the official page has been checked. A wrong date is worse than a missing tournament.
+        Facebook and Lithuania events are under Local. ITF is separate so it does not hide the rest. Uncheck Published on
+        an event to hide it from the public site.
       </p>
+
+      <div className="mt-6 flex flex-wrap gap-2 text-sm font-semibold">
+        <SectionLink href="/admin?section=local" active={section === "local"}>
+          Local (LT + Baltics)
+        </SectionLink>
+        <SectionLink href="/admin?section=lithuania" active={section === "lithuania"}>
+          Lithuania
+        </SectionLink>
+        <SectionLink href="/admin?section=baltics" active={section === "baltics"}>
+          Baltics
+        </SectionLink>
+        <SectionLink href="/admin?section=itf" active={section === "itf"}>
+          ITF
+        </SectionLink>
+        <SectionLink href="/admin?section=all" active={section === "all"}>
+          All
+        </SectionLink>
+      </div>
+
       {tournaments.length === 0 ? (
-        <p className="mt-8 text-sm text-foreground/70">No tournaments yet.</p>
+        <p className="mt-8 text-sm text-foreground/70">
+          No tournaments in this view.
+          {section === "local" || section === "lithuania" ? (
+            <>
+              {" "}
+              If you expected a Facebook import, open{" "}
+              <Link href="/admin/facebook" className="font-semibold text-accent underline-offset-2 hover:underline">
+                Facebook import
+              </Link>{" "}
+              and save an event again.
+            </>
+          ) : null}
+        </p>
       ) : (
         <ul className="mt-8 grid gap-3">
           {tournaments.map((tournament) => (
@@ -24,7 +70,8 @@ export default async function AdminPage() {
                   {tournament.name}
                 </Link>
                 <p className="text-sm text-foreground/70">
-                  {tournament.city} · {tournament.startsOn} · {tournament.lifecycleStatus} · {tournament.verificationStatus}
+                  {tournament.city} · {tournament.startsOn} · {tournament.catalogSection ?? "—"} ·{" "}
+                  {tournament.sourceKind ?? "—"} · {tournament.lifecycleStatus} · {tournament.verificationStatus}
                   {tournament.published ? " · published" : " · draft"}
                 </p>
               </div>
@@ -39,6 +86,21 @@ export default async function AdminPage() {
         </ul>
       )}
     </div>
+  );
+}
+
+function SectionLink({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className={
+        active
+          ? "rounded-full bg-accent px-3 py-1.5 text-[#0f172a]"
+          : "rounded-full border border-border px-3 py-1.5 text-foreground/80 hover:border-accent"
+      }
+    >
+      {children}
+    </Link>
   );
 }
 
