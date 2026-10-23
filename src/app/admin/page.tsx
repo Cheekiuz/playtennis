@@ -1,5 +1,5 @@
 import Link from "next/link";
-import AdminStatusButtons from "@/components/admin/AdminStatusButtons";
+import AdminTournamentList from "@/components/admin/AdminTournamentList";
 import { listAdminTournaments } from "@/lib/tournaments/queries";
 import type { CatalogSection } from "@/lib/tournaments/types";
 
@@ -25,7 +25,7 @@ export default async function AdminPage({
     <div>
       <h1 className="text-3xl font-bold">Tournaments</h1>
       <p className="mt-2 max-w-2xl text-sm text-foreground/70">
-        Facebook and Lithuania events are under Local. Use Unpublish or Archive to hide an event from the public site.
+        Select events to archive in bulk, or open Edit to change details. Unpublish hides an event without archiving it.
       </p>
 
       <div className="mt-6 flex flex-wrap gap-2 text-sm font-semibold">
@@ -61,23 +61,20 @@ export default async function AdminPage({
           ) : null}
         </p>
       ) : (
-        <ul className="mt-8 grid gap-3">
-          {tournaments.map((tournament) => (
-            <li key={tournament.id} className="flex flex-wrap items-center justify-between gap-3 border border-border px-4 py-3">
-              <div>
-                <Link href={`/admin/${tournament.id}`} className="font-semibold hover:text-accent">
-                  {tournament.name}
-                </Link>
-                <p className="text-sm text-foreground/70">
-                  {tournament.city} · {tournament.startsOn} · {tournament.catalogSection ?? "—"} ·{" "}
-                  {tournament.sourceKind ?? "—"} · {tournament.lifecycleStatus} · {tournament.verificationStatus}
-                  {tournament.published ? " · published" : " · draft"}
-                </p>
-              </div>
-              <AdminStatusButtons id={tournament.id} section={section} published={tournament.published} />
-            </li>
-          ))}
-        </ul>
+        <AdminTournamentList
+          section={section}
+          tournaments={tournaments.map((tournament) => ({
+            id: tournament.id,
+            name: tournament.name,
+            city: tournament.city,
+            startsOn: tournament.startsOn,
+            catalogSection: tournament.catalogSection,
+            sourceKind: tournament.sourceKind,
+            lifecycleStatus: tournament.lifecycleStatus,
+            verificationStatus: tournament.verificationStatus,
+            published: tournament.published,
+          }))}
+        />
       )}
     </div>
   );

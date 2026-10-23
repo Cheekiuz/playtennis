@@ -89,8 +89,8 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
       <Field label="Official URL" name="official_url" defaultValue={tournament?.officialUrl ?? ""} />
       <Field label="Source URL" name="source_url" defaultValue={tournament?.sourceUrl} required />
       <Field label="Source external id" name="source_external_id" />
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Select label="Surface" name="surface" defaultValue={tournament?.surface ?? "hard"} options={["clay", "hard", "grass", "carpet", "other", "unknown"]} />
+      <input type="hidden" name="surface" value={tournament?.surface ?? "hard"} />
+      <div className="grid gap-4 sm:grid-cols-2">
         <Select label="Indoor or outdoor" name="environment" defaultValue={tournament?.environment ?? "outdoor"} options={["indoor", "outdoor", "mixed"]} />
         <Select label="Legacy audience" name="audience" defaultValue={tournament?.audience ?? "recreational"} options={["recreational", "masters", "junior", "professional"]} />
       </div>

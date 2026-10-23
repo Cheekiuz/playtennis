@@ -20,7 +20,6 @@ import {
   levelLabel,
   placeLine,
   playLevelLabel,
-  surfaceLabel,
   translationFor,
 } from "@/lib/tournaments/present";
 import CheckedBadge from "@/components/CheckedBadge";
@@ -153,7 +152,7 @@ export default async function TournamentPage({
       </div>
 
       <dl className="mt-10 grid gap-4 sm:grid-cols-2">
-        <Fact label={d.location} value={`${surfaceLabel(tournament.surface, messages)} · ${environmentLabel(tournament.environment, messages)}`} />
+        <Fact label={d.location} value={environmentLabel(tournament.environment, messages)} />
         {tournament.eventFormat !== "MULTIPLE" ? <Fact label={d.format} value={formatLabel(tournament.eventFormat, messages)} /> : null}
         {tournament.playLevel ? <Fact label={d.playLevel} value={playLevelLabel(tournament.playLevel, messages)} /> : null}
         {tournament.priceLabel ? <Fact label={d.fromFee} value={tournament.priceLabel} /> : null}

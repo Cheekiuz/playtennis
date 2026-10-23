@@ -330,6 +330,40 @@ export async function setTournamentStatus(formData: FormData) {
   redirect(returnTo);
 }
 
+export async function bulkArchiveTournaments(formData: FormData) {
+  await requireAdmin();
+  const section = text(formData, "section") || "local";
+  const returnTo = section === "all" ? "/admin?section=all" : `/admin?section=${encodeURIComponent(section)}`;
+  const ids = formData
+    .getAll("ids")
+    .map((value) => String(value).trim())
+    .filter(Boolean);
+
+  if (ids.length === 0) redirect(returnTo);
+
+  const supabase = createServerSupabaseClient();
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("tournaments")
+    .update({ archived_at: now, published: false, updated_at: now })
+    .in("id", ids);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin");
+  revalidatePath("/lt");
+  revalidatePath("/en");
+  revalidatePath("/lt/lithuania");
+  revalidatePath("/en/lithuania");
+  revalidatePath("/lt/baltics");
+  revalidatePath("/en/baltics");
+  revalidatePath("/lt/itf");
+  revalidatePath("/en/itf");
+  revalidatePath("/lt/tournaments");
+  revalidatePath("/en/tournaments");
+  redirect(returnTo);
+}
+
 async function uniqueSlug(
   supabase: ReturnType<typeof createServerSupabaseClient>,
   base: string,

@@ -11,7 +11,6 @@ import {
   formatLabel,
   playLevelLabel,
   publicRegistrationLabel,
-  surfaceLabel,
 } from "@/lib/tournaments/present";
 import type { PublicRegistration, TournamentRecord } from "@/lib/tournaments/types";
 
@@ -34,7 +33,6 @@ export default function TournamentCard({
     eventTypeLabel(tournament.eventType, messages),
     tournament.eventFormat !== "MULTIPLE" ? formatLabel(tournament.eventFormat, messages) : null,
     tournament.playLevel ? playLevelLabel(tournament.playLevel, messages) : null,
-    surfaceLabel(tournament.surface, messages),
     environmentLabel(tournament.environment, messages),
   ].filter((chip): chip is string => Boolean(chip));
 
