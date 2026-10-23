@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { setTournamentStatus } from "@/app/admin/actions";
+import AdminStatusButtons from "@/components/admin/AdminStatusButtons";
 import { listAdminTournaments } from "@/lib/tournaments/queries";
 import type { CatalogSection } from "@/lib/tournaments/types";
 
@@ -25,8 +25,7 @@ export default async function AdminPage({
     <div>
       <h1 className="text-3xl font-bold">Tournaments</h1>
       <p className="mt-2 max-w-2xl text-sm text-foreground/70">
-        Facebook and Lithuania events are under Local. ITF is separate so it does not hide the rest. Uncheck Published on
-        an event to hide it from the public site.
+        Facebook and Lithuania events are under Local. Use Unpublish or Archive to hide an event from the public site.
       </p>
 
       <div className="mt-6 flex flex-wrap gap-2 text-sm font-semibold">
@@ -75,12 +74,7 @@ export default async function AdminPage({
                   {tournament.published ? " · published" : " · draft"}
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <StatusButton id={tournament.id} status="verified" label="Verify" />
-                <StatusButton id={tournament.id} status="cancelled" label="Cancel" />
-                <StatusButton id={tournament.id} status="postponed" label="Postpone" />
-                <StatusButton id={tournament.id} status="archive" label="Archive" />
-              </div>
+              <AdminStatusButtons id={tournament.id} section={section} published={tournament.published} />
             </li>
           ))}
         </ul>
@@ -101,17 +95,5 @@ function SectionLink({ href, active, children }: { href: string; active: boolean
     >
       {children}
     </Link>
-  );
-}
-
-function StatusButton({ id, status, label }: { id: string; status: string; label: string }) {
-  return (
-    <form action={setTournamentStatus}>
-      <input type="hidden" name="id" value={id} />
-      <input type="hidden" name="status" value={status} />
-      <button type="submit" className="border border-border px-3 py-1 text-xs font-semibold">
-        {label}
-      </button>
-    </form>
   );
 }

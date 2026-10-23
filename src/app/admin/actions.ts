@@ -283,7 +283,10 @@ export async function setTournamentStatus(formData: FormData) {
   await requireAdmin();
   const id = text(formData, "id");
   const status = text(formData, "status");
-  if (!id) return;
+  const section = text(formData, "section") || "local";
+  const returnTo = section === "all" ? "/admin?section=all" : `/admin?section=${encodeURIComponent(section)}`;
+  if (!id || !status) redirect(returnTo);
+
   const supabase = createServerSupabaseClient();
   const patch: Record<string, string | boolean | null> = { updated_at: new Date().toISOString() };
 
@@ -291,21 +294,40 @@ export async function setTournamentStatus(formData: FormData) {
     patch.verification_status = "verified";
     patch.last_verified_at = new Date().toISOString();
     patch.review_status = "checked";
+  } else if (status === "unpublish") {
+    patch.published = false;
+  } else if (status === "publish") {
+    patch.published = true;
   } else if (status === "archive") {
     patch.archived_at = new Date().toISOString();
     patch.published = false;
   } else if ((LIFECYCLE as readonly string[]).includes(status)) {
     patch.lifecycle_status = status;
+  } else {
+    redirect(returnTo);
   }
 
-  const updated = await supabase.from("tournaments").update(patch).eq("id", id);
+  let updated = await supabase.from("tournaments").update(patch).eq("id", id);
   if (updated.error && /review_status|schema cache/i.test(updated.error.message)) {
     delete patch.review_status;
-    await supabase.from("tournaments").update(patch).eq("id", id);
+    updated = await supabase.from("tournaments").update(patch).eq("id", id);
   }
+  if (updated.error) {
+    throw new Error(updated.error.message);
+  }
+
+  revalidatePath("/admin");
+  revalidatePath("/lt");
+  revalidatePath("/en");
+  revalidatePath("/lt/lithuania");
+  revalidatePath("/en/lithuania");
+  revalidatePath("/lt/baltics");
+  revalidatePath("/en/baltics");
+  revalidatePath("/lt/itf");
+  revalidatePath("/en/itf");
   revalidatePath("/lt/tournaments");
   revalidatePath("/en/tournaments");
-  redirect("/admin");
+  redirect(returnTo);
 }
 
 async function uniqueSlug(
