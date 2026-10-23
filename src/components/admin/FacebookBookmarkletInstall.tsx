@@ -17,10 +17,9 @@ export default function FacebookBookmarkletInstall({ siteUrl }: { siteUrl: strin
     <div className="mt-8 rounded-xl border border-border p-5">
       <h2 className="text-xl font-bold">One-click Facebook helper</h2>
       <p className="mt-2 text-sm text-foreground/80">
-        Facebook blocks normal bookmarks. Install Tampermonkey, then install our script (version 1.4.0 or newer). On
-        Facebook you should see a small green <strong>PT</strong> badge (top right). On an event page click{" "}
-        <strong>Save to PlayTennis</strong>, then on PlayTennis check or fix the date and click Import. Re-open the
-        script link after updates to upgrade.
+        Facebook blocks normal bookmarks. Install Tampermonkey, then install our script (version 1.5.0 or newer). On an
+        event page click <strong>Save to PlayTennis</strong>. It reads the date written under the event title, then you
+        confirm Import on PlayTennis. Re-open the script link after updates to upgrade.
       </p>
 
       <ol className="mt-4 list-decimal space-y-3 pl-5 text-sm text-foreground/80">

@@ -112,9 +112,10 @@ export default function FacebookBookmarkletCatch() {
 
       {status.kind === "review" ? (
         <div className="grid max-w-xl gap-3">
-          <p className="font-semibold">Check the date before saving</p>
+          <p className="font-semibold">Confirm event details</p>
           <p className="text-foreground/70">
-            Facebook often exposes the wrong date automatically. Fix the start date here, then import.
+            The start date was read from the text under the Facebook event title. Fix it only if it is wrong, then
+            import.
           </p>
           {status.payload.url ? (
             <p className="break-all text-xs text-foreground/60">
