@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PlayTennis: Save Facebook event
 // @namespace    https://www.playtennis.lt
-// @version      1.3.0
-// @description  Adds a Save to PlayTennis button on Facebook event pages
+// @version      1.4.0
+// @description  Sends Facebook event details to PlayTennis for review before import
 // @author       PlayTennis
 // @match        https://www.facebook.com/*
 // @match        https://facebook.com/*
@@ -48,22 +48,22 @@
     sausio: 1,
     vasario: 2,
     kovo: 3,
-    balandzio: 4,
     balandžio: 4,
-    geguzes: 5,
+    balandzio: 4,
     gegužės: 5,
-    birzelio: 6,
+    geguzes: 5,
     birželio: 6,
+    birzelio: 6,
     liepos: 7,
-    rugpjucio: 8,
     rugpjūčio: 8,
-    rugsejo: 9,
+    rugpjucio: 8,
     rugsėjo: 9,
+    rugsejo: 9,
     spalio: 10,
-    lapkricio: 11,
     lapkričio: 11,
-    grudzio: 12,
+    lapkricio: 11,
     gruodžio: 12,
+    grudzio: 12,
   };
 
   function eventIdFromUrl(href) {
@@ -113,37 +113,25 @@
   }
 
   function monthNumber(value) {
-    const key = String(value || "").toLowerCase();
-    return EN_MONTHS[key] || LT_MONTHS[key] || 0;
+    return EN_MONTHS[String(value || "").toLowerCase()] || LT_MONTHS[String(value || "").toLowerCase()] || 0;
   }
 
   function toCalendarDate(value) {
     if (value == null || value === "") return "";
     const trimmed = String(value).trim();
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
-
-    // Keep Facebook's local calendar day when an offset is present.
     const offsetIso = trimmed.match(/^(\d{4}-\d{2}-\d{2})T[0-9:.]+[+-]\d{2}:?\d{2}$/);
     if (offsetIso) return offsetIso[1];
-
     const utcIso = trimmed.match(/^(\d{4}-\d{2}-\d{2})T[0-9:.]+Z$/i);
     if (utcIso) {
       const parsed = Date.parse(trimmed);
       if (Number.isFinite(parsed)) return formatInTz(new Date(parsed));
     }
-
     const isoPrefix = trimmed.match(/^(\d{4}-\d{2}-\d{2})[T\s]/);
     if (isoPrefix) return isoPrefix[1];
-
     if (/^\d{10}$/.test(trimmed)) return formatInTz(new Date(Number(trimmed) * 1000));
     if (/^\d{13}$/.test(trimmed)) return formatInTz(new Date(Number(trimmed)));
-
-    const fromText = firstNamedDate(trimmed);
-    if (fromText) return fromText;
-
-    const parsed = Date.parse(trimmed);
-    if (!Number.isFinite(parsed)) return "";
-    return formatInTz(new Date(parsed));
+    return firstNamedDate(trimmed);
   }
 
   function firstNamedDate(text) {
@@ -157,7 +145,6 @@
       /\b(sausio|vasario|kovo|balandžio|balandzio|gegužės|geguzes|birželio|birzelio|liepos|rugpjūčio|rugpjucio|rugsėjo|rugsejo|spalio|lapkričio|lapkricio|gruodžio|grudzio)\s+(\d{1,2})\s*d\.?/gi,
       /\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+(\d{1,2})(?:,?\s+(20\d{2}))?\b/gi,
     ];
-
     const hits = [];
     for (const pattern of patterns) {
       for (const match of text.matchAll(pattern)) {
@@ -178,61 +165,54 @@
       return month ? ymd(Number(parts[0]), month, Number(parts[2])) : "";
     }
     if (monthNumber(parts[0]) && parts[1]) {
-      const month = monthNumber(parts[0]);
-      const day = Number(parts[1]);
       const year = parts[2] && /^20\d{2}$/.test(parts[2]) ? Number(parts[2]) : yearFallback;
-      return ymd(year, month, day);
+      return ymd(year, monthNumber(parts[0]), Number(parts[1]));
     }
     if (/^\d{1,2}$/.test(parts[0]) && monthNumber(parts[1])) {
-      const day = Number(parts[0]);
-      const month = monthNumber(parts[1]);
       const year = parts[2] && /^20\d{2}$/.test(parts[2]) ? Number(parts[2]) : yearFallback;
-      return ymd(year, month, day);
+      return ymd(year, monthNumber(parts[1]), Number(parts[0]));
     }
     return "";
   }
 
-  function headerText() {
-    const main = document.querySelector('[role="main"]') || document.querySelector("main") || document.body;
-    if (!main) return "";
-    // Event date usually sits near the top of the event column, not deep in the description.
-    return (main.innerText || "").slice(0, 1200);
-  }
-
-  function findEmbeddedEventDate(eventId) {
+  /** Only accept timestamps that are clearly tied to this event id. */
+  function findStrictEmbeddedDate(eventId) {
     const html = document.documentElement.innerHTML;
     const id = String(eventId);
-
-    const timestampPatterns = [
-      new RegExp(`"event_id"\\s*:\\s*"?${id}"?[\\s\\S]{0,2500}?"start_timestamp"\\s*:\\s*(\\d{10})`, "i"),
-      new RegExp(`"start_timestamp"\\s*:\\s*(\\d{10})[\\s\\S]{0,2500}?"event_id"\\s*:\\s*"?${id}"?`, "i"),
-      new RegExp(`"id"\\s*:\\s*"${id}"[\\s\\S]{0,2500}?"start_timestamp"\\s*:\\s*(\\d{10})`, "i"),
-      new RegExp(`"start_timestamp"\\s*:\\s*(\\d{10})[\\s\\S]{0,800}?"${id}"`, "i"),
+    const patterns = [
+      new RegExp(`"event_id"\\s*:\\s*"${id}"[\\s\\S]{0,400}?"start_timestamp"\\s*:\\s*(\\d{10})`, "i"),
+      new RegExp(`"start_timestamp"\\s*:\\s*(\\d{10})[\\s\\S]{0,400}?"event_id"\\s*:\\s*"${id}"`, "i"),
+      new RegExp(`"event_id"\\s*:\\s*"${id}"[\\s\\S]{0,400}?"day_time_sentence"\\s*:\\s*"([^"]+)"`, "i"),
+      new RegExp(`"day_time_sentence"\\s*:\\s*"([^"]+)"[\\s\\S]{0,400}?"event_id"\\s*:\\s*"${id}"`, "i"),
     ];
-    for (const pattern of timestampPatterns) {
+    for (const pattern of patterns) {
       const match = html.match(pattern);
-      if (match) {
-        const date = toCalendarDate(match[1]);
-        if (date) return date;
+      if (!match) continue;
+      const date = toCalendarDate(match[1]) || firstNamedDate(match[1]);
+      if (date) return date;
+    }
+    return "";
+  }
+
+  function visibleEventDate() {
+    const main = document.querySelector('[role="main"]') || document.querySelector("main");
+    if (!main) return "";
+    // Prefer text near the title, not the whole description (deadlines live there).
+    const title = main.querySelector("h1");
+    const chunks = [];
+    if (title) {
+      chunks.push(title.innerText || "");
+      let node = title.parentElement;
+      for (let i = 0; i < 4 && node; i += 1) {
+        chunks.push(node.innerText || "");
+        node = node.parentElement;
       }
     }
-
-    const sentencePatterns = [
-      new RegExp(`"event_id"\\s*:\\s*"?${id}"?[\\s\\S]{0,2500}?"day_time_sentence"\\s*:\\s*"([^"]+)"`, "i"),
-      new RegExp(`"day_time_sentence"\\s*:\\s*"([^"]+)"[\\s\\S]{0,2500}?"event_id"\\s*:\\s*"?${id}"?`, "i"),
-      /"day_time_sentence"\s*:\s*"([^"]+)"/i,
-    ];
-    for (const pattern of sentencePatterns) {
-      const match = html.match(pattern);
-      if (match) {
-        const date = toCalendarDate(match[1]) || firstNamedDate(match[1]);
-        if (date) return date;
-      }
+    chunks.push((main.innerText || "").slice(0, 700));
+    for (const chunk of chunks) {
+      const date = firstNamedDate(chunk);
+      if (date) return date;
     }
-
-    const startTimeMatch = html.match(new RegExp(`"${id}"[\\s\\S]{0,1200}?"start_time"\\s*:\\s*(\\d{10})`, "i"));
-    if (startTimeMatch) return toCalendarDate(startTimeMatch[1]);
-
     return "";
   }
 
@@ -254,17 +234,18 @@
       return;
     }
     const url = `https://www.facebook.com/events/${id}`;
-    const header = headerText();
+    const main = document.querySelector('[role="main"]') || document.body;
+    const scoped = ((main && main.innerText) || "").slice(0, 1500);
 
     let title = (ld && ld.name) || meta('meta[property="og:title"]') || document.title || "";
     title = title.replace(/\s*\|\s*Facebook\s*$/i, "").trim();
 
-    // Priority: Facebook embedded timestamp for THIS event → JSON-LD → meta → visible header text.
+    // Do not use loose page-wide timestamps (they often resolve to a random suggested event day).
     let start =
-      findEmbeddedEventDate(id) ||
+      findStrictEmbeddedDate(id) ||
       toCalendarDate(ld && ld.startDate) ||
       toCalendarDate(meta('meta[property="event:start_time"]')) ||
-      firstNamedDate(header);
+      visibleEventDate();
 
     let end =
       toCalendarDate(ld && ld.endDate) ||
@@ -286,22 +267,13 @@
           "";
       }
     }
-    if (!city) city = guessCity(header + "\n" + desc);
+    if (!city) city = guessCity(scoped + "\n" + desc);
 
-    if (!start) {
-      alert("Could not find the event date on this page. Wait for it to finish loading, then try again.");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Save to PlayTennis?\n\n${title}\nDate: ${start}${end && end !== start ? ` → ${end}` : ""}\n${city ? `City: ${city}\n` : ""}\nIf the date is wrong, click Cancel and edit it later in admin.`,
-    );
-    if (!confirmed) return;
-
+    // Always let the admin correct the date on PlayTennis. Detection is only a prefill.
     const payload = {
       title,
-      startDate: start,
-      endDate: end || start,
+      startDate: start || "",
+      endDate: end || start || "",
       city: city || "",
       venue: venue || "",
       description: desc || "",
@@ -319,7 +291,7 @@
     const badge = document.createElement("div");
     badge.id = BADGE_ID;
     badge.textContent = "PT";
-    badge.title = "PlayTennis helper is active (v1.3.0)";
+    badge.title = "PlayTennis helper is active (v1.4.0)";
     badge.style.cssText = [
       "position:fixed",
       "top:12px",

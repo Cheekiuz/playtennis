@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { importFacebookEventFromBrowser } from "@/app/admin/facebook/actions";
 
@@ -15,9 +15,9 @@ type Payload = {
 };
 
 type Status =
-  | { kind: "idle" }
-  | { kind: "working"; title: string }
-  | { kind: "done"; ok: boolean; title: string; created: number; updated: number; errors: string[] }
+  | { kind: "loading" }
+  | { kind: "review"; payload: Payload }
+  | { kind: "done"; ok: boolean; title: string; created: number; updated: number; errors: string[]; startDate: string }
   | { kind: "error"; message: string };
 
 function readPayloadFromHash(): { payload: Payload | null; error: string | null } {
@@ -25,7 +25,7 @@ function readPayloadFromHash(): { payload: Payload | null; error: string | null 
   if (!hash.startsWith("fb=")) {
     return {
       payload: null,
-      error: "No Facebook event data found. Use the bookmarklet from a Facebook event page.",
+      error: "No Facebook event data found. Use Save to PlayTennis from a Facebook event page.",
     };
   }
 
@@ -35,34 +35,58 @@ function readPayloadFromHash(): { payload: Payload | null; error: string | null 
     const json = decodeURIComponent(escape(atob(padded)));
     return { payload: JSON.parse(json) as Payload, error: null };
   } catch {
-    return { payload: null, error: "Could not read Facebook event data from the bookmarklet." };
+    return { payload: null, error: "Could not read Facebook event data from the helper." };
   }
 }
 
 export default function FacebookBookmarkletCatch() {
-  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [status, setStatus] = useState<Status>({ kind: "loading" });
+  const [title, setTitle] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [city, setCity] = useState("");
+  const [pending, startTransition] = useTransition();
 
   useEffect(() => {
     let cancelled = false;
-
     (async () => {
-      // Defer so setState is not synchronous inside the effect body (eslint react-hooks/set-state-in-effect).
       await Promise.resolve();
       if (cancelled) return;
-
       const { payload, error } = readPayloadFromHash();
       if (!payload) {
-        setStatus({
-          kind: "error",
-          message: error ?? "No Facebook event data found. Use the bookmarklet from a Facebook event page.",
-        });
+        setStatus({ kind: "error", message: error ?? "No Facebook event data found." });
         return;
       }
+      setTitle(payload.title ?? "");
+      setStartDate((payload.startDate ?? "").slice(0, 10));
+      setEndDate((payload.endDate ?? payload.startDate ?? "").slice(0, 10));
+      setCity(payload.city ?? "");
+      setStatus({ kind: "review", payload });
+      history.replaceState(null, "", window.location.pathname);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-      setStatus({ kind: "working", title: payload.title ?? "Facebook event" });
+  function onImport() {
+    if (status.kind !== "review") return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      setStatus({ kind: "error", message: "Start date must be YYYY-MM-DD." });
+      return;
+    }
+    const resolvedEnd = /^\d{4}-\d{2}-\d{2}$/.test(endDate) ? endDate : startDate;
+    const payload: Payload = {
+      ...status.payload,
+      title: title.trim() || status.payload.title,
+      startDate,
+      endDate: resolvedEnd < startDate ? startDate : resolvedEnd,
+      city: city.trim(),
+    };
+
+    startTransition(async () => {
       try {
         const result = await importFacebookEventFromBrowser(payload);
-        if (cancelled) return;
         setStatus({
           kind: "done",
           ok: result.ok,
@@ -70,35 +94,77 @@ export default function FacebookBookmarkletCatch() {
           created: result.created,
           updated: result.updated,
           errors: result.errors,
+          startDate,
         });
-        history.replaceState(null, "", window.location.pathname);
       } catch (err) {
-        if (cancelled) return;
         setStatus({
           kind: "error",
           message: err instanceof Error ? err.message : "Could not import this Facebook event.",
         });
       }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    });
+  }
 
   return (
     <div className="mt-6 rounded-xl border border-border p-5 text-sm">
-      {status.kind === "idle" || status.kind === "working" ? (
-        <p>{status.kind === "working" ? `Importing “${status.title}”…` : "Reading Facebook event…"}</p>
-      ) : null}
+      {status.kind === "loading" ? <p>Reading Facebook event…</p> : null}
       {status.kind === "error" ? <p className="text-foreground/80">{status.message}</p> : null}
+
+      {status.kind === "review" ? (
+        <div className="grid max-w-xl gap-3">
+          <p className="font-semibold">Check the date before saving</p>
+          <p className="text-foreground/70">
+            Facebook often exposes the wrong date automatically. Fix the start date here, then import.
+          </p>
+          {status.payload.url ? (
+            <p className="break-all text-xs text-foreground/60">
+              <a href={status.payload.url} className="text-accent underline-offset-2 hover:underline" target="_blank" rel="noreferrer">
+                {status.payload.url}
+              </a>
+            </p>
+          ) : null}
+          <label className="grid gap-1">
+            <span className="font-semibold">Title</span>
+            <input className="border border-border bg-input-bg px-3 py-2" value={title} onChange={(e) => setTitle(e.target.value)} />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1">
+              <span className="font-semibold">Start date</span>
+              <input
+                className="border border-border bg-input-bg px-3 py-2"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                required
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="font-semibold">End date</span>
+              <input className="border border-border bg-input-bg px-3 py-2" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            </label>
+          </div>
+          <label className="grid gap-1">
+            <span className="font-semibold">City</span>
+            <input className="border border-border bg-input-bg px-3 py-2" value={city} onChange={(e) => setCity(e.target.value)} />
+          </label>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={onImport}
+            className="w-fit rounded-full bg-accent px-5 py-2 text-sm font-semibold text-[#0f172a] disabled:opacity-60"
+          >
+            {pending ? "Importing…" : "Import event"}
+          </button>
+        </div>
+      ) : null}
+
       {status.kind === "done" ? (
         <div className="space-y-2">
           <p className="font-semibold">
             {status.ok ? "Imported" : "Not imported"}: {status.title}
           </p>
           <p>
-            created {status.created} · updated {status.updated}
+            date {status.startDate} · created {status.created} · updated {status.updated}
           </p>
           {status.errors.length > 0 ? (
             <ul className="list-disc pl-5 text-foreground/80">
@@ -109,13 +175,14 @@ export default function FacebookBookmarkletCatch() {
           ) : null}
         </div>
       ) : null}
+
       <p className="mt-4">
         <Link href="/admin/facebook" className="font-semibold text-accent underline-offset-2 hover:underline">
           Back to Facebook import
         </Link>
         {" · "}
-        <Link href="/lt/lietuva" className="font-semibold text-accent underline-offset-2 hover:underline">
-          View Lithuania
+        <Link href="/admin?section=local" className="font-semibold text-accent underline-offset-2 hover:underline">
+          Local tournaments
         </Link>
       </p>
     </div>
