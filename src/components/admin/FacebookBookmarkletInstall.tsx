@@ -1,73 +1,90 @@
 "use client";
 
-import { facebookEventBookmarklet } from "@/lib/discovery/facebook/bookmarklet";
+import { useState } from "react";
 
 export default function FacebookBookmarkletInstall({ siteUrl }: { siteUrl: string }) {
   const base = siteUrl.replace(/\/$/, "");
-  const href = facebookEventBookmarklet(`${base}/admin/facebook-catch`);
   const userscriptUrl = `${base}/playtennis-facebook.user.js`;
+  const [copied, setCopied] = useState(false);
+
+  async function copyInstallLink() {
+    await navigator.clipboard.writeText(userscriptUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <div className="mt-8 rounded-xl border border-border p-5">
       <h2 className="text-xl font-bold">One-click Facebook helper</h2>
       <p className="mt-2 text-sm text-foreground/80">
-        Facebook blocks normal browser bookmarks on event pages, so nothing happens when you click them there. Use the
-        userscript below instead. It adds a green <strong>Save to PlayTennis</strong> button on Facebook event pages.
+        Facebook blocks normal bookmarks. Install Tampermonkey, then install our script. On Facebook you should see a
+        small green <strong>PT</strong> badge (top right). On an event page you also get a green{" "}
+        <strong>Save to PlayTennis</strong> button (bottom right).
       </p>
 
-      <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm text-foreground/80">
+      <ol className="mt-4 list-decimal space-y-3 pl-5 text-sm text-foreground/80">
         <li>
           Install{" "}
           <a
             className="font-semibold text-accent underline-offset-2 hover:underline"
-            href="https://www.tampermonkey.net/"
+            href="https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo"
             target="_blank"
             rel="noreferrer"
           >
-            Tampermonkey
-          </a>{" "}
-          (Chrome / Edge / Firefox) or{" "}
-          <a
-            className="font-semibold text-accent underline-offset-2 hover:underline"
-            href="https://violentmonkey.github.io/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Violentmonkey
+            Tampermonkey for Chrome
           </a>
           .
         </li>
         <li>
-          Open this script and click Install:{" "}
-          <a className="font-semibold text-accent underline-offset-2 hover:underline" href={userscriptUrl}>
-            playtennis-facebook.user.js
-          </a>
+          Enable user scripts in Chrome:
+          <ul className="mt-1 list-disc space-y-1 pl-5">
+            <li>
+              Open <code>chrome://extensions</code>
+            </li>
+            <li>Turn on <strong>Developer mode</strong> (top right)</li>
+            <li>Open Tampermonkey → Details</li>
+            <li>
+              Turn on <strong>Allow User Scripts</strong> (required on newer Chrome)
+            </li>
+          </ul>
         </li>
-        <li>Stay signed in to PlayTennis admin in this browser.</li>
-        <li>Open a Facebook event page (URL contains <code>/events/123…</code>).</li>
-        <li>Click the green <strong>Save to PlayTennis</strong> button at the bottom right.</li>
-        <li>Confirm the import result on PlayTennis.</li>
+        <li>
+          Install the PlayTennis script:{" "}
+          <a className="font-semibold text-accent underline-offset-2 hover:underline" href={userscriptUrl}>
+            {userscriptUrl}
+          </a>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <a
+              href={userscriptUrl}
+              className="inline-flex items-center rounded-full bg-accent px-3 py-1.5 text-sm font-semibold text-[#0f172a]"
+            >
+              Open script install page
+            </a>
+            <button
+              type="button"
+              onClick={() => void copyInstallLink()}
+              className="inline-flex items-center rounded-full border border-border px-3 py-1.5 text-sm font-semibold"
+            >
+              {copied ? "Copied" : "Copy script link"}
+            </button>
+          </div>
+          <p className="mt-2 text-xs text-foreground/60">
+            Tampermonkey should show an Install button. If the page is blank text, click the Tampermonkey icon →
+            Dashboard → Utilities → Install from URL, paste the link, Install.
+          </p>
+        </li>
+        <li>Confirm the script is ON in Tampermonkey Dashboard (toggle enabled).</li>
+        <li>Open a Facebook event whose address bar contains <code>/events/123…</code> and refresh.</li>
+        <li>
+          Look for green <strong>PT</strong> (top right). On the event page, click{" "}
+          <strong>Save to PlayTennis</strong> (bottom right).
+        </li>
       </ol>
 
-      <details className="mt-5 text-sm text-foreground/70">
-        <summary className="cursor-pointer font-semibold text-foreground">Bookmark fallback (usually blocked by Facebook)</summary>
-        <p className="mt-2">
-          Drag this onto your bookmarks bar only if you want a backup. On Facebook it often does nothing because of
-          their security policy:
-        </p>
-        <p className="mt-2">
-          <a
-            href={href}
-            className="inline-flex items-center rounded-full bg-foreground/10 px-3 py-1.5 text-sm font-semibold"
-            onClick={(event) => {
-              event.preventDefault();
-              alert("Prefer the Tampermonkey userscript above. Facebook usually blocks this bookmark.");
-            }}
-          >
-            Save to PlayTennis (bookmark)
-          </a>
-        </p>
-      </details>
+      <p className="mt-4 text-xs text-foreground/60">
+        If there is no PT badge, the script is not running yet (extension off, user scripts disabled, or script not
+        installed). Stay signed in to PlayTennis admin in this browser before saving.
+      </p>
     </div>
   );
 }

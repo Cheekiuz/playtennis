@@ -1,22 +1,29 @@
 // ==UserScript==
 // @name         PlayTennis: Save Facebook event
 // @namespace    https://www.playtennis.lt
-// @version      1.0.0
+// @version      1.1.0
 // @description  Adds a Save to PlayTennis button on Facebook event pages
 // @author       PlayTennis
 // @match        https://www.facebook.com/*
 // @match        https://facebook.com/*
 // @match        https://web.facebook.com/*
-// @run-at       document-idle
+// @match        https://m.facebook.com/*
+// @run-at       document-end
 // @grant        none
 // ==/UserScript==
 
 (function () {
   const CATCH_URL = "https://www.playtennis.lt/admin/facebook-catch";
   const BUTTON_ID = "playtennis-save-event-btn";
+  const BADGE_ID = "playtennis-helper-badge";
+
+  function eventIdFromUrl(href) {
+    const match = String(href || "").match(/\/events\/(?:[^/]+\/)?(\d{8,})/i);
+    return match ? match[1] : null;
+  }
 
   function isEventPage() {
-    return /facebook\.com\/events\/\d+/i.test(location.href);
+    return Boolean(eventIdFromUrl(location.href));
   }
 
   function meta(sel) {
@@ -82,11 +89,12 @@
 
   function sendToPlayTennis() {
     const ld = jsonLd();
-    const url = (location.href || "").split("?")[0];
-    if (!/facebook\.com\/events\/\d+/i.test(url)) {
+    const id = eventIdFromUrl(location.href);
+    if (!id) {
       alert("Open a Facebook event page first (URL should contain /events/123...).");
       return;
     }
+    const url = `https://www.facebook.com/events/${id}`;
 
     let title = (ld && ld.name) || meta('meta[property="og:title"]') || document.title || "";
     title = title.replace(/\s*\|\s*Facebook\s*$/i, "").trim();
@@ -131,7 +139,32 @@
     location.href = `${CATCH_URL}#fb=${encoded}`;
   }
 
+  function ensureBadge() {
+    if (document.getElementById(BADGE_ID)) return;
+    const badge = document.createElement("div");
+    badge.id = BADGE_ID;
+    badge.textContent = "PT";
+    badge.title = "PlayTennis helper is active";
+    badge.style.cssText = [
+      "position:fixed",
+      "top:12px",
+      "right:12px",
+      "z-index:2147483647",
+      "width:28px",
+      "height:28px",
+      "border-radius:999px",
+      "background:#c8f135",
+      "color:#0f172a",
+      "font:700 11px/28px system-ui,sans-serif",
+      "text-align:center",
+      "box-shadow:0 4px 14px rgba(0,0,0,.35)",
+      "pointer-events:none",
+    ].join(";");
+    document.documentElement.appendChild(badge);
+  }
+
   function ensureButton() {
+    ensureBadge();
     const existing = document.getElementById(BUTTON_ID);
     if (!isEventPage()) {
       if (existing) existing.remove();
@@ -166,6 +199,6 @@
   }
 
   ensureButton();
-  setInterval(ensureButton, 1500);
+  setInterval(ensureButton, 1000);
   window.addEventListener("popstate", ensureButton);
 })();
