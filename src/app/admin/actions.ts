@@ -54,14 +54,16 @@ export async function saveTournament(_prev: AdminFormState, formData: FormData):
   const endsOn = text(formData, "ends_on");
   const sourceUrl = text(formData, "source_url");
 
-  const timezone = text(formData, "timezone");
+  const officialUrl = text(formData, "official_url");
+  const resolvedSourceUrl = sourceUrl || officialUrl;
+  let timezone = text(formData, "timezone");
+  if (!isIanaTimezone(timezone)) {
+    timezone = country === "lv" ? "Europe/Riga" : country === "ee" ? "Europe/Tallinn" : "Europe/Vilnius";
+  }
   const priceCurrency = text(formData, "price_currency").toUpperCase();
   const eventGender = text(formData, "event_gender");
-  if (!name || !city || !/^[a-z]{2}$/.test(country) || !startsOn || !endsOn || !sourceUrl) {
+  if (!name || !city || !/^[a-z]{2}$/.test(country) || !startsOn || !endsOn || !resolvedSourceUrl) {
     return { error: "Name, city, country, dates, and source URL are required." };
-  }
-  if (!isIanaTimezone(timezone)) {
-    return { error: "Add the IANA timezone for the event city, such as Europe/Madrid or Asia/Tokyo." };
   }
   if (priceCurrency && !/^[A-Z]{3}$/.test(priceCurrency)) {
     return { error: "Currency must be a 3-letter code, such as EUR or USD." };
@@ -78,24 +80,32 @@ export async function saveTournament(_prev: AdminFormState, formData: FormData):
   } catch {
     return { error: "Categories could not be read." };
   }
-  if (categories.length === 0) return { error: "Add at least one category." };
+  if (categories.length === 0) {
+    categories = [{ discipline: "singles", gender: "open", level: "recreational" }];
+  }
 
   try {
     const supabase = createServerSupabaseClient();
     const id = text(formData, "id");
     const now = new Date().toISOString();
 
-    const { data: source } = await supabase
-      .from("sources")
-      .select("id")
-      .eq("id", "00000000-0000-4000-8000-000000000001")
-      .maybeSingle();
-
-    let sourceId = source?.id as string | undefined;
+    let sourceId: string | undefined;
+    if (id) {
+      const existing = await supabase.from("tournaments").select("source_id, source_external_id").eq("id", id).maybeSingle();
+      sourceId = (existing.data?.source_id as string | undefined) || undefined;
+    }
+    if (!sourceId) {
+      const { data: source } = await supabase
+        .from("sources")
+        .select("id")
+        .eq("id", "00000000-0000-4000-8000-000000000001")
+        .maybeSingle();
+      sourceId = source?.id as string | undefined;
+    }
     if (!sourceId) {
       const { data: created, error } = await supabase
         .from("sources")
-        .insert({ kind: "manual", name: text(formData, "source_name") || "Manual entry", ingestion: "manual", url: sourceUrl })
+        .insert({ kind: "manual", name: text(formData, "source_name") || "Manual entry", ingestion: "manual", url: resolvedSourceUrl })
         .select("id")
         .single();
       if (error || !created) return { error: error?.message ?? "Could not save the source." };
@@ -163,18 +173,10 @@ export async function saveTournament(_prev: AdminFormState, formData: FormData):
       play_level: text(formData, "play_level") ? oneOf(text(formData, "play_level"), PLAY_LEVELS, "OTHER") : null,
       original_source_url: text(formData, "original_source_url") || null,
       source_kind: oneOf(text(formData, "source_kind"), SOURCE_KINDS, "ORGANISER_WEBSITE"),
-      dedupe_key: dedupeKey({
-        name,
-        startsOn,
-        city,
-        format: oneOf(text(formData, "event_format"), EVENT_FORMATS, "MULTIPLE"),
-        organizer: text(formData, "organizer_name"),
-      }),
       registration_url: text(formData, "registration_url") || null,
-      official_url: text(formData, "official_url") || null,
+      official_url: officialUrl || null,
       source_id: sourceId,
-      source_url: sourceUrl,
-      source_external_id: text(formData, "source_external_id") || null,
+      source_url: resolvedSourceUrl,
       surface: oneOf(text(formData, "surface"), SURFACES, "hard"),
       environment: oneOf(text(formData, "environment"), ENVIRONMENTS, "outdoor"),
       contact_name: text(formData, "contact_name") || null,
@@ -189,13 +191,30 @@ export async function saveTournament(_prev: AdminFormState, formData: FormData):
       updated_at: now,
     };
 
+    const externalId = text(formData, "source_external_id");
+    if (externalId) Object.assign(row, { source_external_id: externalId });
+    else if (!id) Object.assign(row, { source_external_id: null });
+
+    // Only set dedupe_key on create. Updating it often collides with other imported rows.
+    if (!id) {
+      Object.assign(row, {
+        dedupe_key: dedupeKey({
+          name,
+          startsOn,
+          city,
+          format: oneOf(text(formData, "event_format"), EVENT_FORMATS, "MULTIPLE"),
+          organizer: text(formData, "organizer_name"),
+        }),
+      });
+    }
+
     const checked = formData.get("verified") === "on";
     const sourceKind = oneOf(text(formData, "source_kind"), SOURCE_KINDS, "ORGANISER_WEBSITE");
     const sourceConfidence = confidenceForKind(sourceKind);
     const level = standardiseLevel(text(formData, "original_level") || null);
     const quality = scoreQuality({
       title: name,
-      officialEventUrl: text(formData, "official_url") || null,
+      officialEventUrl: officialUrl || null,
       registrationUrl: text(formData, "registration_url") || null,
       startDate: startsOn,
       city,

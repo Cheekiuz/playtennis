@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { saveTournament, type AdminFormState } from "@/app/admin/actions";
 import { COUNTRIES } from "@/lib/tournaments/countries";
 import { EVENT_TYPES, type TournamentRecord } from "@/lib/tournaments/types";
@@ -23,8 +23,9 @@ const emptyCategory = {
 
 export default function TournamentForm({ tournament }: { tournament?: TournamentRecord }) {
   const [state, action, pending] = useActionState(saveTournament, {} as AdminFormState);
-  const initial = useMemo(
-    () =>
+  const errorRef = useRef<HTMLParagraphElement>(null);
+  const initial = useMemo(() => {
+    const mapped =
       tournament?.categories.map((category) => ({
         discipline: category.discipline,
         gender: category.gender,
@@ -37,16 +38,28 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
         currency: category.currency ?? "",
         registrationDeadline: category.registrationDeadline ?? "",
         registrationStatus: category.registrationStatus ?? "",
-      })) ?? [{ ...emptyCategory }],
-    [tournament],
-  );
+      })) ?? [];
+    // Imported Facebook/ITF rows often have zero categories; empty [] must not skip the fallback.
+    return mapped.length > 0 ? mapped : [{ ...emptyCategory }];
+  }, [tournament]);
   const [categories, setCategories] = useState(initial);
+  const defaultTimezone =
+    tournament?.timezone ||
+    (tournament?.countryCode === "lv" ? "Europe/Riga" : tournament?.countryCode === "ee" ? "Europe/Tallinn" : "Europe/Vilnius");
+
+  useEffect(() => {
+    if (state.error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [state.error]);
 
   return (
     <form action={action} className="grid max-w-3xl gap-4">
       {tournament ? <input type="hidden" name="id" value={tournament.id} /> : null}
-      <input type="hidden" name="categories" value={JSON.stringify(categories)} />
-      {state.error ? <p className="border border-destructive px-3 py-2 text-sm text-destructive">{state.error}</p> : null}
+      <input type="hidden" name="categories" value={JSON.stringify(categories.length > 0 ? categories : [emptyCategory])} />
+      {state.error ? (
+        <p ref={errorRef} className="border border-destructive px-3 py-2 text-sm text-destructive">
+          {state.error}
+        </p>
+      ) : null}
 
       <Field label="Official name" name="name" defaultValue={tournament?.name} required />
       <Field label="Slug" name="slug" defaultValue={tournament?.slug} />
@@ -74,7 +87,7 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Region" name="region" defaultValue={tournament?.region ?? ""} />
-        <Field label="Timezone" name="timezone" defaultValue={tournament?.timezone ?? ""} required />
+        <Field label="Timezone" name="timezone" defaultValue={defaultTimezone} required />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Start date" name="starts_on" type="date" defaultValue={tournament?.startsOn} required />
@@ -87,8 +100,8 @@ export default function TournamentForm({ tournament }: { tournament?: Tournament
       </div>
       <Field label="Registration URL" name="registration_url" defaultValue={tournament?.registrationUrl ?? ""} />
       <Field label="Official URL" name="official_url" defaultValue={tournament?.officialUrl ?? ""} />
-      <Field label="Source URL" name="source_url" defaultValue={tournament?.sourceUrl} required />
-      <Field label="Source external id" name="source_external_id" />
+      <Field label="Source URL" name="source_url" defaultValue={tournament?.sourceUrl || tournament?.officialUrl || ""} required />
+      <Field label="Source external id" name="source_external_id" defaultValue={tournament?.sourceExternalId ?? ""} />
       <input type="hidden" name="surface" value={tournament?.surface ?? "hard"} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Select label="Indoor or outdoor" name="environment" defaultValue={tournament?.environment ?? "outdoor"} options={["indoor", "outdoor", "mixed"]} />

@@ -30,7 +30,7 @@ import type {
 const SELECT = `
   id, slug, name, series_name, tournament_type, audience, country_code, city,
   starts_on, ends_on, timezone, registration_deadline, registration_status,
-  registration_url, official_url, source_url, surface, environment,
+  registration_url, official_url, source_url, source_external_id, surface, environment,
   contact_name, contact_email, contact_phone, image_url, prize_summary,
   lifecycle_status, verification_status, last_verified_at, published, updated_at,
   countries (name_en, name_lt),
@@ -591,6 +591,7 @@ function mapTournament(row: Record<string, unknown>): TournamentRecord {
     officialUrl: text(row.official_url),
     sourceName: source?.name ?? null,
     sourceUrl: String(row.source_url ?? ""),
+    sourceExternalId: text(row.source_external_id),
     surface: surface(row.surface),
     environment: (row.environment as Environment) ?? "outdoor",
     contactName: text(row.contact_name),

@@ -86,6 +86,7 @@ export type TournamentRecord = {
   officialUrl: string | null;
   sourceName: string | null;
   sourceUrl: string;
+  sourceExternalId: string | null;
   surface: Surface;
   environment: Environment;
   contactName: string | null;
