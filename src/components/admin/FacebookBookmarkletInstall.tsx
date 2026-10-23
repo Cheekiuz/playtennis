@@ -17,9 +17,10 @@ export default function FacebookBookmarkletInstall({ siteUrl }: { siteUrl: strin
     <div className="mt-8 rounded-xl border border-border p-5">
       <h2 className="text-xl font-bold">One-click Facebook helper</h2>
       <p className="mt-2 text-sm text-foreground/80">
-        Facebook blocks normal bookmarks. Install Tampermonkey, then install our script. On Facebook you should see a
-        small green <strong>PT</strong> badge (top right). On an event page you also get a green{" "}
-        <strong>Save to PlayTennis</strong> button (bottom right).
+        Facebook blocks normal bookmarks. Install Tampermonkey, then install our script (version 1.3.0 or newer). On
+        Facebook you should see a small green <strong>PT</strong> badge (top right). On an event page you also get a
+        green <strong>Save to PlayTennis</strong> button (bottom right). The save dialog shows the date before import.
+        Re-open the script link after updates to upgrade.
       </p>
 
       <ol className="mt-4 list-decimal space-y-3 pl-5 text-sm text-foreground/80">
