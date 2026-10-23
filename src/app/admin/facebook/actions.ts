@@ -1,6 +1,11 @@
 "use server";
 
 import {
+  importBrowserFacebookEvent,
+  type BrowserFacebookEventPayload,
+  type BrowserFacebookImportResult,
+} from "@/lib/discovery/facebook/browser-import";
+import {
   DEFAULT_FACEBOOK_PASTE_SOURCE_ID,
   importFacebookEventUrlsForSource,
   type FacebookUrlImportResult,
@@ -16,4 +21,11 @@ export async function importFacebookEventUrls(_prev: FacebookImportState, formDa
   const sourceId = String(formData.get("source_id") ?? DEFAULT_FACEBOOK_PASTE_SOURCE_ID).trim();
   const result = await importFacebookEventUrlsForSource(sourceId, pasted);
   return { ...result, ok: result.errors.length === 0 || result.created > 0 || result.updated > 0 };
+}
+
+export async function importFacebookEventFromBrowser(
+  payload: BrowserFacebookEventPayload,
+): Promise<BrowserFacebookImportResult> {
+  await requireAdmin();
+  return importBrowserFacebookEvent(payload, DEFAULT_FACEBOOK_PASTE_SOURCE_ID);
 }
