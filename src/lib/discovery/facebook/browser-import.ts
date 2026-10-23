@@ -1,3 +1,4 @@
+import { toCalendarDate } from "@/lib/discovery/facebook/event-date";
 import { DEFAULT_FACEBOOK_PASTE_SOURCE_ID, loadRegistrySourceById } from "@/lib/discovery/facebook/manual-url-store";
 import { ingestObservationsFromRegistry } from "@/lib/discovery/ingest";
 import type { RawObservation } from "@/lib/discovery/types";
@@ -26,10 +27,10 @@ export type BrowserFacebookImportResult = {
 export function normalizeBrowserFacebookPayload(raw: BrowserFacebookEventPayload): BrowserFacebookEventPayload | null {
   const title = (raw.title ?? "").replace(/\s*\|\s*Facebook\s*$/i, "").trim();
   const url = (raw.url ?? "").trim();
-  const startDate = toIsoDate(raw.startDate);
+  const startDate = toCalendarDate(raw.startDate);
   if (!title || !url || !startDate || !url.includes("facebook.com/events/")) return null;
 
-  const endDate = toIsoDate(raw.endDate) ?? startDate;
+  const endDate = toCalendarDate(raw.endDate) ?? startDate;
   const city = (raw.city ?? "").trim() || guessCity(raw.description) || "Vilnius";
   const countryCode = (raw.countryCode ?? guessCountry(city, raw.description) ?? "lt").toLowerCase();
 
@@ -110,16 +111,6 @@ export async function importBrowserFacebookEvent(
 function eventIdFromUrl(url: string): string | null {
   const match = url.match(/\/events\/(\d+)/);
   return match ? `fb-event-${match[1]}` : null;
-}
-
-function toIsoDate(value: string | undefined): string | null {
-  if (!value) return null;
-  const trimmed = value.trim();
-  const iso = trimmed.match(/^(\d{4}-\d{2}-\d{2})/);
-  if (iso) return iso[1];
-  const parsed = Date.parse(trimmed);
-  if (!Number.isFinite(parsed)) return null;
-  return new Date(parsed).toISOString().slice(0, 10);
 }
 
 function guessCity(description: string | undefined): string | null {
