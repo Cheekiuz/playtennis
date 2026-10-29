@@ -53,16 +53,13 @@ export default function TournamentListingDesk({
 }) {
   const router = useRouter();
   const desk = messages.desk;
-  const [tab, setTab] = useState<DeskTab>(when);
+  const [savedOnly, setSavedOnly] = useState(false);
   const [view, setView] = useState<DeskView>("grid");
   const [sort, setSort] = useState<DeskSort>("soonest");
   const [savedCount, setSavedCount] = useState(0);
   const [savedItems, setSavedItems] = useState<TournamentRecord[] | null>(null);
   const [savedLoading, startSavedTransition] = useTransition();
-
-  useEffect(() => {
-    setTab(when);
-  }, [when]);
+  const tab: DeskTab = savedOnly ? "saved" : when;
 
   useEffect(() => {
     const sync = () => setSavedCount(readSavedIds().length);
@@ -101,11 +98,12 @@ export default function TournamentListingDesk({
   }
 
   function selectTab(next: DeskTab) {
-    setTab(next);
     if (next === "saved") {
+      setSavedOnly(true);
       loadSaved();
       return;
     }
+    setSavedOnly(false);
     const href = withParams(basePath, { when: next === "upcoming" ? undefined : next, ...filterValues });
     router.push(href);
   }

@@ -75,6 +75,7 @@ export default async function CatalogSectionPage({
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#747874] sm:text-base">{copy.description}</p>
         <div className="mt-8">
           <TournamentListingDesk
+            key={`${section}-${when}`}
             locale={locale}
             messages={messages}
             section={section}

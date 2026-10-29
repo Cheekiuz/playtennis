@@ -84,6 +84,7 @@ export default async function TournamentsPage({
         </p>
         <div className="mt-8">
           <TournamentListingDesk
+            key={`all-${when}`}
             locale={locale}
             messages={messages}
             section="all"

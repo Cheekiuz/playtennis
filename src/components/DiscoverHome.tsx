@@ -79,6 +79,7 @@ export default async function DiscoverHome({
 
           <section className="mx-auto w-full max-w-[1440px] px-4 pb-12 lg:px-12">
             <TournamentListingDesk
+              key={`${activeSection}-${when}`}
               locale={locale}
               messages={messages}
               section={activeSection}
