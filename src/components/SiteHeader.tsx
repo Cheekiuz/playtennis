@@ -37,12 +37,17 @@ export default function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-[#e7e7e2] bg-[#fbfbfa]/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-3 px-4 lg:px-12">
-        <Link href={home} aria-label="PlayTennis.lt" className="flex items-center gap-2 text-lg font-bold tracking-tight text-[#111915]">
-          <TennisBallIcon size={22} priority />
-          <span>
-            playtennis<span className="text-[#506600]">.lt</span>
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <Link href={home} aria-label="PlayTennis.lt" className="flex items-center gap-2 text-lg font-bold tracking-tight text-[#111915]">
+            <TennisBallIcon size={22} priority />
+            <span>
+              playtennis<span className="text-[#506600]">.lt</span>
+            </span>
+          </Link>
+          <span className="truncate text-[11px] font-bold uppercase tracking-[0.08em] text-red-600 sm:text-xs">
+            Under construction
           </span>
-        </Link>
+        </div>
 
         <nav className="hidden items-center gap-8 md:flex" aria-label="PlayTennis">
           <Link
