@@ -32,6 +32,47 @@ export async function loadActiveRegistrySources(): Promise<RegistrySource[]> {
   }
 }
 
+export async function loadAdminRegistrySources(): Promise<RegistrySource[]> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("sources")
+      .select(
+        "id, name, url, facebook_url, city, country_code, region, active, priority, scraping_method, last_checked, last_successful_scrape, registry_source_type, source_type, metadata, kind",
+      )
+      .order("name", { ascending: true })
+      .limit(200);
+
+    if (error || !data?.length) {
+      if (error && !/registry_source_type|scraping_method|facebook_url|schema cache/i.test(error.message)) {
+        console.error("loadAdminRegistrySources", error.message);
+      }
+      if (error && /registry_source_type|scraping_method|facebook_url|schema cache/i.test(error.message)) {
+        const plain = await supabase
+          .from("sources")
+          .select("id, name, url, city, country_code, active, kind")
+          .order("name", { ascending: true })
+          .limit(200);
+        if (plain.data?.length) {
+          return plain.data.map((row) =>
+            mapRegistrySourceRow({
+              ...row,
+              registry_source_type: "OTHER",
+              scraping_method: "manual",
+              priority: 50,
+            }),
+          );
+        }
+      }
+      return REGISTRY_SEEDS;
+    }
+
+    return data.map(mapRegistrySourceRow);
+  } catch {
+    return REGISTRY_SEEDS;
+  }
+}
+
 export function mapRegistrySourceRow(row: Record<string, unknown>): RegistrySource {
   const registryType = (row.registry_source_type as RegistrySourceType | null) ?? "OTHER";
   return {

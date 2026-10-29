@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { adminSourceLabel, needsAdminReview } from "@/lib/tournaments/admin-helpers";
 import { countryCodeFromName, regionName } from "@/lib/tournaments/countries";
 import type { Locale } from "@/lib/i18n";
 import { rangeForPreset, todayIso } from "@/lib/tournaments/dates";
@@ -32,7 +33,7 @@ const SELECT = `
   starts_on, ends_on, timezone, registration_deadline, registration_status,
   registration_url, official_url, source_url, source_external_id, surface, environment,
   contact_name, contact_email, contact_phone, image_url, prize_summary,
-  lifecycle_status, verification_status, last_verified_at, published, updated_at,
+  lifecycle_status, verification_status, last_verified_at, published, archived_at, updated_at,
   countries (name_en, name_lt),
   venues (name, address, latitude, longitude),
   organizers (name, website),
@@ -210,14 +211,71 @@ export async function getTournamentsByIds(ids: string[]): Promise<TournamentReco
   }
 }
 
-export async function listAdminTournaments(options?: {
+export type AdminListStatus = "all" | "listed" | "drafts" | "archived" | "needs_review";
+export type AdminListSort = "soonest" | "latest";
+
+export type AdminTournamentListOptions = {
   section?: CatalogSection | "all" | "local";
-}): Promise<TournamentRecord[]> {
-  const section = options?.section ?? "local";
+  status?: AdminListStatus;
+  q?: string;
+  source?: string;
+  sort?: AdminListSort;
+  page?: number;
+  pageSize?: number;
+};
+
+export type AdminTournamentListResult = {
+  items: TournamentRecord[];
+  total: number;
+  page: number;
+  pageSize: number;
+  sources: string[];
+};
+
+export type AdminTournamentStats = {
+  total: number;
+  listed: number;
+  drafts: number;
+  needsReview: number;
+  archived: number;
+};
+
+const EMPTY_ADMIN_LIST: AdminTournamentListResult = {
+  items: [],
+  total: 0,
+  page: 1,
+  pageSize: 8,
+  sources: [],
+};
+
+const EMPTY_ADMIN_STATS: AdminTournamentStats = {
+  total: 0,
+  listed: 0,
+  drafts: 0,
+  needsReview: 0,
+  archived: 0,
+};
+
+export async function listAdminTournaments(
+  options?: AdminTournamentListOptions,
+): Promise<AdminTournamentListResult> {
+  const section = options?.section ?? "all";
+  const status = options?.status ?? "all";
+  const sort = options?.sort ?? "soonest";
+  const pageSize = Math.min(Math.max(options?.pageSize ?? 8, 1), 50);
+  const page = Math.max(options?.page ?? 1, 1);
+  const q = options?.q?.trim();
+  const sourceFilter = options?.source?.trim();
+
   try {
     const supabase = createServerSupabaseClient();
     const { data, error } = await selectMany((select) => {
-      let query = supabase.from("tournaments").select(select).is("archived_at", null).order("starts_on", { ascending: true }).limit(300);
+      let query = supabase.from("tournaments").select(select).order("starts_on", { ascending: true }).limit(800);
+      if (status === "archived") {
+        query = query.not("archived_at", "is", null);
+      } else if (status !== "all") {
+        query = query.is("archived_at", null);
+      }
       if (section === "lithuania" || section === "baltics" || section === "itf") {
         query = query.eq("catalog_section", section);
       } else if (section === "local") {
@@ -225,33 +283,103 @@ export async function listAdminTournaments(options?: {
       }
       return query;
     });
+
+    let rows = (data ?? []).map((row) => mapTournament(row as Record<string, unknown>));
+
     if (error || !data) {
-      // Older DBs without catalog_section: fall back and filter in memory.
       if (section !== "all" && error && /catalog_section|schema cache/i.test(error.message)) {
         const fallback = await selectMany((select) =>
-          supabase.from("tournaments").select(select).is("archived_at", null).order("starts_on", { ascending: true }).limit(500),
+          supabase.from("tournaments").select(select).order("starts_on", { ascending: true }).limit(800),
         );
-        if (!fallback.data) return [];
-        return fallback.data
-          .map((row) => mapTournament(row as Record<string, unknown>))
-          .filter((tournament) => {
-            if (section === "local") return tournament.countryCode.toLowerCase() === "lt" || tournament.countryCode.toLowerCase() === "lv" || tournament.countryCode.toLowerCase() === "ee";
-            if (section === "lithuania") return tournament.countryCode.toLowerCase() === "lt";
-            if (section === "baltics") {
-              const code = tournament.countryCode.toLowerCase();
-              return code === "lv" || code === "ee";
-            }
-            if (section === "itf") return false;
-            return true;
-          });
+        rows = (fallback.data ?? []).map((row) => mapTournament(row as Record<string, unknown>));
+        rows = rows.filter((tournament) => matchesAdminSection(tournament, section));
+      } else if (error) {
+        console.error("listAdminTournaments", error);
+        return { ...EMPTY_ADMIN_LIST, page, pageSize };
       }
-      return [];
     }
-    return data.map((row) => mapTournament(row as Record<string, unknown>));
+
+    rows = rows.filter((tournament) => matchesAdminStatus(tournament, status));
+    const sources = [...new Set(rows.map(adminSourceLabel).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
+    if (q) {
+      const needle = q.toLowerCase();
+      rows = rows.filter(
+        (tournament) =>
+          tournament.name.toLowerCase().includes(needle) || tournament.city.toLowerCase().includes(needle),
+      );
+    }
+
+    if (sourceFilter) {
+      const needle = sourceFilter.toLowerCase();
+      rows = rows.filter((tournament) => adminSourceLabel(tournament).toLowerCase() === needle);
+    }
+
+    rows.sort((a, b) => {
+      if (sort === "latest") return b.startsOn.localeCompare(a.startsOn) || b.name.localeCompare(a.name);
+      return a.startsOn.localeCompare(b.startsOn) || a.name.localeCompare(b.name);
+    });
+
+    const total = rows.length;
+    const start = (page - 1) * pageSize;
+    const items = rows.slice(start, start + pageSize);
+
+    return { items, total, page, pageSize, sources };
   } catch (error) {
     console.error("listAdminTournaments", error);
-    return [];
+    return { ...EMPTY_ADMIN_LIST, page, pageSize };
   }
+}
+
+export async function getAdminTournamentStats(): Promise<AdminTournamentStats> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await selectMany((select) =>
+      supabase.from("tournaments").select(select).order("starts_on", { ascending: true }).limit(800),
+    );
+    if (error || !data) {
+      console.error("getAdminTournamentStats", error);
+      return EMPTY_ADMIN_STATS;
+    }
+    const rows = data.map((row) => mapTournament(row as Record<string, unknown>));
+    return {
+      total: rows.length,
+      listed: rows.filter((row) => !row.archivedAt && row.published).length,
+      drafts: rows.filter((row) => !row.archivedAt && !row.published).length,
+      needsReview: rows.filter((row) => !row.archivedAt && needsAdminReview(row)).length,
+      archived: rows.filter((row) => Boolean(row.archivedAt)).length,
+    };
+  } catch (error) {
+    console.error("getAdminTournamentStats", error);
+    return EMPTY_ADMIN_STATS;
+  }
+}
+
+export { adminSourceLabel, needsAdminReview } from "@/lib/tournaments/admin-helpers";
+
+function matchesAdminSection(tournament: TournamentRecord, section: CatalogSection | "all" | "local"): boolean {
+  if (section === "all") return true;
+  if (section === "local") {
+    const code = tournament.countryCode.toLowerCase();
+    return code === "lt" || code === "lv" || code === "ee";
+  }
+  if (section === "lithuania") return tournament.countryCode.toLowerCase() === "lt" || tournament.catalogSection === "lithuania";
+  if (section === "baltics") {
+    const code = tournament.countryCode.toLowerCase();
+    return tournament.catalogSection === "baltics" || code === "lv" || code === "ee";
+  }
+  if (section === "itf") return tournament.catalogSection === "itf";
+  return true;
+}
+
+function matchesAdminStatus(tournament: TournamentRecord, status: AdminListStatus): boolean {
+  if (status === "all") return true;
+  if (status === "archived") return Boolean(tournament.archivedAt);
+  if (tournament.archivedAt) return false;
+  if (status === "listed") return tournament.published;
+  if (status === "drafts") return !tournament.published;
+  if (status === "needs_review") return needsAdminReview(tournament);
+  return true;
 }
 
 export async function getAdminTournament(id: string): Promise<TournamentRecord | null> {
@@ -262,6 +390,56 @@ export async function getAdminTournament(id: string): Promise<TournamentRecord |
     return mapTournament(data as Record<string, unknown>);
   } catch {
     return null;
+  }
+}
+
+export type AdminIngestRun = {
+  id: string;
+  sourceKey: string;
+  startedAt: string;
+  finishedAt: string | null;
+  status: string;
+  fetched: number;
+  upserted: number;
+  skipped: number;
+  error: string | null;
+};
+
+export async function listAdminIngestRuns(limit = 20): Promise<AdminIngestRun[]> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("ingest_runs")
+      .select("id, source_key, started_at, finished_at, status, fetched, upserted, skipped, error")
+      .order("started_at", { ascending: false })
+      .limit(limit);
+    if (error || !data) return [];
+    return data.map((row) => ({
+      id: String(row.id),
+      sourceKey: String(row.source_key),
+      startedAt: String(row.started_at),
+      finishedAt: row.finished_at ? String(row.finished_at) : null,
+      status: String(row.status),
+      fetched: Number(row.fetched ?? 0),
+      upserted: Number(row.upserted ?? 0),
+      skipped: Number(row.skipped ?? 0),
+      error: row.error ? String(row.error) : null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export async function listRecentlyUpdatedAdminTournaments(limit = 12): Promise<TournamentRecord[]> {
+  try {
+    const supabase = createServerSupabaseClient();
+    const { data, error } = await selectMany((select) =>
+      supabase.from("tournaments").select(select).order("updated_at", { ascending: false }).limit(limit),
+    );
+    if (error || !data) return [];
+    return data.map((row) => mapTournament(row as Record<string, unknown>));
+  } catch {
+    return [];
   }
 }
 
@@ -603,6 +781,7 @@ function mapTournament(row: Record<string, unknown>): TournamentRecord {
     verificationStatus: row.verification_status === "verified" ? "verified" : "needs_verification",
     lastVerifiedAt: text(row.last_verified_at),
     published: Boolean(row.published),
+    archivedAt: text(row.archived_at),
     updatedAt: String(row.updated_at ?? ""),
     eventType: eventType(row.event_type),
     eventFormat: eventFormat(row.event_format),

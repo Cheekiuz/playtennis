@@ -75,6 +75,28 @@ body {
   background: linear-gradient(180deg, #f8fafc 0%, var(--background) 40%, #eef2f7 100%);
 }
 
+/* Force a light editorial surface inside /admin regardless of public theme. */
+.admin-workspace {
+  --background: #fbfbfa;
+  --foreground: #111915;
+  --accent: #65a30d;
+  --accent-hover: #84cc16;
+  --muted: #747874;
+  --card: #ffffff;
+  --border: #e7e7e2;
+  --surface: #f3f4f3;
+  --surface-hover: #eeeeed;
+  --input-bg: #ffffff;
+  --destructive: #ba1a1a;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.admin-workspace body,
+body:has(.admin-workspace) {
+  background: #fbfbfa;
+}
+
 @keyframes float {
   0%,
   100% {

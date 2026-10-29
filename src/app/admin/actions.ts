@@ -286,10 +286,7 @@ export async function saveTournament(_prev: AdminFormState, formData: FormData):
       );
     }
 
-    revalidatePath("/lt");
-    revalidatePath("/en");
-    revalidatePath("/lt/tournaments");
-    revalidatePath("/en/tournaments");
+    revalidateAdminPaths();
     redirect(`/admin/${tournamentId}?saved=1`);
   } catch (error) {
     if (isRedirect(error)) throw error;
@@ -302,8 +299,7 @@ export async function setTournamentStatus(formData: FormData) {
   await requireAdmin();
   const id = text(formData, "id");
   const status = text(formData, "status");
-  const section = text(formData, "section") || "local";
-  const returnTo = section === "all" ? "/admin?section=all" : `/admin?section=${encodeURIComponent(section)}`;
+  const returnTo = adminReturnTo(formData);
   if (!id || !status) redirect(returnTo);
 
   const supabase = createServerSupabaseClient();
@@ -335,24 +331,13 @@ export async function setTournamentStatus(formData: FormData) {
     throw new Error(updated.error.message);
   }
 
-  revalidatePath("/admin");
-  revalidatePath("/lt");
-  revalidatePath("/en");
-  revalidatePath("/lt/lithuania");
-  revalidatePath("/en/lithuania");
-  revalidatePath("/lt/baltics");
-  revalidatePath("/en/baltics");
-  revalidatePath("/lt/itf");
-  revalidatePath("/en/itf");
-  revalidatePath("/lt/tournaments");
-  revalidatePath("/en/tournaments");
+  revalidateAdminPaths();
   redirect(returnTo);
 }
 
 export async function bulkArchiveTournaments(formData: FormData) {
   await requireAdmin();
-  const section = text(formData, "section") || "local";
-  const returnTo = section === "all" ? "/admin?section=all" : `/admin?section=${encodeURIComponent(section)}`;
+  const returnTo = adminReturnTo(formData);
   const ids = formData
     .getAll("ids")
     .map((value) => String(value).trim())
@@ -369,7 +354,15 @@ export async function bulkArchiveTournaments(formData: FormData) {
 
   if (error) throw new Error(error.message);
 
+  revalidateAdminPaths();
+  redirect(returnTo);
+}
+
+function revalidateAdminPaths() {
   revalidatePath("/admin");
+  revalidatePath("/admin/review");
+  revalidatePath("/admin/sources");
+  revalidatePath("/admin/activity");
   revalidatePath("/lt");
   revalidatePath("/en");
   revalidatePath("/lt/lithuania");
@@ -380,7 +373,6 @@ export async function bulkArchiveTournaments(formData: FormData) {
   revalidatePath("/en/itf");
   revalidatePath("/lt/tournaments");
   revalidatePath("/en/tournaments");
-  redirect(returnTo);
 }
 
 async function uniqueSlug(
@@ -399,6 +391,13 @@ async function uniqueSlug(
 
 function text(formData: FormData, key: string): string {
   return String(formData.get(key) ?? "").trim();
+}
+
+function adminReturnTo(formData: FormData): string {
+  const next = text(formData, "return_to");
+  if (next.startsWith("/admin")) return next;
+  const section = text(formData, "section") || "all";
+  return section === "all" ? "/admin" : `/admin?section=${encodeURIComponent(section)}`;
 }
 
 function numberOrNull(value: string): number | null {

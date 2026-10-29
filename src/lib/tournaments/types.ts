@@ -98,6 +98,7 @@ export type TournamentRecord = {
   verificationStatus: "verified" | "needs_verification";
   lastVerifiedAt: string | null;
   published: boolean;
+  archivedAt: string | null;
   updatedAt: string;
   eventType: EventType;
   eventFormat: EventFormat;
