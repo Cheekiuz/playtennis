@@ -13,7 +13,7 @@ export default function HomeHero({
 
   return (
     <section className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 lg:px-12">
-      <div className="grid overflow-hidden rounded-[32px] bg-[#0d2818] text-white lg:min-h-[360px] lg:grid-cols-[1.05fr_0.95fr]">
+      <div className="grid overflow-hidden rounded-[32px] bg-[#0d2818] text-white lg:min-h-[420px] lg:grid-cols-[1.05fr_0.95fr]">
         <div className="flex flex-col justify-between gap-10 p-7 sm:p-9 lg:p-11">
           <div className="space-y-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c8ff00]">• {home.badge}</p>
@@ -35,42 +35,44 @@ export default function HomeHero({
           </p>
         </div>
 
-        <div className="relative overflow-hidden border-t border-white/10 bg-[#123526] p-6 sm:p-8 lg:border-l lg:border-t-0 lg:p-9">
-          <div className="pointer-events-none absolute -right-10 top-8 h-40 w-40 rounded-full bg-[#c8ff00]/10 blur-3xl" aria-hidden="true" />
-          <div className="pointer-events-none absolute bottom-8 left-6 h-28 w-28 rounded-full bg-[#c8ff00]/8 blur-2xl" aria-hidden="true" />
+        <div className="relative min-h-[340px] overflow-hidden border-t border-white/10 bg-[#123526] sm:min-h-[380px] lg:min-h-full lg:border-l lg:border-t-0">
+          <div className="pointer-events-none absolute -right-10 top-10 h-44 w-44 rounded-full bg-[#c8ff00]/10 blur-3xl" aria-hidden="true" />
+          <div className="pointer-events-none absolute bottom-16 left-8 h-32 w-32 rounded-full bg-[#c8ff00]/8 blur-2xl" aria-hidden="true" />
 
-          <div className="relative flex items-start justify-between gap-3 text-[11px] font-bold uppercase tracking-[0.16em] text-white/55">
+          <div className="absolute inset-x-5 top-5 z-20 flex items-start justify-between gap-3 text-[11px] font-bold uppercase tracking-[0.16em] text-white/55 sm:inset-x-7 sm:top-7">
             <span>{home.heroCaption}</span>
             <span className="tabular-nums text-[#c8ff00]">{home.heroScore}</span>
           </div>
 
-          <div className="relative mt-8 flex flex-1 flex-col items-center justify-center">
-            <div className="relative flex h-52 w-full max-w-md items-end justify-center pb-4">
+          <div className="absolute inset-x-5 bottom-5 top-14 sm:inset-x-7 sm:bottom-7 sm:top-16">
+            <div className="relative h-full w-full">
               <div
-                className="absolute inset-x-4 bottom-0 h-36 rounded-[28px] border border-white/15 bg-[#1a4d35] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]"
+                className="absolute inset-0 rounded-[22px] border border-white/25 bg-[#1a4d35] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
                 aria-hidden="true"
               >
-                <div className="absolute inset-x-[18%] top-1/2 h-px bg-white/40" />
-                <div className="absolute inset-y-[18%] left-1/2 w-px bg-white/30" />
-                <div className="absolute inset-x-[10%] top-[18%] bottom-[18%] rounded-2xl border border-white/20" />
-                <div className="absolute left-[10%] right-[10%] top-1/2 h-px -translate-y-1/2 bg-white/25" />
+                <div className="absolute inset-y-[3%] left-[9%] right-[9%] rounded-[14px] border border-white/30" />
+                <div className="absolute left-[9%] right-[9%] top-[24%] h-px bg-white/40" />
+                <div className="absolute bottom-[24%] left-[9%] right-[9%] h-px bg-white/40" />
+                <div className="absolute inset-x-[3%] top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-white/55 shadow-[0_0_0_1px_rgba(255,255,255,0.12)]" />
+                <div className="absolute left-[2%] top-1/2 h-3 w-1.5 -translate-y-1/2 rounded-sm bg-white/40" />
+                <div className="absolute right-[2%] top-1/2 h-3 w-1.5 -translate-y-1/2 rounded-sm bg-white/40" />
+                <div className="absolute left-1/2 top-[24%] h-[26%] w-px -translate-x-1/2 bg-white/35" />
+                <div className="absolute bottom-[24%] left-1/2 h-[26%] w-px -translate-x-1/2 bg-white/35" />
               </div>
-              <div className="relative z-10 mb-10 drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]">
+
+              <div className="absolute left-1/2 top-[40%] z-10 -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_22px_36px_rgba(0,0,0,0.5)]">
                 <HeroRandomBall hrefs={tournamentHrefs} label={home.findTournament}>
-                  <TennisBallIcon size={120} priority variant="cta" />
+                  <TennisBallIcon size={128} priority variant="cta" />
                 </HeroRandomBall>
               </div>
+
               <a
                 href="#play-next"
-                className="absolute bottom-2 right-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#0d2818]/70 text-lg text-[#c8ff00] backdrop-blur hover:bg-[#0d2818]"
+                className="absolute bottom-3 right-3 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-[#0d2818]/75 text-lg text-[#c8ff00] backdrop-blur hover:bg-[#0d2818] sm:bottom-4 sm:right-4"
                 aria-label={home.findTournament}
               >
                 ↗
               </a>
-            </div>
-            <div className="mt-5 max-w-sm space-y-1 text-center">
-              <p className="text-sm font-semibold leading-6 text-white/85">{home.heroVisualHint}</p>
-              <p className="text-sm leading-6 text-white/60">{home.heroVisualHintSecondary}</p>
             </div>
           </div>
         </div>
