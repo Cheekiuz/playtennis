@@ -56,9 +56,6 @@ export default function SiteHeader() {
           <button type="button" className={navClass(false)} onClick={() => modals.open("story")}>
             {messages.nav.ourStory}
           </button>
-          <button type="button" className={navClass(false)} onClick={() => modals.open("sources")}>
-            {messages.nav.sources}
-          </button>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -110,18 +107,6 @@ export default function SiteHeader() {
                 }}
               >
                 {messages.nav.ourStory}
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                className="flex min-h-11 w-full items-center text-left text-sm font-semibold text-[#434845]"
-                onClick={() => {
-                  setMenuOpen(false);
-                  modals.open("sources");
-                }}
-              >
-                {messages.nav.sources}
               </button>
             </li>
           </ul>

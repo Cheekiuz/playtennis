@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useSiteModals } from "@/components/SiteModals";
 import TournamentCard from "@/components/TournamentCard";
 import type { Locale, Messages } from "@/lib/i18n";
 import { localePath } from "@/lib/i18n";
@@ -53,7 +52,6 @@ export default function TournamentListingDesk({
   filterValues?: DeskFilterValues;
 }) {
   const router = useRouter();
-  const modals = useSiteModals();
   const desk = messages.desk;
   const [tab, setTab] = useState<DeskTab>(when);
   const [view, setView] = useState<DeskView>("grid");
@@ -297,9 +295,6 @@ export default function TournamentListingDesk({
           <div className="mt-6 rounded-2xl border border-dashed border-[#c3c8c3] bg-white px-4 py-4">
             <p className="text-sm font-bold text-[#111915]">{desk.calendarTitle}</p>
             <p className="mt-1 text-sm text-[#747874]">{desk.calendarBody}</p>
-            <button type="button" onClick={() => modals.open("sources")} className="mt-2 text-sm font-semibold text-[#111915] hover:underline">
-              {desk.howSources} ↗
-            </button>
           </div>
         </div>
       </div>

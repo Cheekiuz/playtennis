@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { useLocale } from "@/context/LocaleContext";
 import { localePath } from "@/lib/i18n";
 
-type ModalKind = "story" | "sources" | null;
+type ModalKind = "story" | null;
 
 type SiteModalContextValue = {
   open: (kind: Exclude<ModalKind, null>) => void;
@@ -48,7 +48,6 @@ export function SiteModalProvider({ children }: { children: React.ReactNode }) {
     <SiteModalContext.Provider value={value}>
       {children}
       {kind === "story" ? <StoryModal onClose={close} /> : null}
-      {kind === "sources" ? <SourcesModal onClose={close} /> : null}
     </SiteModalContext.Provider>
   );
 }
@@ -71,93 +70,6 @@ function StoryModal({ onClose }: { onClose: () => void }) {
         {m.cta} <span aria-hidden="true">↗</span>
       </Link>
     </ModalShell>
-  );
-}
-
-function SourcesModal({ onClose }: { onClose: () => void }) {
-  const { messages } = useLocale();
-  const m = messages.sourcesModal;
-
-  return (
-    <ModalShell title={`${messages.meta.siteName} · ${m.eyebrow}`} heading={m.title} onClose={onClose}>
-      <p className="text-sm leading-6 text-[#434845]">{m.intro}</p>
-      <div className="mt-6 space-y-5">
-        <SourceBlock
-          title={m.directoriesTitle}
-          body={m.directoriesBody}
-          tag={m.directoriesTag}
-          links={[
-            { href: "https://tenisonamai.lt/", label: "TenisoNamai" },
-            { href: "https://www.topspin.lt/", label: "Topspin" },
-          ]}
-        />
-        <SourceBlock title={m.facebookTitle} body={m.facebookBody} tag={m.facebookTag} tagTone="warn" />
-        <SourceBlock
-          title={m.itfTitle}
-          body={m.itfBody}
-          tag={m.itfTag}
-          links={[
-            {
-              href: "https://www.itftennis.com/en/tournament-calendar/world-tennis-masters-tour-calendar/",
-              label: "ITF",
-            },
-          ]}
-        />
-        <SourceBlock title={m.missingTitle} body={m.missingBody} />
-        <SourceBlock title={m.privateTitle} body={m.privateBody} />
-      </div>
-    </ModalShell>
-  );
-}
-
-function SourceBlock({
-  title,
-  body,
-  tag,
-  tagTone = "neutral",
-  links,
-}: {
-  title: string;
-  body: string;
-  tag?: string;
-  tagTone?: "neutral" | "warn";
-  links?: { href: string; label: string }[];
-}) {
-  return (
-    <div className="rounded-2xl border border-[#e7e7e2] bg-[#fbfbfa] p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <h3 className="font-bold text-[#111915]">{title}</h3>
-          <p className="mt-2 text-sm leading-6 text-[#434845]">{body}</p>
-          {tag ? (
-            <span
-              className={
-                tagTone === "warn"
-                  ? "mt-3 inline-flex rounded-full bg-[#ffdbcf] px-2.5 py-1 text-[11px] font-bold text-[#822801]"
-                  : "mt-3 inline-flex rounded-full bg-[#eeeeed] px-2.5 py-1 text-[11px] font-bold text-[#434845]"
-              }
-            >
-              {tag}
-            </span>
-          ) : null}
-        </div>
-        {links?.length ? (
-          <div className="flex flex-col items-end gap-2">
-            {links.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                target="_blank"
-                rel="noreferrer"
-                className="text-sm font-semibold text-[#111915] hover:underline"
-              >
-                {link.label} ↗
-              </a>
-            ))}
-          </div>
-        ) : null}
-      </div>
-    </div>
   );
 }
 
