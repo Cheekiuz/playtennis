@@ -40,7 +40,24 @@ export default async function LithuaniaPage({
   const when: CatalogWhen = one(query.when) === "past" ? "past" : "upcoming";
   const page = Math.max(1, Number(one(query.page) ?? "1") || 1);
 
-  return <CatalogSectionPage locale={locale} messages={messages} section="lithuania" when={when} page={page} />;
+  return (
+    <CatalogSectionPage
+      locale={locale}
+      messages={messages}
+      section="lithuania"
+      when={when}
+      page={page}
+      filterValues={{
+        q: one(query.q),
+        country: one(query.country),
+        city: one(query.city),
+        format: one(query.format),
+        surface: one(query.surface),
+        playLevel: one(query.playLevel),
+        age: one(query.age),
+      }}
+    />
+  );
 }
 
 function one(value: string | string[] | undefined): string | undefined {

@@ -165,6 +165,21 @@ export async function listSectionTournaments(
   );
 }
 
+export type CatalogSectionCounts = Record<CatalogSection, number>;
+
+export async function getCatalogSectionCounts(): Promise<CatalogSectionCounts> {
+  const [lithuania, baltics, itf] = await Promise.all([
+    listSectionTournaments("lithuania", "upcoming", 1, 1),
+    listSectionTournaments("baltics", "upcoming", 1, 1),
+    listSectionTournaments("itf", "upcoming", 1, 1),
+  ]);
+  return {
+    lithuania: lithuania.total,
+    baltics: baltics.total,
+    itf: itf.total,
+  };
+}
+
 export async function getTournament(slug: string): Promise<TournamentRecord | null> {
   try {
     const supabase = createServerSupabaseClient();

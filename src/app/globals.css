@@ -76,7 +76,9 @@ body {
 }
 
 /* Force a light editorial surface inside /admin regardless of public theme. */
-.admin-workspace {
+.admin-workspace,
+.public-shell,
+.home-editorial {
   --background: #fbfbfa;
   --foreground: #111915;
   --accent: #65a30d;
@@ -93,8 +95,18 @@ body {
 }
 
 .admin-workspace body,
-body:has(.admin-workspace) {
+body:has(.admin-workspace),
+body:has(.public-shell),
+body:has(.home-editorial) {
   background: #fbfbfa;
+}
+
+.court-card-header {
+  background-color: #eceae3;
+  background-image:
+    linear-gradient(rgba(17, 25, 21, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(17, 25, 21, 0.06) 1px, transparent 1px);
+  background-size: 18px 18px;
 }
 
 @keyframes float {

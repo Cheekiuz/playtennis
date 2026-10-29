@@ -10,6 +10,15 @@ export function translationFor(tournament: TournamentRecord, locale: Locale) {
   );
 }
 
+export function formatDateBlock(iso: string, locale: Locale): { day: string; month: string } {
+  const date = parseDate(iso);
+  const tag = locale === "lt" ? "lt-LT" : "en-GB";
+  return {
+    day: String(date.getDate()),
+    month: new Intl.DateTimeFormat(tag, { month: "short" }).format(date).replace(".", "").toUpperCase(),
+  };
+}
+
 export function formatCardDate(start: string, end: string, locale: Locale): string {
   const tag = locale === "lt" ? "lt-LT" : "en-GB";
   const startDate = parseDate(start);

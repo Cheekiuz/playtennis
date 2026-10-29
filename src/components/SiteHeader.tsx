@@ -3,27 +3,23 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
+import LocaleToggle from "@/components/LocaleToggle";
+import { useSiteModals } from "@/components/SiteModals";
 import TennisBallIcon from "@/components/TennisBallIcon";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { useLocale } from "@/context/LocaleContext";
 import { localePath } from "@/lib/i18n";
 import { readSavedIds } from "@/lib/tournaments/saved";
 
-export default function SiteHeader({ courtHome = false }: { courtHome?: boolean }) {
+export default function SiteHeader() {
   const { locale, messages } = useLocale();
   const pathname = usePathname();
+  const modals = useSiteModals();
   const [savedCount, setSavedCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const home = localePath(locale, "/");
-  const lithuania = localePath(locale, "/lithuania");
-  const baltics = localePath(locale, "/baltics");
-  const itf = localePath(locale, "/itf");
   const tournaments = localePath(locale, "/tournaments");
-  const play = localePath(locale, "/play");
-  const quiz = localePath(locale, "/quiz");
-  const about = localePath(locale, "/about");
   const saved = localePath(locale, "/saved");
+  const onHome = pathname === home || pathname === `${home}/`;
 
   useEffect(() => {
     const sync = () => setSavedCount(readSavedIds().length);
@@ -36,64 +32,53 @@ export default function SiteHeader({ courtHome = false }: { courtHome?: boolean 
     };
   }, []);
 
-  const items = [
-    { href: lithuania, label: messages.nav.lithuania, primary: true },
-    { href: baltics, label: messages.nav.baltics, primary: true },
-    { href: itf, label: messages.nav.itf, primary: true },
-    { href: tournaments, label: messages.nav.tournaments, primary: false },
-    { href: play, label: messages.nav.play, primary: false },
-    { href: quiz, label: messages.nav.quiz, primary: false },
-    { href: about, label: messages.nav.about, primary: false },
-  ];
-
-    const linkClass = (href: string, primary: boolean) => {
-    const active = pathname === href || (href !== localePath(locale, "/") && pathname.startsWith(`${href}/`));
-    const weight = active || primary ? "font-bold" : "font-semibold";
-    const underline = active ? "underline decoration-4 underline-offset-4" : "";
-    if (courtHome) {
-      return `text-sm ${weight} ${underline} ${active || primary ? "text-[#1a1c1c] decoration-[#c1f100]" : "text-[#434845] hover:text-[#1a1c1c]"}`;
-    }
-    return `text-sm ${weight} ${underline} ${active ? "text-foreground decoration-accent" : "text-foreground/80 hover:text-foreground"}`;
-  };
+  const tournamentsActive = pathname.startsWith(tournaments) || onHome;
 
   return (
-    <header className={courtHome ? "sticky top-0 z-40 border-b border-[#e2e2e2] bg-[#f9f9f8]/95 backdrop-blur" : "sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur"}>
-      <div className={`mx-auto flex h-16 w-full items-center justify-between gap-3 px-4 ${courtHome ? "max-w-[1440px] lg:px-12" : "max-w-6xl sm:px-6"}`}>
-        <Link href={home} aria-label="PlayTennis.lt" className={`flex items-center gap-2 text-lg font-bold tracking-tight ${courtHome ? "text-[#1a1c1c]" : "text-foreground"}`}>
+    <header className="sticky top-0 z-40 border-b border-[#e7e7e2] bg-[#fbfbfa]/95 backdrop-blur">
+      <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-3 px-4 lg:px-12">
+        <Link href={home} aria-label="PlayTennis.lt" className="flex items-center gap-2 text-lg font-bold tracking-tight text-[#111915]">
           <TennisBallIcon size={22} priority />
-          <span className="hidden sm:inline">
-            PlayTennis{courtHome ? <span className="text-[#506600]">.lt</span> : null}
+          <span>
+            playtennis<span className="text-[#506600]">.lt</span>
           </span>
         </Link>
-        <nav className="hidden items-center gap-6 lg:flex" aria-label="PlayTennis">
-          {items.map((item) => (
-            <Link key={item.href} href={item.href} className={linkClass(item.href, item.primary)} aria-current={pathname.startsWith(item.href) ? "page" : undefined} onClick={() => setMenuOpen(false)}>
-              {item.label}
-            </Link>
-          ))}
+
+        <nav className="hidden items-center gap-8 md:flex" aria-label="PlayTennis">
+          <Link
+            href={onHome ? "#play-next" : tournaments}
+            className={navClass(tournamentsActive)}
+            aria-current={tournamentsActive ? "page" : undefined}
+          >
+            {messages.nav.tournaments}
+            {tournamentsActive ? <span className="mx-auto mt-1 block h-1.5 w-1.5 rounded-full bg-[#c8ff00]" aria-hidden="true" /> : null}
+          </Link>
+          <button type="button" className={navClass(false)} onClick={() => modals.open("story")}>
+            {messages.nav.ourStory}
+          </button>
+          <button type="button" className={navClass(false)} onClick={() => modals.open("sources")}>
+            {messages.nav.sources}
+          </button>
         </nav>
+
         <div className="flex items-center gap-2">
+          <LocaleToggle />
           <Link
             href={saved}
             aria-label={messages.nav.saved}
-            className={`relative inline-flex h-11 w-11 items-center justify-center rounded-full border ${
-              courtHome ? "border-[#e2e2e2] bg-white text-[#1a1c1c]" : "border-border bg-surface text-foreground"
-            }`}
+            className="relative inline-flex h-11 items-center gap-2 rounded-full border border-[#e7e7e2] bg-white px-3 text-sm font-semibold text-[#111915]"
           >
-            <BookmarkIcon />
+            <HeartIcon />
+            <span className="hidden sm:inline">{messages.nav.savedShort}</span>
             {savedCount > 0 ? (
-              <span className={`absolute -right-1 -top-1 min-w-5 rounded-full px-1 text-center text-[11px] font-bold ${courtHome ? "bg-[#151d19] text-[#c1f100]" : "bg-accent text-[#0f172a]"}`}>
+              <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-[#0d2818] px-1 text-center text-[11px] font-bold text-[#c8ff00]">
                 {savedCount}
               </span>
             ) : null}
           </Link>
-          <ThemeSwitcher paper={courtHome} />
-          <LanguageSwitcher paper={courtHome} />
           <button
             type="button"
-            className={`inline-flex h-11 items-center rounded-full border px-3 text-sm font-semibold lg:hidden ${
-              courtHome ? "border-[#e2e2e2] bg-white text-[#1a1c1c]" : "border-border bg-surface text-foreground"
-            }`}
+            className="inline-flex h-11 items-center rounded-full border border-[#e7e7e2] bg-white px-3 text-sm font-semibold text-[#111915] md:hidden"
             aria-expanded={menuOpen}
             aria-controls="site-menu"
             onClick={() => setMenuOpen((value) => !value)}
@@ -102,16 +87,43 @@ export default function SiteHeader({ courtHome = false }: { courtHome?: boolean 
           </button>
         </div>
       </div>
+
       {menuOpen ? (
-        <nav id="site-menu" className={`border-t px-4 py-3 lg:hidden ${courtHome ? "border-[#e2e2e2] bg-[#f9f9f8]" : "border-border bg-background"}`} aria-label="PlayTennis">
+        <nav id="site-menu" className="border-t border-[#e7e7e2] bg-[#fbfbfa] px-4 py-3 md:hidden" aria-label="PlayTennis">
           <ul className="grid gap-1">
-            {items.map((item) => (
-              <li key={item.href}>
-                <Link href={item.href} className={`flex min-h-11 items-center ${linkClass(item.href, item.primary)}`} onClick={() => setMenuOpen(false)}>
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+            <li>
+              <Link
+                href={onHome ? "#play-next" : tournaments}
+                className="flex min-h-11 items-center text-sm font-bold text-[#111915]"
+                onClick={() => setMenuOpen(false)}
+              >
+                {messages.nav.tournaments}
+              </Link>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center text-left text-sm font-semibold text-[#434845]"
+                onClick={() => {
+                  setMenuOpen(false);
+                  modals.open("story");
+                }}
+              >
+                {messages.nav.ourStory}
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                className="flex min-h-11 w-full items-center text-left text-sm font-semibold text-[#434845]"
+                onClick={() => {
+                  setMenuOpen(false);
+                  modals.open("sources");
+                }}
+              >
+                {messages.nav.sources}
+              </button>
+            </li>
           </ul>
         </nav>
       ) : null}
@@ -119,10 +131,16 @@ export default function SiteHeader({ courtHome = false }: { courtHome?: boolean 
   );
 }
 
-function BookmarkIcon() {
+function navClass(active: boolean) {
+  return active
+    ? "text-sm font-bold text-[#111915]"
+    : "text-sm font-semibold text-[#434845] hover:text-[#111915]";
+}
+
+function HeartIcon() {
   return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
-      <path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3.5L6 20V5.5a1 1 0 0 1 1-1Z" />
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+      <path d="M12 20s-7-4.4-7-9.2A3.8 3.8 0 0 1 12 7.5a3.8 3.8 0 0 1 7 3.3C19 15.6 12 20 12 20Z" />
     </svg>
   );
 }
