@@ -1,7 +1,14 @@
+import HeroRandomBall from "@/components/HeroRandomBall";
 import TennisBallIcon from "@/components/TennisBallIcon";
 import type { Messages } from "@/lib/i18n";
 
-export default function HomeHero({ messages }: { messages: Messages }) {
+export default function HomeHero({
+  messages,
+  tournamentHrefs = [],
+}: {
+  messages: Messages;
+  tournamentHrefs?: string[];
+}) {
   const home = messages.home;
 
   return (
@@ -49,7 +56,9 @@ export default function HomeHero({ messages }: { messages: Messages }) {
                 <div className="absolute left-[10%] right-[10%] top-1/2 h-px -translate-y-1/2 bg-white/25" />
               </div>
               <div className="relative z-10 mb-10 drop-shadow-[0_18px_30px_rgba(0,0,0,0.45)]">
-                <TennisBallIcon size={120} priority variant="cta" />
+                <HeroRandomBall hrefs={tournamentHrefs} label={home.findTournament}>
+                  <TennisBallIcon size={120} priority variant="cta" />
+                </HeroRandomBall>
               </div>
               <a
                 href="#play-next"

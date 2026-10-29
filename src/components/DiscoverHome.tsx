@@ -46,7 +46,7 @@ export default async function DiscoverHome({
       filterValues.age ||
       filterValues.country,
   );
-  const [result, places, counts] = await Promise.all([
+  const [result, places, counts, lithuaniaPool, balticsPool, itfPool] = await Promise.all([
     hasExtraFilters
       ? listTournaments(
           {
@@ -66,16 +66,26 @@ export default async function DiscoverHome({
       : listSectionTournaments(activeSection, when, 12, 1),
     listEventPlaces(locale),
     getCatalogSectionCounts(),
+    listSectionTournaments("lithuania", "upcoming", 200, 1),
+    listSectionTournaments("baltics", "upcoming", 200, 1),
+    listSectionTournaments("itf", "upcoming", 200, 1),
   ]);
 
   const basePath = localePath(locale, CATALOG_SECTION_PATHS[activeSection]);
+  const tournamentHrefs = [
+    ...new Set(
+      [...lithuaniaPool.items, ...balticsPool.items, ...itfPool.items].map((tournament) =>
+        localePath(locale, `/tournaments/${tournament.slug}`),
+      ),
+    ),
+  ];
 
   return (
     <SiteModalProvider>
       <div className="home-editorial public-shell relative min-h-screen overflow-x-clip bg-[#fbfbfa] text-[#111915]">
         <SiteHeader />
         <main>
-          <HomeHero messages={messages} />
+          <HomeHero messages={messages} tournamentHrefs={tournamentHrefs} />
 
           <section className="mx-auto w-full max-w-[1440px] px-4 pb-12 lg:px-12">
             <TournamentListingDesk
