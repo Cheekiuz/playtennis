@@ -35,9 +35,9 @@ export default function SiteHeader() {
   const tournamentsActive = pathname.startsWith(tournaments) || onHome;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-[#e7e7e2] bg-[#fbfbfa]/95 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-3 px-4 lg:px-12">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+    <header className="sticky top-0 z-40 w-full border-b border-[#e7e7e2] bg-[#fbfbfa]/95 backdrop-blur">
+      <div className="flex h-16 w-full items-center gap-4 px-3 sm:gap-6 sm:px-4 lg:gap-8 lg:px-5">
+        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <Link href={home} aria-label="PlayTennis.lt" className="flex items-center gap-2 text-lg font-bold tracking-tight text-[#111915]">
             <TennisBallIcon size={22} priority />
             <span>
@@ -49,21 +49,26 @@ export default function SiteHeader() {
           </span>
         </div>
 
-        <nav className="hidden items-center gap-8 md:flex" aria-label="PlayTennis">
+        <nav className="hidden min-w-0 flex-1 items-center justify-center gap-10 md:flex lg:gap-12" aria-label="PlayTennis">
           <Link
             href={onHome ? "#play-next" : tournaments}
-            className={navClass(tournamentsActive)}
+            className={`relative inline-flex items-center ${navClass(tournamentsActive)}`}
             aria-current={tournamentsActive ? "page" : undefined}
           >
             {messages.nav.tournaments}
-            {tournamentsActive ? <span className="mx-auto mt-1 block h-1.5 w-1.5 rounded-full bg-[#c8ff00]" aria-hidden="true" /> : null}
+            {tournamentsActive ? (
+              <span
+                className="pointer-events-none absolute left-1/2 top-full mt-1 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#c8ff00]"
+                aria-hidden="true"
+              />
+            ) : null}
           </Link>
-          <button type="button" className={navClass(false)} onClick={() => modals.open("story")}>
+          <button type="button" className={`inline-flex items-center ${navClass(false)}`} onClick={() => modals.open("story")}>
             {messages.nav.ourStory}
           </button>
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-2">
           <LocaleToggle />
           <Link
             href={saved}
