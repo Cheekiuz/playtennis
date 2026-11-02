@@ -45,6 +45,7 @@ export async function generateMetadata({
     translation?.seoDescription ||
     `${tournament.name}, ${placeLine(tournament, locale)}. ${formatDateRange(tournament.startsOn, tournament.endsOn, locale)}.`;
   const path = `/tournaments/${slug}`;
+  const hasGeo = tournament.latitude != null && tournament.longitude != null;
 
   return {
     title,
@@ -59,6 +60,16 @@ export async function generateMetadata({
       url: absoluteUrl(localePath(locale, path)),
       type: "website",
     },
+    ...(hasGeo
+      ? {
+          other: {
+            "geo.region": tournament.countryCode.toUpperCase(),
+            "geo.placename": tournament.venueName || tournament.city,
+            "geo.position": `${tournament.latitude};${tournament.longitude}`,
+            ICBM: `${tournament.latitude}, ${tournament.longitude}`,
+          },
+        }
+      : {}),
   };
 }
 
@@ -81,12 +92,13 @@ export default async function TournamentPage({
     "@context": "https://schema.org",
     "@type": "SportsEvent",
     name: tournament.name,
+    description: translation?.seoDescription || translation?.description || undefined,
     startDate: tournament.startsOn,
     endDate: tournament.endsOn,
     eventStatus: schemaStatus(tournament.lifecycleStatus),
     eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
     sport: "Tennis",
-    url: tournament.officialUrl || absoluteUrl(localePath(locale, `/tournaments/${tournament.slug}`)),
+    url: absoluteUrl(localePath(locale, `/tournaments/${tournament.slug}`)),
     location: {
       "@type": "Place",
       name: tournament.venueName || tournament.city,
@@ -96,7 +108,32 @@ export default async function TournamentPage({
         addressLocality: tournament.city,
         addressCountry: tournament.countryCode.toUpperCase(),
       },
+      ...(tournament.latitude != null && tournament.longitude != null
+        ? {
+            geo: {
+              "@type": "GeoCoordinates",
+              latitude: tournament.latitude,
+              longitude: tournament.longitude,
+            },
+          }
+        : {}),
     },
+    ...(tournament.priceAmount != null
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: tournament.priceAmount,
+            priceCurrency: tournament.priceCurrency || "EUR",
+            url: tournament.registrationUrl || tournament.officialUrl || undefined,
+            availability:
+              tournament.publicRegistration === "OPEN"
+                ? "https://schema.org/InStock"
+                : tournament.publicRegistration === "FULL"
+                  ? "https://schema.org/SoldOut"
+                  : undefined,
+          },
+        }
+      : {}),
   };
 
   return (

@@ -410,7 +410,12 @@ async function refreshExisting(
     ...(listing.publish ? { published: true, review_status: listing.reviewStatus } : {}),
     updated_at: new Date().toISOString(),
   };
-  await supabase.from("tournaments").update(patch).eq("id", id);
+  const venueId = await ensureVenue(supabase, event);
+  await supabase
+    .from("tournaments")
+    .update(venueId ? { ...patch, venue_id: venueId } : patch)
+    .eq("id", id);
+  await upsertTranslations(supabase, id, event, raw);
   await replaceCategories(supabase, id, raw);
   await attachSourceRow(supabase, id, raw, sourceId);
   void slugPrefix;
@@ -556,9 +561,127 @@ async function createTournament(
 
   if (saved.error || !saved.data) return null;
   const tournamentId = saved.data.id as string;
+  const venueId = await ensureVenue(supabase, event);
+  if (venueId) {
+    await supabase.from("tournaments").update({ venue_id: venueId, updated_at: now }).eq("id", tournamentId);
+  }
+  await upsertTranslations(supabase, tournamentId, event, raw);
   await replaceCategories(supabase, tournamentId, raw);
   await attachSourceRow(supabase, tournamentId, raw, sourceId, sourceKind);
   return { id: tournamentId };
+}
+
+async function ensureVenue(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  event: ReturnType<typeof normalizeObservation>,
+): Promise<string | null> {
+  const name = event.venue?.trim();
+  if (!name) return null;
+  const city = event.city?.trim() || "Unknown";
+  const country = (event.countryCode && event.countryCode.length === 2 ? event.countryCode : "lt").toLowerCase();
+
+  const existing = await supabase
+    .from("venues")
+    .select("id, address, latitude, longitude")
+    .eq("name", name)
+    .eq("city", city)
+    .eq("country_code", country)
+    .maybeSingle();
+
+  if (existing.data?.id) {
+    const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (event.address && !existing.data.address) patch.address = event.address;
+    if (event.latitude != null && existing.data.latitude == null) patch.latitude = event.latitude;
+    if (event.longitude != null && existing.data.longitude == null) patch.longitude = event.longitude;
+    if (Object.keys(patch).length > 1) {
+      await supabase.from("venues").update(patch).eq("id", existing.data.id);
+    }
+    return existing.data.id as string;
+  }
+
+  const inserted = await supabase
+    .from("venues")
+    .insert({
+      name,
+      address: event.address,
+      city,
+      country_code: country,
+      latitude: event.latitude,
+      longitude: event.longitude,
+    })
+    .select("id")
+    .single();
+  return inserted.data?.id ? (inserted.data.id as string) : null;
+}
+
+function seoCopyForEvent(event: ReturnType<typeof normalizeObservation>, raw: RawObservation) {
+  const place = [event.venue, event.city].filter(Boolean).join(", ") || event.city || "Lithuania";
+  const date = event.startDate;
+  const price =
+    event.priceAmount != null && event.currency
+      ? `${event.priceAmount} ${event.currency}`
+      : event.priceAmount != null
+        ? `€${event.priceAmount}`
+        : null;
+  const level = event.originalLevel;
+  const format = event.format;
+  const formatLt = format === "doubles" ? "dvejetai" : format === "singles" ? "vienetai" : "tenisas";
+  const formatEn = format === "doubles" ? "doubles" : format === "singles" ? "singles" : "tennis";
+  const levelLt =
+    level === "beginner" ? "pradedantieji" : level === "intermediate" ? "pažengę" : level === "advanced" ? "pažengę+" : null;
+  const levelEn =
+    level === "beginner" ? "beginner" : level === "intermediate" ? "intermediate" : level === "advanced" ? "advanced" : null;
+  const envLt = event.indoorOutdoor === "indoor" ? "vidaus" : event.indoorOutdoor === "outdoor" ? "lauko" : null;
+  const envEn = event.indoorOutdoor === "indoor" ? "indoor" : event.indoorOutdoor === "outdoor" ? "outdoor" : null;
+
+  const seoTitleEn = [event.title.replace(/\s*\(\d{4}-\d{2}-\d{2}\)\s*$/, "").trim(), "|", place].join(" ").slice(0, 70);
+  const seoTitleLt = seoTitleEn;
+  const seoDescriptionEn = [
+    `${formatEn} tennis${levelEn ? ` (${levelEn})` : ""} at ${place} on ${date}.`,
+    envEn ? `${envEn} courts.` : null,
+    price ? `From ${price}.` : null,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .slice(0, 160);
+  const seoDescriptionLt = [
+    `Tenisas (${formatLt}${levelLt ? `, ${levelLt}` : ""}) ${place}, ${date}.`,
+    envLt ? `${envLt} kortai.` : null,
+    price ? `Nuo ${price}.` : null,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .slice(0, 160);
+
+  const description = raw.description?.trim() || null;
+  return {
+    en: {
+      description: [seoDescriptionEn, description].filter(Boolean).join(" "),
+      seo_title: seoTitleEn,
+      seo_description: seoDescriptionEn,
+    },
+    lt: {
+      description: [seoDescriptionLt, description].filter(Boolean).join(" "),
+      seo_title: seoTitleLt,
+      seo_description: seoDescriptionLt,
+    },
+  };
+}
+
+async function upsertTranslations(
+  supabase: ReturnType<typeof createServerSupabaseClient>,
+  tournamentId: string,
+  event: ReturnType<typeof normalizeObservation>,
+  raw: RawObservation,
+) {
+  const copy = seoCopyForEvent(event, raw);
+  await supabase.from("tournament_translations").upsert(
+    [
+      { tournament_id: tournamentId, locale: "en", ...copy.en },
+      { tournament_id: tournamentId, locale: "lt", ...copy.lt },
+    ],
+    { onConflict: "tournament_id,locale" },
+  );
 }
 
 async function replaceCategories(supabase: ReturnType<typeof createServerSupabaseClient>, tournamentId: string, raw: RawObservation) {

@@ -28,7 +28,13 @@ export function canonicalUrl(value: string | null | undefined): string | null {
     const url = new URL(value);
     const host = url.hostname.replace(/^www\./, "").toLowerCase();
     const path = url.pathname.replace(/\/+$/, "").toLowerCase();
-    return `${host}${path}`;
+    const params = [...url.searchParams.entries()]
+      .filter(([key]) => !/^(utm_|fbclid|gclid|mc_|ref$)/i.test(key))
+      .sort(([left], [right]) => left.localeCompare(right));
+    const query = params.length
+      ? `?${params.map(([key, val]) => `${encodeURIComponent(key)}=${encodeURIComponent(val)}`).join("&")}`
+      : "";
+    return `${host}${path}${query}`;
   } catch {
     return null;
   }

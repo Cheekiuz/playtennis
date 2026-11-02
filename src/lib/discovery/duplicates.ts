@@ -34,13 +34,16 @@ export function findDuplicate(existing: DuplicateCandidate[], incoming: Normaliz
     if (organiser) reasons.push("organiser");
     if (venue) reasons.push("venue");
 
-    if (days === 1 && (organiser || venue || title >= 0.6)) {
+    // Same venue/organiser on adjacent days is common for social play. Require a strong title match.
+    if (days === 1 && title >= 0.6 && (organiser || venue)) {
       return { eventId: event.id, relation: "conflict", reasons };
     }
     if (days === 0 && (organiser || venue || title >= 0.75)) {
       return { eventId: event.id, relation: "duplicate", reasons };
     }
-    if (!possible) possible = { eventId: event.id, relation: "possible", reasons };
+    if (title >= 0.6 && (organiser || venue) && !possible) {
+      possible = { eventId: event.id, relation: "possible", reasons };
+    }
   }
 
   return possible;

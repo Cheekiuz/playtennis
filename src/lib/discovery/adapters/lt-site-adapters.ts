@@ -110,7 +110,13 @@ type WidenGame = {
   is_joinable?: boolean;
   free_spots?: number;
   price_with_vat?: number;
+  levels?: Array<{ name?: string } | string> | null;
 };
+
+const WIDEN_ARENA_ADDRESS = "Alksnynų g. 4, Vilnius";
+/** OpenStreetMap Nominatim match for Widen Arena. */
+const WIDEN_ARENA_LAT = 54.81287;
+const WIDEN_ARENA_LNG = 25.274105;
 
 export async function collectWidenArenaGames(source: RegistrySource): Promise<HttpSiteResult> {
   try {
@@ -125,38 +131,71 @@ export async function collectWidenArenaGames(source: RegistrySource): Promise<Ht
     }
 
     const observations: RawObservation[] = [];
-    for (const [, sessions] of byGroup) {
-      const first = sessions[0];
+    for (const [groupKey, sessions] of byGroup) {
+      const ordered = [...sessions].sort((a, b) => (a.start_time ?? "").localeCompare(b.start_time ?? ""));
+      const first = ordered[0];
+      const last = ordered[ordered.length - 1];
       const groupName = first.gameGroup?.name?.trim() ?? "Widen Arena žaidimas";
-      const starts = sessions.map((s) => s.start_time).filter(Boolean) as string[];
+      const starts = ordered.map((s) => s.start_time).filter(Boolean) as string[];
       if (starts.length === 0) continue;
-      starts.sort();
       const startDate = starts[0].slice(0, 10);
       const endDate = starts[starts.length - 1].slice(0, 10);
-      const allFull = sessions.every((s) => s.is_full);
-      const anyJoinable = sessions.some((s) => s.is_joinable);
+      const allFull = ordered.every((s) => s.is_full);
+      const anyJoinable = ordered.some((s) => s.is_joinable);
+      const freeSpots = ordered.reduce((sum, s) => sum + (s.free_spots ?? 0), 0);
+      const meta = parseWidenGroupMeta(groupName, startDate);
+      const eventUrl = `${WIDEN_GAMES_PUBLIC}?group=${groupKey}`;
+      const indoorOutdoor = /vidus|indoor/i.test(first.courtType?.name ?? "")
+        ? "indoor"
+        : /laukas|outdoor/i.test(first.courtType?.name ?? "")
+          ? "outdoor"
+          : "indoor";
+      const sessionTimes = ordered
+        .map((s) => {
+          const start = s.start_time?.slice(11, 16);
+          const end = s.end_time?.slice(11, 16);
+          return start && end ? `${start}-${end}` : start;
+        })
+        .filter(Boolean)
+        .join(", ");
 
       observations.push({
-        title: groupName,
-        eventType: /MEET&PLAY/i.test(groupName) ? "SOCIAL" : "TOURNAMENT",
+        title: meta.title,
+        eventType: /MEET&PLAY/i.test(groupName) ? "SOCIAL" : "PLAY_SESSION",
         startDate,
         endDate,
-        startTime: starts[0].slice(11, 16),
+        startTime: first.start_time?.slice(11, 16) ?? null,
+        endTime: last.end_time?.slice(11, 16) ?? null,
         countryCode: source.countryCode ?? "lt",
         city: source.city ?? "Vilnius",
         venue: source.sourceName,
+        address: WIDEN_ARENA_ADDRESS,
+        latitude: WIDEN_ARENA_LAT,
+        longitude: WIDEN_ARENA_LNG,
+        indoorOutdoor,
+        originalLevel: meta.level,
+        gender: meta.gender,
+        format: meta.format,
         organiser: source.sourceName,
         organiserUrl: source.url,
-        officialEventUrl: WIDEN_GAMES_PUBLIC,
-        registrationUrl: WIDEN_GAMES_PUBLIC,
+        officialEventUrl: eventUrl,
+        registrationUrl: eventUrl,
         priceAmount: first.price_with_vat ?? null,
         currency: first.price_with_vat != null ? "EUR" : null,
-        description: `${sessions.length} session(s) listed at Widen Arena.`,
+        description: [
+          `${ordered.length} court session${ordered.length === 1 ? "" : "s"} at Widen Arena.`,
+          sessionTimes ? `Times: ${sessionTimes}.` : null,
+          freeSpots > 0 ? `${freeSpots} free spot${freeSpots === 1 ? "" : "s"} across sessions.` : null,
+        ]
+          .filter(Boolean)
+          .join(" "),
         sourceName: source.sourceName,
-        sourceUrl: `${WIDEN_GAMES_PUBLIC}?group=${first.gameGroup?.uuid ?? first.uuid}`,
+        sourceUrl: eventUrl,
+        sourceExternalId: `widen-group-${groupKey}`,
         sourceType: mapRegistryToSourceType(source.registrySourceType),
         sourceConfidence: "high",
         registrationStatus: allFull ? "full" : anyJoinable ? "open" : "unknown",
+        catalogSection: "lithuania",
       });
     }
 
@@ -170,6 +209,42 @@ export async function collectWidenArenaGames(source: RegistrySource): Promise<Ht
       error: error instanceof Error ? error.message : "Widen Arena fetch failed.",
     };
   }
+}
+
+function parseWidenGroupMeta(
+  groupName: string,
+  startDate: string,
+): {
+  title: string;
+  level: string | null;
+  gender: string | null;
+  format: string | null;
+} {
+  const parts = groupName
+    .split("|")
+    .map((part) => part.trim())
+    .filter(Boolean);
+  const body = parts.filter((part) => !/^\d{1,2}-\d{2}\s*d\.?$/i.test(part));
+  const baseTitle = body.join(" · ") || groupName;
+  const title = `${baseTitle} (${startDate})`;
+  const blob = groupName.toLowerCase();
+
+  let level: string | null = null;
+  if (/pradedant/i.test(blob) || /\blight\b/i.test(blob)) level = "beginner";
+  else if (/paženg|pazeng|intermediate|middle/i.test(blob)) level = "intermediate";
+  else if (/advanced|aukšt|aukst/i.test(blob)) level = "advanced";
+
+  let format: string | null = null;
+  if (/dvejet/i.test(blob) || /doubles/i.test(blob)) format = "doubles";
+  else if (/vienet/i.test(blob) || /singles/i.test(blob)) format = "singles";
+
+  let gender: string | null = null;
+  if (/\bmix\b|mišr|misr/i.test(blob)) gender = "mixed";
+  else if (/moter|women|ladies/i.test(blob)) gender = "women";
+  else if (/vyr|men\b|gents/i.test(blob)) gender = "men";
+  else gender = "open";
+
+  return { title, level, gender, format };
 }
 
 async function fetchAllWidenGames(): Promise<WidenGame[]> {
