@@ -65,6 +65,8 @@ function parseTennisPassionUpcoming(html: string, source: RegistrySource): RawOb
       const title = line.replace(/,\s*20\d{2}[\s\S]*$/i, "").replace(/\.\s*20\d{2}[\s\S]*$/i, "").trim();
 
       const city = inferLtCity(venue, source.city);
+      const eventKey = encodeURIComponent(`${title || line}-${dates.startDate}`);
+      const eventPage = `${TENNIS_PASSION_PUBLIC}&event=${eventKey}`;
       observations.push({
         title: title || line,
         startDate: dates.startDate,
@@ -74,11 +76,11 @@ function parseTennisPassionUpcoming(html: string, source: RegistrySource): RawOb
         venue,
         organiser: source.sourceName,
         organiserUrl: source.url,
-        officialEventUrl: TENNIS_PASSION_PUBLIC,
+        officialEventUrl: eventPage,
         registrationUrl,
         description: venue ? `Vieta: ${venue}` : null,
         sourceName: source.sourceName,
-        sourceUrl: `${TENNIS_PASSION_PUBLIC}&event=${encodeURIComponent(title || line)}`,
+        sourceUrl: eventPage,
         sourceType: mapRegistryToSourceType(source.registrySourceType),
         sourceConfidence: "high",
         registrationStatus: "unknown",

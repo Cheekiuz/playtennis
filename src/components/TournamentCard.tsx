@@ -13,6 +13,7 @@ import {
   playLevelLabel,
   surfaceLabel,
 } from "@/lib/tournaments/present";
+import { snapshotFromTournament } from "@/lib/tournaments/saved";
 import type { PublicRegistration, TournamentRecord } from "@/lib/tournaments/types";
 
 export default function TournamentCard({
@@ -70,6 +71,7 @@ export default function TournamentCard({
         </div>
         <SaveButton
           id={tournament.id}
+          snapshot={snapshotFromTournament(tournament)}
           saveLabel={d.save}
           savedLabel={d.saved}
           unsaveLabel={d.unsave}

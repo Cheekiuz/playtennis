@@ -454,6 +454,8 @@
     "savedTitle": "Saved events",
     "savedEmpty": "Save an event and it will wait here, on this device.",
     "savedNote": "Saved on this device. An account can carry them later.",
+    "savedLoadError": "Saved events could not be loaded right now. Try again in a moment.",
+    "savedUnavailable": "Some saved events are no longer listed. Open the original page from the details below if you still have them.",
     "aboutMetaTitle": "About PlayTennis.lt",
     "aboutMetaDescription": "PlayTennis is an independent tennis event discovery platform, built by a tennis player for tennis players. We collect events and point you to the official organiser.",
     "listingMetaTitle": "Tennis events",

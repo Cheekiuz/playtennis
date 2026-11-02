@@ -26,6 +26,7 @@ import CheckedBadge from "@/components/CheckedBadge";
 import { RegistrationStatus } from "@/components/TournamentCard";
 import { isPubliclyChecked } from "@/lib/discovery/review";
 import { getTournament } from "@/lib/tournaments/queries";
+import { snapshotFromTournament } from "@/lib/tournaments/saved";
 
 export const dynamic = "force-dynamic";
 
@@ -108,7 +109,13 @@ export default async function TournamentPage({
       </p>
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <h1 className="max-w-3xl text-4xl font-bold tracking-tight">{tournament.name}</h1>
-        <SaveButton id={tournament.id} saveLabel={d.save} savedLabel={d.saved} unsaveLabel={d.unsave} />
+        <SaveButton
+          id={tournament.id}
+          snapshot={snapshotFromTournament(tournament)}
+          saveLabel={d.save}
+          savedLabel={d.saved}
+          unsaveLabel={d.unsave}
+        />
       </div>
       <p className="mt-3 text-sm font-bold uppercase tracking-wide text-accent">{eventTypeLabel(tournament.eventType, messages)}</p>
       <p className="mt-3 text-lg text-foreground/80">{placeLine(tournament, locale)}</p>

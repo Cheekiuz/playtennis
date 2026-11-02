@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { track } from "@/lib/analytics";
-import { readSavedIds, toggleSavedId } from "@/lib/tournaments/saved";
+import { readSavedIds, toggleSavedId, type SavedSnapshot } from "@/lib/tournaments/saved";
 
 export default function SaveButton({
   id,
+  snapshot,
   saveLabel,
   savedLabel,
   unsaveLabel,
@@ -13,6 +14,7 @@ export default function SaveButton({
   variant = "text",
 }: {
   id: string;
+  snapshot?: SavedSnapshot | null;
   saveLabel: string;
   savedLabel: string;
   unsaveLabel: string;
@@ -35,7 +37,7 @@ export default function SaveButton({
       aria-label={saved ? unsaveLabel : saveLabel}
       title={saved ? savedLabel : saveLabel}
       onClick={() => {
-        const next = toggleSavedId(id);
+        const next = toggleSavedId(id, snapshot);
         setSaved(next);
         track("save_tournament", { tournament_id: id, saved: next });
       }}

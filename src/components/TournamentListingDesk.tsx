@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import TournamentCard from "@/components/TournamentCard";
 import type { Locale, Messages } from "@/lib/i18n";
@@ -58,19 +58,56 @@ export default function TournamentListingDesk({
   const [sort, setSort] = useState<DeskSort>("soonest");
   const [savedCount, setSavedCount] = useState(0);
   const [savedItems, setSavedItems] = useState<TournamentRecord[] | null>(null);
-  const [savedLoading, startSavedTransition] = useTransition();
+  const [savedLoading, setSavedLoading] = useState(false);
   const tab: DeskTab = savedOnly ? "saved" : when;
 
   useEffect(() => {
-    const sync = () => setSavedCount(readSavedIds().length);
-    sync();
-    window.addEventListener("playtennis-saved", sync);
-    window.addEventListener("storage", sync);
+    const syncCount = () => setSavedCount(readSavedIds().length);
+    syncCount();
+    window.addEventListener("playtennis-saved", syncCount);
+    window.addEventListener("storage", syncCount);
     return () => {
-      window.removeEventListener("playtennis-saved", sync);
-      window.removeEventListener("storage", sync);
+      window.removeEventListener("playtennis-saved", syncCount);
+      window.removeEventListener("storage", syncCount);
     };
   }, []);
+
+  useEffect(() => {
+    if (!savedOnly) return;
+
+    let cancelled = false;
+    const loadSaved = async () => {
+      setSavedLoading(true);
+      const ids = readSavedIds();
+      if (ids.length === 0) {
+        if (!cancelled) {
+          setSavedItems([]);
+          setSavedLoading(false);
+        }
+        return;
+      }
+      try {
+        const response = await fetch(`/api/tournaments?ids=${encodeURIComponent(ids.join(","))}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = (await response.json()) as { tournaments?: TournamentRecord[] };
+        if (!cancelled) setSavedItems(data.tournaments ?? []);
+      } catch {
+        if (!cancelled) setSavedItems([]);
+      } finally {
+        if (!cancelled) setSavedLoading(false);
+      }
+    };
+
+    void loadSaved();
+    const onSaved = () => {
+      void loadSaved();
+    };
+    window.addEventListener("playtennis-saved", onSaved);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("playtennis-saved", onSaved);
+    };
+  }, [savedOnly]);
 
   const visibleItems = useMemo(() => {
     const source = tab === "saved" ? savedItems ?? [] : items;
@@ -80,27 +117,9 @@ export default function TournamentListingDesk({
     return sorted;
   }, [items, savedItems, sort, tab]);
 
-  function loadSaved() {
-    startSavedTransition(async () => {
-      const ids = readSavedIds();
-      if (ids.length === 0) {
-        setSavedItems([]);
-        return;
-      }
-      const response = await fetch(`/api/tournaments?ids=${ids.map(encodeURIComponent).join(",")}`);
-      if (!response.ok) {
-        setSavedItems([]);
-        return;
-      }
-      const data = (await response.json()) as { tournaments?: TournamentRecord[] };
-      setSavedItems(data.tournaments ?? []);
-    });
-  }
-
   function selectTab(next: DeskTab) {
     if (next === "saved") {
       setSavedOnly(true);
-      loadSaved();
       return;
     }
     setSavedOnly(false);
