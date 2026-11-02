@@ -204,26 +204,25 @@ export async function getTournamentsByIds(ids: string[]): Promise<TournamentReco
   const unique = [...new Set(ids)].slice(0, 50);
   if (unique.length === 0) return [];
 
-  try {
-    const supabase = createServerSupabaseClient();
-    const { data, error } = await selectMany((select) =>
-      supabase.from("tournaments").select(select).in("id", unique).eq("published", true).is("archived_at", null),
-    );
+  const supabase = createServerSupabaseClient();
+  const { data, error } = await selectMany((select) =>
+    supabase.from("tournaments").select(select).in("id", unique).eq("published", true).is("archived_at", null),
+  );
 
-    if (error || !data) return [];
-    const byId = new Map(data.map((row) => {
+  if (error) throw new Error(error.message);
+  if (!data) return [];
+
+  const byId = new Map(
+    data.map((row) => {
       const tournament = mapTournament(row as Record<string, unknown>);
       return [tournament.id, tournament] as const;
-    }));
-    return unique.flatMap((id) => {
-      const tournament = byId.get(id);
-      if (!tournament || isJuniorPublicTournament(tournament)) return [];
-      return [stripJuniorFromPublicRecord(tournament)];
-    });
-  } catch (error) {
-    console.error("getTournamentsByIds", error);
-    return [];
-  }
+    }),
+  );
+  return unique.flatMap((id) => {
+    const tournament = byId.get(id);
+    if (!tournament || isJuniorPublicTournament(tournament)) return [];
+    return [stripJuniorFromPublicRecord(tournament)];
+  });
 }
 
 export type AdminListStatus = "all" | "listed" | "drafts" | "archived" | "needs_review";

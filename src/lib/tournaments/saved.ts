@@ -110,6 +110,21 @@ export function writeSavedIds(ids: string[]) {
   writeStore({ ids, snapshots: current.snapshots });
 }
 
+/** After a successful API lookup, drop saves that are no longer publicly listed. */
+export function reconcileSavedIds(foundIds: string[]): string[] {
+  const store = readStore();
+  const found = new Set(foundIds);
+  const nextIds = store.ids.filter((id) => found.has(id));
+  if (nextIds.length === store.ids.length) return store.ids;
+
+  const snapshots: Record<string, SavedSnapshot> = {};
+  for (const id of nextIds) {
+    if (store.snapshots[id]) snapshots[id] = store.snapshots[id];
+  }
+  writeStore({ ids: nextIds, snapshots });
+  return nextIds;
+}
+
 export function toggleSavedId(id: string, snapshot?: SavedSnapshot | null): boolean {
   const store = readStore();
   const exists = store.ids.includes(id);

@@ -8,7 +8,7 @@ import type { Locale, Messages } from "@/lib/i18n";
 import { localePath } from "@/lib/i18n";
 import { CATALOG_SECTION_PATHS } from "@/lib/tournaments/catalog";
 import type { CatalogSectionCounts, EventPlaces } from "@/lib/tournaments/queries";
-import { readSavedIds } from "@/lib/tournaments/saved";
+import { readSavedIds, reconcileSavedIds } from "@/lib/tournaments/saved";
 import type { CatalogSection, CatalogWhen, TournamentRecord } from "@/lib/tournaments/types";
 
 type DeskTab = CatalogWhen | "saved";
@@ -76,6 +76,7 @@ export default function TournamentListingDesk({
     if (!savedOnly) return;
 
     let cancelled = false;
+    let reconciling = false;
     const loadSaved = async () => {
       setSavedLoading(true);
       const ids = readSavedIds();
@@ -88,11 +89,18 @@ export default function TournamentListingDesk({
       }
       try {
         const response = await fetch(`/api/tournaments?ids=${encodeURIComponent(ids.join(","))}`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = (await response.json()) as { tournaments?: TournamentRecord[] };
-        if (!cancelled) setSavedItems(data.tournaments ?? []);
+        const data = (await response.json()) as { tournaments?: TournamentRecord[]; ok?: boolean };
+        if (!response.ok || data.ok === false) throw new Error(`HTTP ${response.status}`);
+        const tournaments = data.tournaments ?? [];
+        const foundIds = tournaments.map((row) => row.id);
+        if (foundIds.length !== ids.length) {
+          reconciling = true;
+          reconcileSavedIds(foundIds);
+          reconciling = false;
+        }
+        if (!cancelled) setSavedItems(tournaments);
       } catch {
-        if (!cancelled) setSavedItems([]);
+        // Keep whatever we already showed; do not clear saves on a failed fetch.
       } finally {
         if (!cancelled) setSavedLoading(false);
       }
@@ -100,6 +108,7 @@ export default function TournamentListingDesk({
 
     void loadSaved();
     const onSaved = () => {
+      if (reconciling) return;
       void loadSaved();
     };
     window.addEventListener("playtennis-saved", onSaved);
