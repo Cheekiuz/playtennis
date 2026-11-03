@@ -72,7 +72,11 @@ async function main() {
         : null;
     const level = event?.originalLevel;
     const format = event?.format;
-    const time = tournament.start_time ? String(tournament.start_time).slice(0, 5) : event?.startTime;
+    const time = tournament.start_time
+      ? String(tournament.start_time).slice(0, 5)
+      : raw?.startTime
+        ? String(raw.startTime).slice(0, 5)
+        : null;
 
     const formatLt = format === "doubles" ? "dvejetai" : format === "singles" ? "vienetai" : "tenisas";
     const formatEn = format === "doubles" ? "doubles" : format === "singles" ? "singles" : "tennis";
