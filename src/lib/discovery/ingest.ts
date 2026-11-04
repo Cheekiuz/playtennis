@@ -483,6 +483,7 @@ async function createTournament(
   const quality = scoreQuality(event);
   const now = new Date().toISOString();
   const section = resolveCatalogSection(raw, country);
+  const isFacebook = raw.registrySourceType?.startsWith("FACEBOOK") || sourceKind === "FACEBOOK";
   const row = {
     slug,
     name: event.title,
@@ -499,7 +500,8 @@ async function createTournament(
     source_url: event.sourceUrl,
     source_external_id: externalId,
     surface: event.surface === "unknown" ? "hard" : event.surface,
-    environment: event.indoorOutdoor ?? "outdoor",
+    // Facebook events rarely say indoor or outdoor; default to indoor unless the event states otherwise.
+    environment: event.indoorOutdoor ?? (isFacebook ? "indoor" : "outdoor"),
     event_type: event.eventType,
     event_format: "MULTIPLE",
     duration_type: event.startDate === event.endDate ? "ONE_DAY" : "WEEKEND",
