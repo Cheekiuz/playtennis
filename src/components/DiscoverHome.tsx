@@ -5,6 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 import { SiteModalProvider } from "@/components/SiteModals";
 import TournamentListingDesk from "@/components/TournamentListingDesk";
 import type { Locale, Messages } from "@/lib/i18n";
+import { buildHeroPool } from "@/lib/tournaments/hero-pick";
 import { localePath } from "@/lib/i18n";
 import { CATALOG_SECTION_PATHS } from "@/lib/tournaments/catalog";
 import {
@@ -72,20 +73,18 @@ export default async function DiscoverHome({
   ]);
 
   const basePath = localePath(locale, CATALOG_SECTION_PATHS[activeSection]);
-  const tournamentHrefs = [
-    ...new Set(
-      [...lithuaniaPool.items, ...balticsPool.items, ...itfPool.items].map((tournament) =>
-        localePath(locale, `/tournaments/${tournament.slug}`),
-      ),
-    ),
-  ];
+  const heroPool = buildHeroPool(
+    [lithuaniaPool.items, balticsPool.items, itfPool.items],
+    locale,
+    new Date().toISOString().slice(0, 10),
+  );
 
   return (
     <SiteModalProvider>
       <div className="home-editorial public-shell relative min-h-screen overflow-x-clip bg-[#fbfbfa] text-[#111915]">
         <SiteHeader />
         <main>
-          <HomeHero messages={messages} tournamentHrefs={tournamentHrefs} />
+          <HomeHero messages={messages} heroPool={heroPool} />
 
           <section className="mx-auto w-full max-w-[1440px] px-4 pb-12 lg:px-12">
             <TournamentListingDesk
