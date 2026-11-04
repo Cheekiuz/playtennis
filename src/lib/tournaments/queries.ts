@@ -61,6 +61,8 @@ const DISCOVERY_SELECT = `
 
 export type EventPlaces = {
   cities: string[];
+  /** Cities with their country and the number of upcoming events (used for city landing pages). */
+  cityPlaces: { city: string; countryCode: string; count: number }[];
   countries: { code: string; name: string; count: number }[];
   regions: string[];
 };
@@ -458,7 +460,7 @@ export async function listRecentlyUpdatedAdminTournaments(limit = 12): Promise<T
 }
 
 export async function listEventPlaces(locale: Locale): Promise<EventPlaces> {
-  const empty = { cities: [], countries: [], regions: [] };
+  const empty: EventPlaces = { cities: [], cityPlaces: [], countries: [], regions: [] };
   try {
     const supabase = createServerSupabaseClient();
     const rows = await placeRows(supabase);
@@ -477,7 +479,19 @@ export async function listEventPlaces(locale: Locale): Promise<EventPlaces> {
       .sort((a, b) => a.name.localeCompare(b.name, collator));
     const regions = [...new Set(visible.map((row) => String(row.region ?? "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, collator));
 
-    return { cities, countries, regions };
+    const cityCounts = new Map<string, { city: string; countryCode: string; count: number }>();
+    for (const row of visible) {
+      const city = String(row.city ?? "").trim();
+      const code = String(row.country_code ?? "").trim().toLowerCase();
+      if (!city || !/^[a-z]{2}$/.test(code)) continue;
+      const key = `${code}:${city.toLowerCase()}`;
+      const entry = cityCounts.get(key);
+      if (entry) entry.count += 1;
+      else cityCounts.set(key, { city, countryCode: code, count: 1 });
+    }
+    const cityPlaces = [...cityCounts.values()].sort((a, b) => b.count - a.count || a.city.localeCompare(b.city, collator));
+
+    return { cities, cityPlaces, countries, regions };
   } catch (error) {
     console.error("listEventPlaces", error);
     return empty;

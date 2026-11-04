@@ -1,4 +1,7 @@
+import FaqSection from "@/components/FaqSection";
 import HomeHero from "@/components/HomeHero";
+import ListingJsonLd, { latestUpdate } from "@/components/ListingJsonLd";
+import PlaceLinks, { indexablePlaceLinks } from "@/components/PlaceLinks";
 import PlayerFirstBand from "@/components/PlayerFirstBand";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
@@ -8,6 +11,8 @@ import type { Locale, Messages } from "@/lib/i18n";
 import { buildHeroPool } from "@/lib/tournaments/hero-pick";
 import { localePath } from "@/lib/i18n";
 import { CATALOG_SECTION_PATHS } from "@/lib/tournaments/catalog";
+import { siteFaq } from "@/lib/tournaments/place-copy";
+import { formatDay } from "@/lib/tournaments/present";
 import {
   getCatalogSectionCounts,
   listEventPlaces,
@@ -79,8 +84,24 @@ export default async function DiscoverHome({
     new Date().toISOString().slice(0, 10),
   );
 
+  const indexableHome = !hasExtraFilters && when === "upcoming" && activeSection === "lithuania";
+  const faq = siteFaq(messages);
+  const placeLinks = indexablePlaceLinks(places, locale);
+  const lastUpdated = latestUpdate(result.items)?.slice(0, 10) ?? null;
+
   return (
     <SiteModalProvider>
+      {indexableHome ? (
+        <ListingJsonLd
+          locale={locale}
+          path="/"
+          name={messages.meta.title}
+          description={messages.meta.description}
+          items={result.items}
+          crumbs={[{ name: messages.meta.siteName, path: "/" }]}
+          faq={faq}
+        />
+      ) : null}
       <div className="home-editorial public-shell relative min-h-screen overflow-x-clip bg-[#fbfbfa] text-[#111915]">
         <SiteHeader />
         <main>
@@ -104,6 +125,30 @@ export default async function DiscoverHome({
           </section>
 
           <PlayerFirstBand messages={messages} />
+
+          <section className="mx-auto w-full max-w-[1440px] px-4 pb-16 lg:px-12" aria-labelledby="home-about">
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+              <div>
+                <h2 id="home-about" className="text-2xl font-bold tracking-tight">
+                  {messages.seo.howWeVerifyTitle}
+                </h2>
+                <p className="mt-3 text-base leading-7 text-[#434845]">{messages.seo.howWeVerifyBody}</p>
+                {lastUpdated ? (
+                  <p className="mt-3 text-xs text-[#747874]">
+                    {messages.seo.lastUpdated}: <time dateTime={lastUpdated}>{formatDay(lastUpdated, locale)}</time>
+                  </p>
+                ) : null}
+                <div className="mt-8">
+                  <PlaceLinks
+                    title={messages.seo.popularPlaces}
+                    links={[...placeLinks.countries, ...placeLinks.cities]}
+                    messages={messages}
+                  />
+                </div>
+              </div>
+              <FaqSection title={messages.faq.title} items={faq} />
+            </div>
+          </section>
         </main>
         <SiteFooter locale={locale} messages={messages} />
       </div>

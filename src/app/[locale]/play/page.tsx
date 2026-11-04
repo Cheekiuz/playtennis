@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import RallyGame from "@/components/RallyGame";
 import SiteFrame from "@/components/SiteFrame";
 import { getMessages, isValidLocale, localePath } from "@/lib/i18n";
-import { absoluteUrl, routeAlternates } from "@/lib/seo";
+import { buildMetadata } from "@/lib/seo";
 
 export async function generateMetadata({
   params,
@@ -12,14 +12,12 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isValidLocale(locale)) return {};
   const messages = getMessages(locale);
-  return {
+  return buildMetadata({
+    locale,
+    path: "/play",
     title: messages.play.metaTitle,
     description: messages.play.metaDescription,
-    alternates: {
-      canonical: absoluteUrl(localePath(locale, "/play")),
-      languages: routeAlternates("/play"),
-    },
-  };
+  });
 }
 
 export default async function PlayPage({ params }: { params: Promise<{ locale: string }> }) {

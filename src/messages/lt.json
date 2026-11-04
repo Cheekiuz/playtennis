@@ -6,6 +6,57 @@
     "siteName": "PlayTennis.lt",
     "ogImageAlt": "PlayTennis.lt - teniso kamuoliukas"
   },
+  "seo": {
+    "tournamentDescription": "{name}: {place}, {dates}. {facts}Patikrink informaciją ir registruokis pas oficialų organizatorių.",
+    "feeFrom": "nuo {amount}",
+    "lastUpdated": "Atnaujinta",
+    "placeIntro": "Artimiausi mėgėjų teniso renginiai: {place}, iš viso {count}. Artimiausias: {name}, prasideda {date}.",
+    "placeSurfaces": "Dangos: {surfaces}.",
+    "placeMetaDescription": "{count} artėjančių mėgėjų teniso turnyrų: {place}. Artimiausias renginys: {date} Palygink datas ir vietas, registruokis pas organizatorių.",
+    "citiesIn": "Miestai: {country}",
+    "popularPlaces": "Populiarios vietos žaisti",
+    "otherPlaces": "Daugiau vietų",
+    "eventsCount": "Renginių: {count}",
+    "faqPlaceNextQ": "Kada artimiausias teniso turnyras: {place}?",
+    "faqPlaceNextA": "Artimiausias renginys ({place}): {name}, prasideda {date}.",
+    "faqPlaceCountQ": "Kiek teniso renginių yra sąraše: {place}?",
+    "faqPlaceCountA": "Šiuo metu sąraše artėjančių renginių: {count} ({place}).",
+    "faqPlaceSurfaceQ": "Kokios dangos naudojamos renginiuose: {place}?",
+    "faqPlaceSurfaceA": "Sąraše esantys renginiai ({place}) vyksta ant dangos: {surfaces}.",
+    "faqPlaceRegisterQ": "Kaip užsiregistruoti į teniso renginį: {place}?",
+    "faqPlaceRegisterA": "Atidaryk renginio puslapį ir naudok registracijos arba oficialaus šaltinio nuorodą. Registraciją ir mokėjimą tvarko organizatorius, o ne PlayTennis.lt.",
+    "howWeVerifyTitle": "Kaip renkame ir tikriname renginius",
+    "howWeVerifyBody": "PlayTennis.lt renka turnyrus ir organizuotą žaidimą iš klubų, organizatorių, Facebook renginių ir oficialių kalendorių, pavyzdžiui, ITF World Tennis Masters Tour. Kiekvienas įrašas prieš rodant peržiūrimas pagal originalų šaltinį. Renginiai su žyma Patikrinta peržiūrėti pagal organizatoriaus oficialų šaltinį. Mes neorganizuojame renginių, neparduodame narysčių ir nerenkame dalyvio mokesčių, todėl datas, kainas ir registraciją visada patikrink pas organizatorių."
+  },
+  "faq": {
+    "title": "Dažniausiai užduodami klausimai",
+    "items": [
+      {
+        "q": "Kas yra PlayTennis.lt?",
+        "a": "PlayTennis.lt yra nepriklausomas mėgėjų ir veteranų teniso turnyrų bei organizuoto žaidimo kalendorius Lietuvoje, Baltijos šalyse ir už jų ribų. Renkame renginius ir nukreipiame žaidėjus pas oficialų organizatorių."
+      },
+      {
+        "q": "Kas organizuoja turnyrus?",
+        "a": "Kiekvieną renginį rengia atskiras klubas ar organizatorius. PlayTennis.lt tik renka informaciją ir pateikia nuorodą į originalų šaltinį."
+      },
+      {
+        "q": "Kaip tikrinami renginiai?",
+        "a": "Renginius renkame iš organizatorių, klubų ir oficialių kalendorių, tada peržiūrime duomenis pagal originalų šaltinį. Renginiai su žyma Patikrinta peržiūrėti pagal organizatoriaus oficialų šaltinį. Prieš keliaudamas ar mokėdamas visada patikrink datas, kainas ir registraciją pas organizatorių."
+      },
+      {
+        "q": "Kaip užsiregistruoti į turnyrą?",
+        "a": "Atidaryk renginio puslapį ir naudok registracijos arba oficialaus šaltinio nuorodą. Registraciją ir mokėjimą tvarko organizatorius, o ne PlayTennis.lt."
+      },
+      {
+        "q": "Kokias šalis ir turus apima kalendorius?",
+        "a": "Pirmiausia Lietuvą, tada Latviją ir Estiją, taip pat ITF World Tennis Masters Tour veteranų renginius visame pasaulyje."
+      },
+      {
+        "q": "Kaip pridėti savo renginį?",
+        "a": "Naudok formą Pateikti renginį. Patikriname duomenis prieš renginiui pasirodant kalendoriuje."
+      }
+    ]
+  },
   "header": {
     "joinWaitlist": "Prisijungti prie sąrašo",
     "courtAlerts": "Kortų pranešimai",
@@ -89,7 +140,7 @@
     "contactBody": "Jei trūksta renginio ar reikia pataisyti duomenis, atsiųsk informaciją. Kiekvieną pateikimą perskaitome prieš paskelbdami."
   },
   "submit": {
-    "metaTitle": "Pateikti renginį | PlayTennis.lt",
+    "metaTitle": "Pateikti renginį",
     "metaDescription": "Atsiųsk turnyrą ar organizuotą teniso pasižaidimą. PlayTennis patikrina duomenis prieš įtraukdamas į kalendorių.",
     "title": "Pateikti renginį",
     "body": "Atsiųsk turnyrą ar organizuotą teniso pasižaidimą. Patikrinsime duomenis ir įtrauksime į kalendorių.",
@@ -244,16 +295,19 @@
     },
     "lithuania": {
       "title": "Lietuva",
+      "metaTitle": "Mėgėjų teniso turnyrai Lietuvoje",
       "description": "Suaugusiųjų mėgėjų teniso turnyrai Lietuvoje iš Facebook renginių ir TenisoNamai vienos dienos turnyrų.",
       "sourceNote": "Nuorodos veda į originalų organizatoriaus ar Facebook renginį. Uždaryti ir atšaukti turnyrai nerodomi."
     },
     "baltics": {
       "title": "Baltijos šalys",
+      "metaTitle": "Mėgėjų teniso turnyrai Baltijos šalyse",
       "description": "Suaugusiųjų mėgėjų teniso turnyrai Latvijoje ir Estijoje iš Facebook renginių.",
       "sourceNote": "Lietuva turi atskirą skyrių. Nuorodos veda į originalų Facebook renginį, kai jis prieinamas."
     },
     "itf": {
       "title": "ITF World Tennis Masters Tour",
+      "metaTitle": "ITF Masters teniso turnyrų kalendorius",
       "description": "Turnyrai iš oficialaus ITF World Tennis Masters Tour kalendoriaus (nuo 30 m.).",
       "sourceNote": "Šaltinis: ITF World Tennis Masters Tour kalendorius. Prieš registruodamiesi patikrinkite detales oficialiame ITF puslapyje. Uždaryti ir atšaukti turnyrai nerodomi."
     }
@@ -455,11 +509,11 @@
     "savedEmpty": "Išsaugok renginį ir jis liks čia, šiame įrenginyje.",
     "savedNote": "Išsaugota šiame įrenginyje. Vėliau paskyra galės juos perkelti.",
     "savedLoadError": "Išsaugotų renginių dabar įkelti nepavyko. Bandyk dar kartą po akimirkos.",
-    "aboutMetaTitle": "Apie PlayTennis.lt",
+    "aboutMetaTitle": "Apie nepriklausomą teniso kalendorių",
     "aboutMetaDescription": "PlayTennis yra nepriklausoma teniso renginių paieška, sukurta tenisininko tenisininkams. Renkame renginius ir nukreipiame į oficialų organizatorių.",
     "listingMetaTitle": "Teniso renginiai",
     "listingMetaDescription": "Rask mėgėjų teniso turnyrus, organizuotą tenisą ir teniso renginius vienoje vietoje. Filtruok pagal datą, miestą, tipą ir lygį.",
-    "quizMetaTitle": "Rask teniso renginį | PlayTennis.lt",
+    "quizMetaTitle": "Rask teniso renginį",
     "quizMetaDescription": "Penki trumpi klausimai ir teniso renginiai, kurie atitinka, kaip nori žaisti.",
     "surfaceChange": "Keisti korto dangą",
     "previous": "Ankstesnis",
@@ -471,7 +525,7 @@
     "notFoundBody": "Jis galėjo būti pašalintas arba dar nepaskelbtas."
   },
   "play": {
-    "metaTitle": "Pažaisk ralį | PlayTennis.lt",
+    "metaTitle": "Pažaisk ralį",
     "metaDescription": "Minutės teniso ralis. Pataikyk laiku, tada rask tikrą turnyrą.",
     "title": "Išlaikyk kamuoliuką.",
     "intro": "Kamuoliukas artėja. Smūgiuok tinkamu metu. Gruntas atleidžia. Žolė ne.",
@@ -501,7 +555,7 @@
     }
   },
   "quiz": {
-    "metaTitle": "Kokį renginį tau žaisti? | PlayTennis.lt",
+    "metaTitle": "Kokį renginį tau žaisti?",
     "metaDescription": "Penki trumpi klausimai ir teniso renginiai, kurie atitinka, kaip nori žaisti.",
     "title": "Kokį renginį tau žaisti?",
     "intro": "Penki klausimai. Tada trumpas sąrašas iš kalendoriaus, ne horoskopas.",

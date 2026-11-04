@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import ListingJsonLd from "@/components/ListingJsonLd";
 import SiteFrame from "@/components/SiteFrame";
 import TournamentListingDesk from "@/components/TournamentListingDesk";
 import { getMessages, isValidLocale, localePath, type Locale } from "@/lib/i18n";
-import { absoluteUrl, routeAlternates } from "@/lib/seo";
+import { buildMetadata, hasIndexBlockingParams } from "@/lib/seo";
 import {
   filtersAreIndexable,
   getCatalogSectionCounts,
@@ -29,18 +30,15 @@ export async function generateMetadata({
   const messages = getMessages(locale);
   const raw = await searchParams;
   const filters = parseFilters(raw);
-  const path = localePath(locale, "/tournaments");
-  const index = filtersAreIndexable(filters) && (filters.page ?? 1) === 1;
+  const index = filtersAreIndexable(filters) && (filters.page ?? 1) === 1 && !hasIndexBlockingParams(raw);
 
-  return {
-    title: `${messages.discover.listingMetaTitle} | PlayTennis.lt`,
+  return buildMetadata({
+    locale,
+    path: "/tournaments",
+    title: messages.discover.listingMetaTitle,
     description: messages.discover.listingMetaDescription,
-    alternates: {
-      canonical: absoluteUrl(path),
-      languages: routeAlternates("/tournaments"),
-    },
-    robots: index ? { index: true, follow: true } : { index: false, follow: true },
-  };
+    noindex: !index,
+  });
 }
 
 export default async function TournamentsPage({
@@ -70,9 +68,20 @@ export default async function TournamentsPage({
     getCatalogSectionCounts(),
   ]);
   const base = localePath(locale, "/tournaments");
+  const indexable = filtersAreIndexable(filters) && (filters.page ?? 1) === 1 && when === "upcoming" && !hasIndexBlockingParams(rawParams);
 
   return (
     <SiteFrame locale={locale} messages={messages} wide>
+      {indexable ? (
+        <ListingJsonLd
+          locale={locale}
+          path="/tournaments"
+          name={messages.discover.listingMetaTitle}
+          description={messages.discover.listingMetaDescription}
+          items={result.items}
+          crumbs={[{ name: messages.nav.tournaments, path: "/tournaments" }]}
+        />
+      ) : null}
       <div className="pt-6">
         <h1 className="text-3xl font-bold tracking-tight text-[#111915] sm:text-4xl">{messages.discover.results}</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#747874] sm:text-base">{messages.discover.subhead}</p>

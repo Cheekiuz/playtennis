@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import DiscoverHome from "@/components/DiscoverHome";
 import { getMessages, isValidLocale } from "@/lib/i18n";
-import { buildPageMetadata } from "@/lib/seo";
+import { buildPageMetadata, hasIndexBlockingParams } from "@/lib/seo";
 import { isCatalogSection } from "@/lib/tournaments/catalog";
 import type { CatalogWhen } from "@/lib/tournaments/types";
 
@@ -9,12 +9,14 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { locale } = await params;
   if (!isValidLocale(locale)) return {};
-  return buildPageMetadata(locale);
+  return buildPageMetadata(locale, { noindex: hasIndexBlockingParams(await searchParams) });
 }
 
 export default async function HomePage({

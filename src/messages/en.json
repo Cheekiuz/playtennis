@@ -6,6 +6,57 @@
     "siteName": "PlayTennis.lt",
     "ogImageAlt": "PlayTennis.lt tennis ball"
   },
+  "seo": {
+    "tournamentDescription": "{name} in {place}, {dates}. {facts}Check the details and register with the official organiser.",
+    "feeFrom": "from {amount}",
+    "lastUpdated": "Last updated",
+    "placeIntro": "{count} upcoming amateur tennis events in {place}. The next one is {name}, starting {date}.",
+    "placeSurfaces": "Surfaces: {surfaces}.",
+    "placeMetaDescription": "{count} upcoming amateur tennis tournaments and organised play in {place}. Next event: {date}. Compare dates, venues and surfaces, then register with the organiser.",
+    "citiesIn": "Cities in {country}",
+    "popularPlaces": "Popular places to play",
+    "otherPlaces": "More places",
+    "eventsCount": "{count} events",
+    "faqPlaceNextQ": "When is the next tennis tournament in {place}?",
+    "faqPlaceNextA": "The next event in {place} is {name}, starting {date}.",
+    "faqPlaceCountQ": "How many tennis events are listed in {place}?",
+    "faqPlaceCountA": "{count} upcoming events are currently listed in {place}.",
+    "faqPlaceSurfaceQ": "What surfaces are used for events in {place}?",
+    "faqPlaceSurfaceA": "Listed events in {place} are played on {surfaces}.",
+    "faqPlaceRegisterQ": "How do I register for a tennis event in {place}?",
+    "faqPlaceRegisterA": "Open the event page and use the Register or official source link. Registration and payment are handled by the organiser, not by PlayTennis.lt.",
+    "howWeVerifyTitle": "How we collect and verify events",
+    "howWeVerifyBody": "PlayTennis.lt collects tournaments and organised play from clubs, organisers, Facebook events and official calendars such as the ITF World Tennis Masters Tour. Each record is reviewed against the original source before it is shown. Events marked Checked were reviewed against the organiser's official source. We do not organise events, sell memberships or take entry fees, so always confirm dates, fees and registration with the organiser."
+  },
+  "faq": {
+    "title": "Frequently asked questions",
+    "items": [
+      {
+        "q": "What is PlayTennis.lt?",
+        "a": "PlayTennis.lt is an independent calendar of amateur and masters tennis tournaments and organised play in Lithuania, the Baltics and beyond. We collect events and point players to the official organiser."
+      },
+      {
+        "q": "Who organises the tournaments?",
+        "a": "Each event is run by its own club or organiser. PlayTennis.lt only collects the information and links to the original source."
+      },
+      {
+        "q": "How are events verified?",
+        "a": "We collect events from organisers, clubs and official calendars, then review the details against the original source. Events marked Checked were reviewed against the organiser's official source. Always confirm dates, fees and registration with the organiser before you travel or pay."
+      },
+      {
+        "q": "How do I register for a tournament?",
+        "a": "Open the event page and use the Register or official source link. Registration and payment are handled by the organiser, not by PlayTennis.lt."
+      },
+      {
+        "q": "Which countries and tours are covered?",
+        "a": "Lithuania first, then Latvia and Estonia, plus masters events from the ITF World Tennis Masters Tour around the world."
+      },
+      {
+        "q": "How can I add my event?",
+        "a": "Use the Submit an event form. We check the details before the event appears on the calendar."
+      }
+    ]
+  },
   "header": {
     "joinWaitlist": "Join Waitlist",
     "courtAlerts": "Court Alerts",
@@ -89,7 +140,7 @@
     "contactBody": "For a missing event, or a correction, send the details. Every submission is read before anything is published."
   },
   "submit": {
-    "metaTitle": "Submit an event | PlayTennis.lt",
+    "metaTitle": "Submit an event",
     "metaDescription": "Send a tournament or organised tennis session. PlayTennis checks the details before it appears on the calendar.",
     "title": "Submit an event",
     "body": "Send us a tournament or organised tennis session. We'll check the details and add it to the calendar.",
@@ -244,16 +295,19 @@
     },
     "lithuania": {
       "title": "Lithuania",
+      "metaTitle": "Amateur tennis tournaments in Lithuania",
       "description": "Adult amateur tennis tournaments in Lithuania from Facebook events and TenisoNamai one-day events.",
       "sourceNote": "Listings link to the original organiser or Facebook event. Closed and cancelled events are omitted."
     },
     "baltics": {
       "title": "Baltic States",
+      "metaTitle": "Amateur tennis tournaments in the Baltics",
       "description": "Adult amateur tennis tournaments in Latvia and Estonia, sourced from Facebook events.",
       "sourceNote": "Lithuania has its own section. Listings link to the original Facebook event when available."
     },
     "itf": {
       "title": "ITF World Tennis Masters Tour",
+      "metaTitle": "ITF Masters tennis tournament calendar",
       "description": "Tournaments from the official ITF World Tennis Masters Tour calendar (ages 30+).",
       "sourceNote": "Source: ITF World Tennis Masters Tour calendar. Always confirm details on the official ITF page before registering. Closed and cancelled events are omitted."
     }
@@ -455,11 +509,11 @@
     "savedEmpty": "Save an event and it will wait here, on this device.",
     "savedNote": "Saved on this device. An account can carry them later.",
     "savedLoadError": "Saved events could not be loaded right now. Try again in a moment.",
-    "aboutMetaTitle": "About PlayTennis.lt",
+    "aboutMetaTitle": "About the independent tennis calendar",
     "aboutMetaDescription": "PlayTennis is an independent tennis event discovery platform, built by a tennis player for tennis players. We collect events and point you to the official organiser.",
     "listingMetaTitle": "Tennis events",
     "listingMetaDescription": "Find amateur tennis tournaments, organised play and tennis events in one place. Filter by date, city, type and level.",
-    "quizMetaTitle": "Find a tennis event | PlayTennis.lt",
+    "quizMetaTitle": "Find a tennis event",
     "quizMetaDescription": "Answer five short questions and get tennis events that match how you want to play.",
     "surfaceChange": "Change court surface",
     "previous": "Previous",
@@ -471,7 +525,7 @@
     "notFoundBody": "It may have been removed, or it has not been published yet."
   },
   "play": {
-    "metaTitle": "Play a rally | PlayTennis.lt",
+    "metaTitle": "Play a rally",
     "metaDescription": "A one-minute tennis rally. Time your hit, then go find a real tournament.",
     "title": "Keep it in.",
     "intro": "A ball is coming. Hit it at the right moment. Clay forgives you. Grass does not.",
@@ -501,7 +555,7 @@
     }
   },
   "quiz": {
-    "metaTitle": "Which event should you play? | PlayTennis.lt",
+    "metaTitle": "Which event should you play?",
     "metaDescription": "Answer five short questions and get tennis events that match how you want to play.",
     "title": "Which event should you play?",
     "intro": "Five questions. Then a short list from the calendar, not a horoscope.",

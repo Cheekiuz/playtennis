@@ -42,7 +42,12 @@ export function formatDateRange(start: string, end: string, locale: Locale): str
 
   const sameMonth = startDate.getMonth() === endDate.getMonth() && startDate.getFullYear() === endDate.getFullYear();
   if (sameMonth) {
-    return `${startDate.getDate()}-${full.format(endDate)}`;
+    const days = `${startDate.getDate()}-${endDate.getDate()}`;
+    const parts = full.formatToParts(endDate);
+    const month = parts.find((part) => part.type === "month")?.value ?? "";
+    const year = parts.find((part) => part.type === "year")?.value ?? "";
+    // Lithuanian: "2026 m. lapkričio 14-15 d."; English: "14-15 November 2026".
+    return locale === "lt" ? `${year} m. ${month} ${days} d.` : `${days} ${month} ${year}`;
   }
   return `${full.format(startDate)} - ${full.format(endDate)}`;
 }

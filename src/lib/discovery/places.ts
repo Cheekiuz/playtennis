@@ -25,6 +25,9 @@ export function countrySlug(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+/** URL slug for any place name (country or city). */
+export const placeSlug = countrySlug;
+
 export function countryCatalogRegion(code: string): CatalogRegion {
   const country = code.toLowerCase();
   if (BALTICS.has(country)) return "baltics";

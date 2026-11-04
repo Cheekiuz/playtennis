@@ -1,28 +1,29 @@
 import type { Metadata } from "next";
 import CatalogSectionPage from "@/components/CatalogSectionPage";
-import { getMessages, isValidLocale, localePath, type Locale } from "@/lib/i18n";
-import { absoluteUrl, routeAlternates } from "@/lib/seo";
+import { getMessages, isValidLocale, type Locale } from "@/lib/i18n";
+import { buildMetadata, hasIndexBlockingParams } from "@/lib/seo";
 import type { CatalogWhen } from "@/lib/tournaments/types";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
   const { locale } = await params;
   if (!isValidLocale(locale)) return {};
   const messages = getMessages(locale);
-  const path = localePath(locale, "/itf");
-  return {
-    title: `${messages.catalog.itf.title} | PlayTennis.lt`,
+  const blocked = hasIndexBlockingParams(await searchParams);
+  return buildMetadata({
+    locale,
+    path: "/itf",
+    title: messages.catalog.itf.metaTitle,
     description: messages.catalog.itf.description,
-    alternates: {
-      canonical: absoluteUrl(path),
-      languages: routeAlternates("/itf"),
-    },
-  };
+    noindex: blocked,
+  });
 }
 
 export default async function ItfPage({

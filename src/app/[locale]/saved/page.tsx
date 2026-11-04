@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import SavedTournaments from "@/components/SavedTournaments";
 import SiteFrame from "@/components/SiteFrame";
 import { getMessages, isValidLocale } from "@/lib/i18n";
+import { buildMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,14 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isValidLocale(locale)) return {};
   const messages = getMessages(locale);
-  return {
-    title: `${messages.discover.savedTitle} | PlayTennis.lt`,
-    robots: { index: false, follow: false },
-  };
+  return buildMetadata({
+    locale,
+    path: "/saved",
+    title: messages.discover.savedTitle,
+    description: messages.discover.savedNote,
+    noindex: true,
+    follow: false,
+  });
 }
 
 export default async function SavedPage({ params }: { params: Promise<{ locale: string }> }) {

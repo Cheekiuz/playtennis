@@ -4,7 +4,7 @@ import QuizFlow from "@/components/QuizFlow";
 import SiteFrame from "@/components/SiteFrame";
 import TournamentCard from "@/components/TournamentCard";
 import { getMessages, isValidLocale, localePath, type Locale } from "@/lib/i18n";
-import { absoluteUrl, routeAlternates } from "@/lib/seo";
+import { buildMetadata, hasIndexBlockingParams } from "@/lib/seo";
 import { matchReasons } from "@/lib/tournaments/match";
 import { listTournaments } from "@/lib/tournaments/queries";
 
@@ -21,15 +21,13 @@ export async function generateMetadata({
   if (!isValidLocale(locale)) return {};
   const messages = getMessages(locale);
   const done = (await searchParams).done === "1";
-  return {
+  return buildMetadata({
+    locale,
+    path: "/quiz",
     title: messages.quiz.metaTitle,
     description: messages.quiz.metaDescription,
-    alternates: {
-      canonical: absoluteUrl(localePath(locale, "/quiz")),
-      languages: routeAlternates("/quiz"),
-    },
-    robots: done ? { index: false, follow: true } : { index: true, follow: true },
-  };
+    noindex: hasIndexBlockingParams(await searchParams) || done,
+  });
 }
 
 export default async function QuizPage({

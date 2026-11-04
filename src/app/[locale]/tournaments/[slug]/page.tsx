@@ -5,7 +5,8 @@ import OutboundLink from "@/components/OutboundLink";
 import SaveButton from "@/components/SaveButton";
 import SiteFrame from "@/components/SiteFrame";
 import { getMessages, isValidLocale, localePath, type Locale } from "@/lib/i18n";
-import { absoluteUrl, routeAlternates } from "@/lib/seo";
+import { buildMetadata } from "@/lib/seo";
+import { tournamentDescription, tournamentTitle } from "@/lib/tournaments/seo-copy";
 import {
   categorySummary,
   disciplineLabel,
@@ -23,6 +24,8 @@ import {
   translationFor,
 } from "@/lib/tournaments/present";
 import CheckedBadge from "@/components/CheckedBadge";
+import { JsonLd } from "@/components/JsonLd";
+import { breadcrumbNode, graph, sportsEventNode } from "@/lib/structured-data";
 import { RegistrationStatus } from "@/components/TournamentCard";
 import { isPubliclyChecked } from "@/lib/discovery/review";
 import { getTournament } from "@/lib/tournaments/queries";
@@ -38,39 +41,29 @@ export async function generateMetadata({
   const { locale, slug } = await params;
   if (!isValidLocale(locale)) return {};
   const tournament = await getTournament(slug);
-  if (!tournament) return {};
-  const translation = translationFor(tournament, locale);
-  const title = translation?.seoTitle || `${tournament.name} | PlayTennis.lt`;
-  const description =
-    translation?.seoDescription ||
-    `${tournament.name}, ${placeLine(tournament, locale)}. ${formatDateRange(tournament.startsOn, tournament.endsOn, locale)}.`;
-  const path = `/tournaments/${slug}`;
+  if (!tournament) return { robots: { index: false, follow: false } };
+  const description = tournamentDescription(tournament, locale, getMessages(locale));
   const hasGeo = tournament.latitude != null && tournament.longitude != null;
+  const hidden = tournament.isTest || tournament.lifecycleStatus === "cancelled";
 
-  return {
-    title,
+  return buildMetadata({
+    locale,
+    path: `/tournaments/${slug}`,
+    imagePath: `/tournaments/${slug}/opengraph-image`,
+    title: tournamentTitle(tournament),
     description,
-    alternates: {
-      canonical: absoluteUrl(localePath(locale, path)),
-      languages: routeAlternates(path),
-    },
-    openGraph: {
-      title,
-      description,
-      url: absoluteUrl(localePath(locale, path)),
-      type: "website",
-    },
-    ...(hasGeo
-      ? {
-          other: {
-            "geo.region": tournament.countryCode.toUpperCase(),
-            "geo.placename": tournament.venueName || tournament.city,
+    noindex: hidden,
+    other: {
+      "geo.region": tournament.countryCode.toUpperCase(),
+      "geo.placename": tournament.venueName || tournament.city,
+      ...(hasGeo
+        ? {
             "geo.position": `${tournament.latitude};${tournament.longitude}`,
             ICBM: `${tournament.latitude}, ${tournament.longitude}`,
-          },
-        }
-      : {}),
-  };
+          }
+        : {}),
+    },
+  });
 }
 
 export default async function TournamentPage({
@@ -88,57 +81,20 @@ export default async function TournamentPage({
   const d = messages.discover;
   const translation = translationFor(tournament, locale);
   const sourceHref = tournament.officialUrl || tournament.sourceUrl || null;
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "SportsEvent",
-    name: tournament.name,
-    description: translation?.seoDescription || translation?.description || undefined,
-    startDate: tournament.startsOn,
-    endDate: tournament.endsOn,
-    eventStatus: schemaStatus(tournament.lifecycleStatus),
-    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    sport: "Tennis",
-    url: absoluteUrl(localePath(locale, `/tournaments/${tournament.slug}`)),
-    location: {
-      "@type": "Place",
-      name: tournament.venueName || tournament.city,
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: tournament.venueAddress || undefined,
-        addressLocality: tournament.city,
-        addressCountry: tournament.countryCode.toUpperCase(),
-      },
-      ...(tournament.latitude != null && tournament.longitude != null
-        ? {
-            geo: {
-              "@type": "GeoCoordinates",
-              latitude: tournament.latitude,
-              longitude: tournament.longitude,
-            },
-          }
-        : {}),
-    },
-    ...(tournament.priceAmount != null
-      ? {
-          offers: {
-            "@type": "Offer",
-            price: tournament.priceAmount,
-            priceCurrency: tournament.priceCurrency || "EUR",
-            url: tournament.registrationUrl || tournament.officialUrl || undefined,
-            availability:
-              tournament.publicRegistration === "OPEN"
-                ? "https://schema.org/InStock"
-                : tournament.publicRegistration === "FULL"
-                  ? "https://schema.org/SoldOut"
-                  : undefined,
-          },
-        }
-      : {}),
-  };
+  const jsonLd = graph(
+    breadcrumbNode(
+      [
+        { name: messages.nav.tournaments, path: "/tournaments" },
+        { name: tournament.name, path: `/tournaments/${tournament.slug}` },
+      ],
+      locale,
+    ),
+    sportsEventNode(tournament, locale),
+  );
 
   return (
     <SiteFrame locale={locale} messages={messages}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
       <p className="text-sm text-foreground/70">
         <Link href={localePath(locale, "/tournaments")} className="hover:text-foreground">
           {messages.nav.tournaments}
@@ -235,7 +191,9 @@ export default async function TournamentPage({
       </>
       ) : null}
 
-      {translation?.description ? <p className="mt-8 max-w-2xl leading-relaxed text-foreground/80">{translation.description}</p> : null}
+      <p className="mt-8 max-w-2xl leading-relaxed text-foreground/80">
+        {translation?.description || tournamentDescription(tournament, locale, messages, 300)}
+      </p>
       {tournament.prizeSummary ? <p className="mt-4 text-sm text-foreground/80">{tournament.prizeSummary}</p> : null}
 
       {tournament.latitude != null && tournament.longitude != null ? (
@@ -259,6 +217,10 @@ export default async function TournamentPage({
         </p>
       ) : null}
       {tournament.sourceName ? <p className="mt-4 text-sm text-foreground/60">{d.source}: {tournament.sourceName}</p> : null}
+      <p className="mt-2 text-xs text-foreground/60">
+        {messages.seo.lastUpdated}:{" "}
+        <time dateTime={tournament.updatedAt.slice(0, 10)}>{formatDay(tournament.updatedAt, locale)}</time>
+      </p>
     </SiteFrame>
   );
 }
@@ -270,10 +232,4 @@ function Fact({ label, value }: { label: string; value: string }) {
       <dd className="mt-1 text-sm text-foreground">{value}</dd>
     </div>
   );
-}
-
-function schemaStatus(status: string): string {
-  if (status === "cancelled") return "https://schema.org/EventCancelled";
-  if (status === "postponed") return "https://schema.org/EventPostponed";
-  return "https://schema.org/EventScheduled";
 }

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
@@ -7,7 +7,8 @@ import { ThemeScript } from "@/components/ThemeScript";
 import { ThemeProvider } from "@/context/ThemeContext";
 import "./globals.css";
 import { defaultLocale, isValidLocale, type Locale } from "@/lib/i18n";
-import { buildPageMetadata } from "@/lib/seo";
+import { buildRootMetadata } from "@/lib/seo";
+import { buildSiteGraph } from "@/lib/structured-data";
 import { BALL_IMAGE_SRC } from "@/lib/tennis-ball-assets";
 
 const inter = Inter({
@@ -20,6 +21,16 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbfbfa" },
+    { media: "(prefers-color-scheme: dark)", color: "#0d2818" },
+  ],
+};
+
 async function getLocale(): Promise<Locale> {
   const headersList = await headers();
   const locale = headersList.get("x-locale") ?? defaultLocale;
@@ -29,7 +40,7 @@ async function getLocale(): Promise<Locale> {
 export async function generateMetadata(): Promise<Metadata> {
   const locale = await getLocale();
   return {
-    ...buildPageMetadata(locale),
+    ...buildRootMetadata(locale),
     verification: {
       google: "EGCGjn5dVKhFrKOX0HEpSAXz3dY9K6aPe30H94CAaUg",
     },
@@ -47,7 +58,7 @@ export default async function RootLayout({
     <html lang={locale} className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <ThemeScript />
-        <JsonLd locale={locale} />
+        <JsonLd data={buildSiteGraph(locale)} />
         <link rel="preload" href={BALL_IMAGE_SRC} as="image" type="image/webp" />
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans text-foreground">

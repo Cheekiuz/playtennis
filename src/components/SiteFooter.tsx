@@ -3,6 +3,14 @@ import TennisBallIcon from "@/components/TennisBallIcon";
 import type { Locale, Messages } from "@/lib/i18n";
 import { localePath } from "@/lib/i18n";
 
+const FOOTER_LINKS: { path: string; label: (m: Messages) => string }[] = [
+  { path: "/tournaments", label: (m) => m.nav.tournaments },
+  { path: "/lithuania", label: (m) => m.nav.lithuania },
+  { path: "/baltics", label: (m) => m.nav.baltics },
+  { path: "/itf", label: (m) => m.nav.itf },
+  { path: "/about", label: (m) => m.nav.about },
+];
+
 export default function SiteFooter({
   locale,
   messages,
@@ -22,6 +30,11 @@ export default function SiteFooter({
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#747874]">
           <span>{messages.footer.tagline}</span>
+          {FOOTER_LINKS.map((link) => (
+            <Link key={link.path} href={localePath(locale, link.path)} className="hover:text-[#111915] hover:underline">
+              {link.label(messages)}
+            </Link>
+          ))}
           <Link href={localePath(locale, "/submit")} className="font-semibold text-[#111915] hover:underline">
             {messages.nav.submit}
           </Link>

@@ -1,3 +1,4 @@
+import ListingJsonLd from "@/components/ListingJsonLd";
 import SiteFrame from "@/components/SiteFrame";
 import TournamentListingDesk from "@/components/TournamentListingDesk";
 import { CATALOG_SECTION_PATHS } from "@/lib/tournaments/catalog";
@@ -68,8 +69,23 @@ export default async function CatalogSectionPage({
   const base = localePath(locale, CATALOG_SECTION_PATHS[section]);
   const copy = messages.catalog[section];
 
+  const indexable = !hasExtraFilters && when === "upcoming" && page === 1;
+
   return (
     <SiteFrame locale={locale} messages={messages} wide>
+      {indexable ? (
+        <ListingJsonLd
+          locale={locale}
+          path={CATALOG_SECTION_PATHS[section]}
+          name={copy.metaTitle}
+          description={copy.description}
+          items={result.items}
+          crumbs={[
+            { name: messages.nav.tournaments, path: "/tournaments" },
+            { name: copy.title, path: CATALOG_SECTION_PATHS[section] },
+          ]}
+        />
+      ) : null}
       <div className="pt-6">
         <h1 className="text-3xl font-bold tracking-tight text-[#111915] sm:text-4xl">{copy.title}</h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[#747874] sm:text-base">{copy.description}</p>
