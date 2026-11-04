@@ -12,6 +12,7 @@ type Payload = {
   venue?: string;
   description?: string;
   url?: string;
+  dateCandidates?: { date: string; sources: string[]; text?: string }[];
 };
 
 type Status =
@@ -46,6 +47,7 @@ export default function FacebookBookmarkletCatch() {
   const [endDate, setEndDate] = useState("");
   const [city, setCity] = useState("");
   const [pending, startTransition] = useTransition();
+  const candidates = status.kind === "review" ? (status.payload.dateCandidates ?? []) : [];
 
   useEffect(() => {
     let cancelled = false;
@@ -114,9 +116,29 @@ export default function FacebookBookmarkletCatch() {
         <div className="grid max-w-xl gap-3">
           <p className="font-semibold">Confirm event details</p>
           <p className="text-foreground/70">
-            The start date was read from the text under the Facebook event title. Fix it only if it is wrong, then
+            The start date was read from Facebook. Check it against the event page and fix it if it is wrong, then
             import.
           </p>
+          {candidates.length > 1 ? (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-[#111915]">
+              <p className="font-semibold">Facebook showed more than one date. Pick the right one:</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {candidates.map((candidate) => (
+                  <button
+                    key={candidate.date}
+                    type="button"
+                    onClick={() => setStartDate(candidate.date)}
+                    className={`rounded-full border px-3 py-1 font-semibold ${
+                      startDate === candidate.date ? "border-[#111915] bg-[#111915] text-white" : "border-border bg-white"
+                    }`}
+                    title={candidate.text || undefined}
+                  >
+                    {candidate.date} ({candidate.sources.join(", ")})
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {status.payload.url ? (
             <p className="break-all text-xs text-foreground/60">
               <a href={status.payload.url} className="text-accent underline-offset-2 hover:underline" target="_blank" rel="noreferrer">

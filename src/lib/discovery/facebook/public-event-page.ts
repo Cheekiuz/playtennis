@@ -52,8 +52,9 @@ export async function fetchPublicFacebookEventFromUrl(
   const description = jsonLd?.description ?? meta["og:description"] ?? meta.description ?? null;
   const hints = parseFacebookDescription(description);
 
-  const startRaw = jsonLd?.startDate ?? meta["event:start_time"] ?? meta["og:updated_time"];
-  const startDate = startRaw ? toDateOnly(startRaw) : hints.startDate;
+  // og:updated_time is when Facebook last cached the page, not the event date, so it is never used.
+  const startRaw = jsonLd?.startDate ?? meta["event:start_time"];
+  const startDate = (startRaw ? toDateOnly(startRaw) : null) ?? hints.startDate;
   if (!title?.trim() || !startDate) return null;
 
   const endRaw = jsonLd?.endDate ?? meta["event:end_time"];

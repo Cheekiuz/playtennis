@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         PlayTennis: Save Facebook event
 // @namespace    https://www.playtennis.lt
-// @version      1.5.0
-// @description  Reads the written Facebook event date and sends it to PlayTennis
+// @version      1.6.0
+// @description  Reads the Facebook event date from a fresh copy of the event page and sends it to PlayTennis
 // @author       PlayTennis
 // @match        https://www.facebook.com/*
 // @match        https://facebook.com/*
@@ -16,55 +16,35 @@
   const CATCH_URL = "https://www.playtennis.lt/admin/facebook-catch";
   const BUTTON_ID = "playtennis-save-event-btn";
   const BADGE_ID = "playtennis-helper-badge";
+  const VERSION = "1.6.0";
   const TZ = "Europe/Vilnius";
 
-  const EN_MONTHS = {
-    january: 1,
-    jan: 1,
-    february: 2,
-    feb: 2,
-    march: 3,
-    mar: 3,
-    april: 4,
-    apr: 4,
-    may: 5,
-    june: 6,
-    jun: 6,
-    july: 7,
-    jul: 7,
-    august: 8,
-    aug: 8,
-    september: 9,
-    sep: 9,
-    october: 10,
-    oct: 10,
-    november: 11,
-    nov: 11,
-    december: 12,
-    dec: 12,
+  const MONTHS = {
+    january: 1, jan: 1, february: 2, feb: 2, march: 3, mar: 3, april: 4, apr: 4, may: 5,
+    june: 6, jun: 6, july: 7, jul: 7, august: 8, aug: 8, september: 9, sep: 9, sept: 9,
+    october: 10, oct: 10, november: 11, nov: 11, december: 12, dec: 12,
+    // Lithuanian, full genitive forms and the short forms Facebook uses ("lapkr.", "spal.")
+    sausio: 1, saus: 1, vasario: 2, vas: 2, kovo: 3, kov: 3, balandžio: 4, balandzio: 4, bal: 4,
+    gegužės: 5, geguzes: 5, geg: 5, birželio: 6, birzelio: 6, birž: 6, bir: 6,
+    liepos: 7, liep: 7, lie: 7, rugpjūčio: 8, rugpjucio: 8, rugp: 8, rgp: 8,
+    rugsėjo: 9, rugsejo: 9, rugs: 9, rgs: 9, spalio: 10, spal: 10, spa: 10,
+    lapkričio: 11, lapkricio: 11, lapkr: 11, lap: 11, gruodžio: 12, grudzio: 12, gruod: 12, gru: 12,
   };
 
-  const LT_MONTHS = {
-    sausio: 1,
-    vasario: 2,
-    kovo: 3,
-    balandžio: 4,
-    balandzio: 4,
-    gegužės: 5,
-    geguzes: 5,
-    birželio: 6,
-    birzelio: 6,
-    liepos: 7,
-    rugpjūčio: 8,
-    rugpjucio: 8,
-    rugsėjo: 9,
-    rugsejo: 9,
-    spalio: 10,
-    lapkričio: 11,
-    lapkricio: 11,
-    gruodžio: 12,
-    grudzio: 12,
+  const MONTH_RE = Object.keys(MONTHS)
+    .sort((a, b) => b.length - a.length)
+    .join("|");
+
+  const WEEKDAYS = {
+    sunday: 0, sun: 0, monday: 1, mon: 1, tuesday: 2, tue: 2, wednesday: 3, wed: 3,
+    thursday: 4, thu: 4, friday: 5, fri: 5, saturday: 6, sat: 6,
+    sekmadienį: 0, sekmadienis: 0, pirmadienį: 1, pirmadienis: 1, antradienį: 2, antradienis: 2,
+    trečiadienį: 3, trečiadienis: 3, ketvirtadienį: 4, ketvirtadienis: 4,
+    penktadienį: 5, penktadienis: 5, šeštadienį: 6, šeštadienis: 6,
   };
+  const WEEKDAY_RE = Object.keys(WEEKDAYS)
+    .sort((a, b) => b.length - a.length)
+    .join("|");
 
   function eventIdFromUrl(href) {
     const match = String(href || "").match(/\/events\/(?:[^/]+\/)?(\d{8,})/i);
@@ -80,17 +60,22 @@
     return (el && (el.getAttribute("content") || el.content)) || "";
   }
 
+  function pickEvent(data) {
+    const list = Array.isArray(data) ? data : data && data["@graph"] ? data["@graph"] : [data];
+    for (const row of list) {
+      if (!row) continue;
+      const type = row["@type"];
+      if (type === "Event" || (Array.isArray(type) && type.includes("Event")) || /Event$/.test(String(type))) return row;
+    }
+    return null;
+  }
+
   function jsonLd() {
     const nodes = document.querySelectorAll('script[type="application/ld+json"]');
     for (const node of nodes) {
       try {
-        const data = JSON.parse(node.textContent || "");
-        const list = Array.isArray(data) ? data : [data];
-        for (const row of list) {
-          if (!row) continue;
-          const type = row["@type"];
-          if (type === "Event" || (Array.isArray(type) && type.includes("Event"))) return row;
-        }
+        const found = pickEvent(JSON.parse(node.textContent || ""));
+        if (found) return found;
       } catch {
         /* ignore */
       }
@@ -112,14 +97,32 @@
     }).format(date);
   }
 
+  function today() {
+    return formatInTz(new Date());
+  }
+
+  function addDays(iso, days) {
+    const [y, m, d] = iso.split("-").map(Number);
+    return formatInTz(new Date(Date.UTC(y, m - 1, d + days, 12)));
+  }
+
   function monthNumber(value) {
-    return EN_MONTHS[String(value || "").toLowerCase()] || LT_MONTHS[String(value || "").toLowerCase()] || 0;
+    return MONTHS[String(value || "").toLowerCase().replace(/\.$/, "")] || 0;
+  }
+
+  /** A date written without a year means the next time it happens, never a date that already passed. */
+  function withInferredYear(month, day) {
+    const now = today();
+    const year = Number(now.slice(0, 4));
+    const thisYear = ymd(year, month, day);
+    return thisYear && thisYear < addDays(now, -7) ? ymd(year + 1, month, day) : thisYear;
   }
 
   function toCalendarDate(value) {
     if (value == null || value === "") return "";
     const trimmed = String(value).trim();
     if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+    // Offset form: the written calendar day is Facebook's local day.
     const offsetIso = trimmed.match(/^(\d{4}-\d{2}-\d{2})T[0-9:.]+[+-]\d{2}:?\d{2}$/);
     if (offsetIso) return offsetIso[1];
     const utcIso = trimmed.match(/^(\d{4}-\d{2}-\d{2})T[0-9:.]+Z$/i);
@@ -134,77 +137,83 @@
     return parseNamedDate(trimmed);
   }
 
+  /** Reads a date written as text: "Saturday, November 7, 2026", "Sat, Nov 7", "2026 m. lapkričio 7 d.", "lapkr. 7 d." */
   function parseNamedDate(text) {
     if (!text) return "";
-    const yearFallback = Number((text.match(/\b(20\d{2})\b/) || [])[1] || new Date().getFullYear());
+    const m = `(${MONTH_RE})\\.?`;
+    const year = `(20\\d{2})`;
     const patterns = [
-      // SATURDAY, OCTOBER 24, 2026
-      /\b(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)[a-z]*,\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),\s+(20\d{2})\b/i,
-      // October 24, 2026
-      /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(20\d{2})\b/i,
-      // 24 October 2026
-      /\b(\d{1,2})\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(20\d{2})\b/i,
-      // OCT 24, 2026 / OCT 24
-      /\b(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)\s+(\d{1,2})(?:,?\s+(20\d{2}))?\b/i,
-      // 2026 m. spalio 24
-      /\b(20\d{2})\s*m\.?\s*(sausio|vasario|kovo|balandžio|balandzio|gegužės|geguzes|birželio|birzelio|liepos|rugpjūčio|rugpjucio|rugsėjo|rugsejo|spalio|lapkričio|lapkricio|gruodžio|grudzio)\s+(\d{1,2})/i,
-      // spalio 24 d.
-      /\b(sausio|vasario|kovo|balandžio|balandzio|gegužės|geguzes|birželio|birzelio|liepos|rugpjūčio|rugpjucio|rugsėjo|rugsejo|spalio|lapkričio|lapkricio|gruodžio|grudzio)\s+(\d{1,2})\s*d\.?/i,
-      // Šeštadienis, 2026 m. spalio 24 d.
-      /\b(?:Pirmadienis|Antradienis|Trečiadienis|Ketvirtadienis|Penktadienis|Šeštadienis|Sekmadienis),?\s+(20\d{2})\s*m\.?\s*(sausio|vasario|kovo|balandžio|gegužės|birželio|liepos|rugpjūčio|rugsėjo|spalio|lapkričio|gruodžio)\s+(\d{1,2})/i,
+      // November 7, 2026 / Nov 7 2026 / Nov 7
+      { re: new RegExp(`\\b${m}\\s+(\\d{1,2})(?:st|nd|rd|th)?(?:,?\\s+${year})?(?![\\d:])`, "i"), order: "mdy" },
+      // 7 November 2026 / 7 Nov
+      { re: new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+${m}(?:,?\\s+${year})?`, "i"), order: "dmy" },
+      // 2026 m. lapkričio 7 d.
+      { re: new RegExp(`\\b${year}\\s*m\\.?\\s*${m}\\s+(\\d{1,2})`, "i"), order: "ymd" },
+      // lapkričio 7 d. / lapkr. 7 d.
+      { re: new RegExp(`\\b${m}\\s+(\\d{1,2})\\s*d\\b`, "i"), order: "md" },
     ];
 
-    for (const pattern of patterns) {
-      const match = text.match(pattern);
+    let best = null;
+    for (const { re, order } of patterns) {
+      const match = text.match(re);
       if (!match) continue;
-      const date = dateFromGroups(match, yearFallback);
-      if (date) return date;
+      let y = 0;
+      let month = 0;
+      let day = 0;
+      if (order === "mdy") {
+        month = monthNumber(match[1]);
+        day = Number(match[2]);
+        y = Number(match[3] || 0);
+      } else if (order === "dmy") {
+        day = Number(match[1]);
+        month = monthNumber(match[2]);
+        y = Number(match[3] || 0);
+      } else if (order === "ymd") {
+        y = Number(match[1]);
+        month = monthNumber(match[2]);
+        day = Number(match[3]);
+      } else {
+        month = monthNumber(match[1]);
+        day = Number(match[2]);
+      }
+      if (!month || !day) continue;
+      const date = y ? ymd(y, month, day) : withInferredYear(month, day);
+      if (!date) continue;
+      // Earliest position in the text wins.
+      if (!best || (match.index || 0) < best.index) best = { index: match.index || 0, date };
     }
-    return "";
+    return best ? best.date : "";
   }
 
-  function dateFromGroups(match, yearFallback) {
-    const parts = match.slice(1).filter(Boolean);
-    if (!parts.length) return "";
-
-    // Weekday, Month Day, Year already consumed weekday outside groups in first pattern:
-    // groups: Month, Day, Year
-    if (monthNumber(parts[0]) && /^\d{1,2}$/.test(parts[1]) && /^20\d{2}$/.test(parts[2] || "")) {
-      return ymd(Number(parts[2]), monthNumber(parts[0]), Number(parts[1]));
-    }
-    // Day Month Year
-    if (/^\d{1,2}$/.test(parts[0]) && monthNumber(parts[1]) && /^20\d{2}$/.test(parts[2] || "")) {
-      return ymd(Number(parts[2]), monthNumber(parts[1]), Number(parts[0]));
-    }
-    // Year month day (LT)
-    if (/^20\d{2}$/.test(parts[0]) && monthNumber(parts[1]) && parts[2]) {
-      return ymd(Number(parts[0]), monthNumber(parts[1]), Number(parts[2]));
-    }
-    // month day [year]
-    if (monthNumber(parts[0]) && /^\d{1,2}$/.test(parts[1])) {
-      const year = parts[2] && /^20\d{2}$/.test(parts[2]) ? Number(parts[2]) : yearFallback;
-      return ymd(year, monthNumber(parts[0]), Number(parts[1]));
-    }
-    // LT month day
-    if (monthNumber(parts[0]) && /^\d{1,2}$/.test(parts[1]) && !parts[2]) {
-      return ymd(yearFallback, monthNumber(parts[0]), Number(parts[1]));
-    }
-    return "";
+  /** Facebook writes "Today", "Tomorrow" or just "Saturday at 10:00" for events in the next days. */
+  function parseRelativeDate(text) {
+    const lower = String(text || "").toLowerCase().trim();
+    if (!lower || lower.length > 80) return "";
+    const time = "[^\\d]{0,12}\\d{1,2}[:.]\\d{2}";
+    if (new RegExp(`^(?:today|šiandien|siandien)${time}`, "i").test(lower)) return today();
+    if (new RegExp(`^(?:tomorrow|rytoj)${time}`, "i").test(lower)) return addDays(today(), 1);
+    const match = lower.match(new RegExp(`^(?:this\\s+|next\\s+)?(${WEEKDAY_RE})${time}`, "i"));
+    if (!match) return "";
+    const target = WEEKDAYS[match[1].toLowerCase()];
+    const now = today();
+    const [y, m, d] = now.split("-").map(Number);
+    const current = new Date(Date.UTC(y, m - 1, d, 12)).getUTCDay();
+    return addDays(now, (target - current + 7) % 7);
   }
 
   function isNoiseDateText(text) {
-    return /registr|deadline|\biki\b|until|before|baigiasi|sale starts|interested|going|invite|share|host|discussion|comment|people responded/i.test(
+    return /registr|deadline|\biki\b|until|before|baigiasi|sale starts|interested|going|invite|share|host|discussion|comment|people responded|posted|published|created|updated/i.test(
       text,
     );
   }
 
   /**
-   * Read the date Facebook writes under the event title.
-   * Only short UI labels near the title. Never scan the full description.
+   * Dates written in short UI labels after the event title.
+   * Returns scored candidates; the description is never scanned.
    */
-  function findWrittenEventDate() {
+  function findWrittenDates() {
     const main = document.querySelector('[role="main"]') || document.querySelector("main") || document.body;
-    if (!main) return "";
+    if (!main) return [];
     const h1 = main.querySelector("h1");
     const nodes = Array.from(main.querySelectorAll("span, div, time, h2, h3"));
     const scored = [];
@@ -220,36 +229,79 @@
       const text = String(el.innerText || el.getAttribute("aria-label") || "")
         .replace(/\s+/g, " ")
         .trim();
-      if (text.length < 8 || text.length > 160) continue;
+      if (text.length < 5 || text.length > 160) continue;
       if (el.querySelector("h1")) continue;
       if (isNoiseDateText(text)) continue;
 
-      const date = parseNamedDate(text);
+      const explicit = parseNamedDate(text);
+      const date = explicit || parseRelativeDate(text);
       if (!date) continue;
 
-      let score = 10;
-      if (/\b(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b/i.test(text)) score += 12;
-      if (/\b(pirmadien|antradien|trečiadien|ketvirtadien|penktadien|šeštadien|sekmadien)/i.test(text)) score += 12;
-      if (/\b(january|february|march|april|may|june|july|august|september|october|november|december)\b/i.test(text)) score += 8;
-      if (/\b(sausio|vasario|kovo|balandžio|gegužės|birželio|liepos|rugpjūčio|rugsėjo|spalio|lapkričio|gruodžio)\b/i.test(text))
-        score += 8;
+      let score = explicit ? 10 : 6;
+      if (new RegExp(`\\b(${WEEKDAY_RE})`, "i").test(text)) score += 12;
       if (/\b20\d{2}\b/.test(text)) score += 6;
-      if (/\b\d{1,2}:\d{2}\b|\bat\b|utc|gmt/i.test(text)) score += 4;
+      if (/\b\d{1,2}[:.]\d{2}\b|\bat\b|\bval\b|utc|gmt/i.test(text)) score += 4;
       if (text.length <= 60) score += 3;
-      // Closer to the title wins.
       score += Math.max(0, 25 - scored.length);
 
-      scored.push({ date, score, text });
+      scored.push({ date, score, text: text.slice(0, 90) });
       if (scored.length >= 30) break;
     }
 
-    if (!scored.length) return "";
-    scored.sort((a, b) => b.score - a.score);
-    return scored[0].date;
+    return scored.sort((a, b) => b.score - a.score);
+  }
+
+  function readMeta(html, name) {
+    const a = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${name}["'][^>]*content=["']([^"']*)["']`, "i"));
+    if (a) return a[1];
+    const b = html.match(new RegExp(`<meta[^>]+content=["']([^"']*)["'][^>]*(?:property|name)=["']${name}["']`, "i"));
+    return b ? b[1] : "";
+  }
+
+  /**
+   * Facebook is a single page app: the open page can still carry data from the first event you loaded.
+   * Requesting the event URL again returns data for this event only.
+   */
+  async function readFreshEventPage(id) {
+    const urls = [`https://www.facebook.com/events/${id}/`];
+    for (const url of urls) {
+      for (const credentials of ["omit", "include"]) {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 7000);
+          const response = await fetch(url, { credentials, signal: controller.signal, headers: { Accept: "text/html" } });
+          clearTimeout(timer);
+          if (!response.ok) continue;
+          const html = await response.text();
+
+          let ld = null;
+          for (const match of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+            try {
+              ld = pickEvent(JSON.parse(match[1]));
+            } catch {
+              /* ignore */
+            }
+            if (ld) break;
+          }
+          const result = {
+            ldStart: toCalendarDate(ld && ld.startDate),
+            ldEnd: toCalendarDate(ld && ld.endDate),
+            metaStart: toCalendarDate(readMeta(html, "event:start_time")),
+            metaEnd: toCalendarDate(readMeta(html, "event:end_time")),
+            ld,
+          };
+          if (result.ldStart || result.metaStart) return result;
+        } catch {
+          /* try the next option */
+        }
+      }
+    }
+    return null;
   }
 
   function guessCity(text) {
     const body = text || "";
+    if (/Palanga/i.test(body)) return "Palanga";
     if (/Kaunas/i.test(body)) return "Kaunas";
     if (/Klaip/i.test(body)) return "Klaipėda";
     if (/Vilnius|SEB Arena|Sportima/i.test(body)) return "Vilnius";
@@ -258,67 +310,96 @@
     return "";
   }
 
-  function sendToPlayTennis() {
-    const ld = jsonLd();
+  function addCandidate(list, date, source, text) {
+    if (!date) return;
+    const existing = list.find((item) => item.date === date);
+    if (existing) {
+      existing.sources.push(source);
+      return;
+    }
+    list.push({ date, sources: [source], text: text || "" });
+  }
+
+  async function sendToPlayTennis(button) {
     const id = eventIdFromUrl(location.href);
     if (!id) {
       alert("Open a Facebook event page first (URL should contain /events/123...).");
       return;
     }
-    const url = `https://www.facebook.com/events/${id}`;
-    const main = document.querySelector('[role="main"]') || document.body;
-    const scoped = ((main && main.innerText) || "").slice(0, 1200);
+    const label = button.textContent;
+    button.textContent = "Reading event…";
+    button.disabled = true;
 
-    let title = (ld && ld.name) || meta('meta[property="og:title"]') || document.title || "";
-    title = title.replace(/\s*\|\s*Facebook\s*$/i, "").trim();
+    try {
+      const url = `https://www.facebook.com/events/${id}`;
+      const main = document.querySelector('[role="main"]') || document.body;
+      const scoped = ((main && main.innerText) || "").slice(0, 1200);
+      const ld = jsonLd();
+      const fresh = await readFreshEventPage(id);
+      const written = findWrittenDates();
 
-    // Prefer the date written on the event UI. Do not use loose page timestamps.
-    let start =
-      findWrittenEventDate() ||
-      toCalendarDate(ld && ld.startDate) ||
-      toCalendarDate(meta('meta[property="event:start_time"]'));
-
-    let end =
-      toCalendarDate(ld && ld.endDate) ||
-      toCalendarDate(meta('meta[property="event:end_time"]')) ||
-      start;
-
-    const desc =
-      (ld && ld.description) || meta('meta[property="og:description"]') || meta('meta[name="description"]') || "";
-
-    let venue = "";
-    let city = "";
-    if (ld && ld.location) {
-      if (typeof ld.location === "string") venue = ld.location;
-      else {
-        venue = ld.location.name || "";
-        city =
-          (ld.location.address &&
-            (ld.location.address.addressLocality || ld.location.address.addressRegion)) ||
-          "";
+      // Ordered by trust. The first one is used as the default, the rest are shown for review.
+      const candidates = [];
+      if (fresh) {
+        addCandidate(candidates, fresh.ldStart, "event data");
+        addCandidate(candidates, fresh.metaStart, "event meta");
       }
-    }
-    if (!city) city = guessCity(scoped + "\n" + desc);
+      if (written[0]) addCandidate(candidates, written[0].date, "page text", written[0].text);
+      for (const item of written.slice(1, 3)) addCandidate(candidates, item.date, "page text (other)", item.text);
+      addCandidate(candidates, toCalendarDate(ld && ld.startDate), "open page data");
 
-    if (!start) {
-      alert("Could not read the event date from the page. Make sure the event finished loading, then try again.");
-      return;
-    }
+      const start = candidates[0] ? candidates[0].date : "";
+      if (!start) {
+        alert("Could not read the event date from the page. Make sure the event finished loading, then try again.");
+        return;
+      }
 
-    const payload = {
-      title,
-      startDate: start,
-      endDate: end || start,
-      city: city || "",
-      venue: venue || "",
-      description: desc || "",
-      url,
-    };
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-    location.href = `${CATCH_URL}#fb=${encoded}`;
+      const sourceLd = (fresh && fresh.ld) || ld;
+      let title = (sourceLd && sourceLd.name) || meta('meta[property="og:title"]') || document.title || "";
+      title = title.replace(/\s*\|\s*Facebook\s*$/i, "").trim();
+
+      let end = (fresh && (fresh.ldEnd || fresh.metaEnd)) || toCalendarDate(ld && ld.endDate) || start;
+      if (end < start) end = start;
+
+      const desc =
+        (sourceLd && sourceLd.description) ||
+        meta('meta[property="og:description"]') ||
+        meta('meta[name="description"]') ||
+        "";
+
+      let venue = "";
+      let city = "";
+      if (sourceLd && sourceLd.location) {
+        if (typeof sourceLd.location === "string") venue = sourceLd.location;
+        else {
+          venue = sourceLd.location.name || "";
+          city =
+            (sourceLd.location.address &&
+              (sourceLd.location.address.addressLocality || sourceLd.location.address.addressRegion)) ||
+            "";
+        }
+      }
+      if (!city) city = guessCity(title + "\n" + scoped + "\n" + desc);
+
+      const payload = {
+        title,
+        startDate: start,
+        endDate: end || start,
+        city: city || "",
+        venue: venue || "",
+        description: desc || "",
+        url,
+        dateCandidates: candidates.slice(0, 5),
+      };
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+      location.href = `${CATCH_URL}#fb=${encoded}`;
+    } finally {
+      button.textContent = label;
+      button.disabled = false;
+    }
   }
 
   function ensureBadge() {
@@ -326,7 +407,7 @@
     const badge = document.createElement("div");
     badge.id = BADGE_ID;
     badge.textContent = "PT";
-    badge.title = "PlayTennis helper is active (v1.5.0)";
+    badge.title = `PlayTennis helper is active (v${VERSION})`;
     badge.style.cssText = [
       "position:fixed",
       "top:12px",
@@ -375,7 +456,7 @@
     btn.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      sendToPlayTennis();
+      sendToPlayTennis(btn);
     });
     document.documentElement.appendChild(btn);
   }
