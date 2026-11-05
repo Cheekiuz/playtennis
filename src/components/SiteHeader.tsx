@@ -43,26 +43,34 @@ export default function SiteHeader() {
   const tournamentsActive = pathname.startsWith(tournaments) || onHome;
 
   const shellClass = scrolled
-    ? "px-3 pt-0.5 sm:px-4 lg:px-3 xl:px-4 2xl:px-6"
+    ? "max-md:px-0 max-md:pt-0 px-3 pt-0.5 sm:px-4 lg:px-3 xl:px-4 2xl:px-6"
     : "px-0 pt-0";
-  const barSizeClass = scrolled ? "max-w-[min(100%,1680px)]" : "max-w-[1440px]";
+  const barSizeClass = scrolled
+    ? "max-md:max-w-none max-w-[min(100%,1680px)]"
+    : "max-w-none md:max-w-[1440px]";
   const barClass = scrolled
-    ? "rounded-2xl border border-[var(--editorial-border)] bg-[var(--editorial-header-bg-scrolled)] shadow-[var(--editorial-header-shadow)] backdrop-blur-lg"
+    ? "border-[var(--editorial-border)] bg-[var(--editorial-header-bg-scrolled)] backdrop-blur-lg max-md:rounded-none max-md:border-x-0 max-md:border-t-0 max-md:shadow-none md:rounded-2xl md:border md:shadow-[var(--editorial-header-shadow)]"
     : "rounded-none border-b border-[var(--editorial-border)] bg-[var(--editorial-header-bg)] backdrop-blur-lg";
-  const rowClass = scrolled ? "lg:px-10 xl:px-12" : "lg:px-12";
+  const rowClass = scrolled ? "px-3 sm:px-4 lg:px-10 xl:px-12" : "px-3 sm:px-4 lg:px-12";
 
   return (
     <div className={`sticky top-0 z-40 w-full transition-[padding] duration-300 ease-out ${shellClass}`}>
       <header className={`mx-auto w-full overflow-hidden transition-all duration-300 ease-out ${barSizeClass} ${barClass}`}>
-        <div className={`mx-auto flex h-16 w-full items-center gap-4 px-4 transition-[padding] duration-300 ease-out sm:gap-8 lg:gap-12 ${rowClass}`}>
-        <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
-          <Link href={home} aria-label="PlayTennis.lt" className="flex items-center gap-2 text-lg font-bold tracking-tight text-[#111915]">
+        <div
+          className={`mx-auto flex h-14 w-full min-w-0 items-center gap-2 transition-[padding] duration-300 ease-out sm:h-16 sm:gap-4 md:gap-8 lg:gap-12 ${rowClass}`}
+        >
+        <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden sm:gap-2 md:flex-none md:gap-3">
+          <Link
+            href={home}
+            aria-label="PlayTennis.lt"
+            className="flex min-w-0 shrink items-center gap-1.5 text-base font-bold tracking-tight text-[var(--editorial-page-fg)] sm:gap-2 sm:text-lg"
+          >
             <TennisBallIcon size={22} priority />
-            <span>
+            <span className="truncate">
               playtennis<span className="text-[#506600]">.lt</span>
             </span>
           </Link>
-          <span className="truncate text-[11px] font-bold uppercase tracking-[0.08em] text-red-600 sm:text-xs">
+          <span className="hidden truncate text-[11px] font-bold uppercase tracking-[0.08em] text-red-600 min-[420px]:inline sm:text-xs">
             Under construction
           </span>
         </div>
@@ -86,12 +94,12 @@ export default function SiteHeader() {
           </button>
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
           <LocaleToggle />
           <Link
             href={saved}
             aria-label={messages.nav.saved}
-            className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--editorial-border)] bg-[var(--editorial-surface)] text-[var(--editorial-page-fg)]"
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--editorial-border)] bg-[var(--editorial-surface)] text-[var(--editorial-page-fg)] sm:h-11 sm:w-11"
           >
             <HeartIcon />
             {savedCount > 0 ? (
@@ -102,12 +110,13 @@ export default function SiteHeader() {
           </Link>
           <button
             type="button"
-            className="inline-flex h-11 items-center rounded-full border border-[#e7e7e2] bg-white px-3 text-sm font-semibold text-[#111915] md:hidden"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[var(--editorial-border)] bg-[var(--editorial-surface)] text-[var(--editorial-page-fg)] md:hidden"
             aria-expanded={menuOpen}
             aria-controls="site-menu"
+            aria-label={menuOpen ? messages.nav.close : messages.nav.menu}
             onClick={() => setMenuOpen((value) => !value)}
           >
-            {menuOpen ? messages.nav.close : messages.nav.menu}
+            <MenuIcon open={menuOpen} />
           </button>
         </div>
         </div>
@@ -118,7 +127,7 @@ export default function SiteHeader() {
             <li>
               <Link
                 href={onHome ? "#play-next" : tournaments}
-                className="flex min-h-11 items-center text-sm font-bold text-[#111915]"
+                className="flex min-h-11 items-center text-sm font-bold text-[var(--editorial-page-fg)]"
                 onClick={() => setMenuOpen(false)}
               >
                 {messages.nav.tournaments}
@@ -127,7 +136,7 @@ export default function SiteHeader() {
             <li>
               <button
                 type="button"
-                className="flex min-h-11 w-full items-center text-left text-sm font-semibold text-[#434845]"
+                className="flex min-h-11 w-full items-center text-left text-sm font-semibold text-[var(--editorial-muted)]"
                 onClick={() => {
                   setMenuOpen(false);
                   modals.open("story");
@@ -154,6 +163,21 @@ function HeartIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
       <path d="M12 20s-7-4.4-7-9.2A3.8 3.8 0 0 1 12 7.5a3.8 3.8 0 0 1 7 3.3C19 15.6 12 20 12 20Z" />
+    </svg>
+  );
+}
+
+function MenuIcon({ open }: { open: boolean }) {
+  if (open) {
+    return (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18" strokeLinecap="round" />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
     </svg>
   );
 }

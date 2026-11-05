@@ -119,7 +119,7 @@ export default function HeroIllustration({
   hintSecondary: string;
 }) {
   return (
-    <div className="relative aspect-square overflow-hidden text-white [container-type:size] lg:aspect-auto">
+    <div className="relative w-full min-w-0 overflow-hidden text-white [container-type:size] aspect-[534/355] lg:aspect-auto lg:min-h-[400px]">
       {/* Soft green glow behind the illustration; fades in from the top when stacked on mobile. */}
       <div
         className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent,black_28%)] lg:[mask-image:none]"

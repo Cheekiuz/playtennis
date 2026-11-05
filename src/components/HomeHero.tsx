@@ -13,8 +13,8 @@ export default function HomeHero({
 
   return (
     <section className="mx-auto w-full max-w-[1440px] px-4 pb-10 pt-6 lg:px-12">
-      <div className="grid overflow-hidden rounded-[32px] bg-[#0d2818] text-white lg:min-h-[400px] lg:grid-cols-[1.05fr_0.95fr]">
-        <div className="flex flex-col justify-between gap-10 p-7 sm:p-9 lg:p-11">
+      <div className="grid w-full min-w-0 overflow-hidden rounded-[32px] bg-[#0d2818] text-white lg:min-h-[400px] lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="flex w-full min-w-0 flex-col justify-between gap-10 p-7 sm:p-9 lg:p-11">
           <div className="space-y-5">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#c8ff00]">• {home.badge}</p>
             <h1 className="max-w-xl text-balance text-[40px] font-extrabold leading-[1.02] tracking-tight sm:text-5xl lg:text-[64px] lg:leading-[1.02]">
