@@ -43,16 +43,17 @@ export default function SiteHeader() {
   const tournamentsActive = pathname.startsWith(tournaments) || onHome;
 
   const shellClass = scrolled
-    ? "px-3 pt-0.5 sm:px-4 lg:px-10"
+    ? "px-3 pt-0.5 sm:px-4 lg:px-3 xl:px-4 2xl:px-6"
     : "px-0 pt-0";
+  const barSizeClass = scrolled ? "max-w-[min(100%,1680px)]" : "max-w-[1440px]";
   const barClass = scrolled
     ? "rounded-2xl border border-[var(--editorial-border)] bg-[var(--editorial-header-bg-scrolled)] shadow-[var(--editorial-header-shadow)] backdrop-blur-lg"
     : "rounded-none border-b border-[var(--editorial-border)] bg-[var(--editorial-header-bg)] backdrop-blur-lg";
-  const rowClass = scrolled ? "lg:px-8" : "lg:px-12";
+  const rowClass = scrolled ? "lg:px-10 xl:px-12" : "lg:px-12";
 
   return (
     <div className={`sticky top-0 z-40 w-full transition-[padding] duration-300 ease-out ${shellClass}`}>
-      <header className={`mx-auto w-full max-w-[1440px] overflow-hidden transition-all duration-300 ease-out ${barClass}`}>
+      <header className={`mx-auto w-full overflow-hidden transition-all duration-300 ease-out ${barSizeClass} ${barClass}`}>
         <div className={`mx-auto flex h-16 w-full items-center gap-4 px-4 transition-[padding] duration-300 ease-out sm:gap-8 lg:gap-12 ${rowClass}`}>
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <Link href={home} aria-label="PlayTennis.lt" className="flex items-center gap-2 text-lg font-bold tracking-tight text-[#111915]">
