@@ -102,7 +102,7 @@ export default async function DiscoverHome({
           faq={faq}
         />
       ) : null}
-      <div className="home-editorial public-shell relative min-h-screen overflow-x-clip bg-[#fbfbfa] text-[#111915]">
+      <div className="home-editorial public-shell relative min-h-screen overflow-x-clip">
         <SiteHeader />
         <main>
           <HomeHero messages={messages} heroPool={heroPool} />

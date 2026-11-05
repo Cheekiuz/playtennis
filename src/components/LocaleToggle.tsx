@@ -5,10 +5,16 @@ import { useLocale } from "@/context/LocaleContext";
 import { track } from "@/lib/analytics";
 import { switchLocalePath, type Locale } from "@/lib/i18n";
 
+const localeLabels: Record<Locale, string> = {
+  en: "EN",
+  lt: "LT",
+};
+
 export default function LocaleToggle() {
-  const { locale } = useLocale();
+  const { locale, messages } = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+  const otherLocale: Locale = locale === "lt" ? "en" : "lt";
 
   function switchTo(code: Locale) {
     const href = switchLocalePath(pathname, code);
@@ -19,31 +25,14 @@ export default function LocaleToggle() {
   }
 
   return (
-    <div className="inline-flex items-center rounded-full border border-[#e7e7e2] bg-white p-0.5 text-xs font-bold">
-      <button
-        type="button"
-        onClick={() => switchTo("lt")}
-        className={
-          locale === "lt"
-            ? "rounded-full bg-[#111915] px-2.5 py-1.5 text-[#c8ff00]"
-            : "rounded-full px-2.5 py-1.5 text-[#747874] hover:text-[#111915]"
-        }
-        aria-pressed={locale === "lt"}
-      >
-        LT
-      </button>
-      <button
-        type="button"
-        onClick={() => switchTo("en")}
-        className={
-          locale === "en"
-            ? "rounded-full bg-[#111915] px-2.5 py-1.5 text-[#c8ff00]"
-            : "rounded-full px-2.5 py-1.5 text-[#747874] hover:text-[#111915]"
-        }
-        aria-pressed={locale === "en"}
-      >
-        EN
-      </button>
-    </div>
+    <button
+      type="button"
+      onClick={() => switchTo(otherLocale)}
+      className="inline-flex h-9 min-w-9 items-center justify-center rounded-full border border-[var(--editorial-border)] bg-[var(--editorial-surface)] px-3 text-xs font-bold text-[var(--editorial-page-fg)] transition-colors hover:border-[var(--editorial-page-fg)]"
+      aria-label={`${messages.nav.changeLanguage}: ${localeLabels[otherLocale]}`}
+      title={`${messages.nav.changeLanguage}: ${localeLabels[otherLocale]}`}
+    >
+      {localeLabels[otherLocale]}
+    </button>
   );
 }

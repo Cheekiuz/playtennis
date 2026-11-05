@@ -16,7 +16,7 @@ export default function SiteFrame({
 }) {
   return (
     <SiteModalProvider>
-      <div className="public-shell min-h-screen bg-[#fbfbfa] text-[#111915]">
+      <div className="public-shell min-h-screen">
         <SiteHeader />
         <main className={`mx-auto w-full px-4 pb-16 lg:px-12 ${wide ? "max-w-[1440px]" : "max-w-6xl"}`}>{children}</main>
         <SiteFooter locale={locale} messages={messages} />

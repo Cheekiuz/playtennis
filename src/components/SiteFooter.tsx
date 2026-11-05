@@ -1,5 +1,6 @@
 import Link from "next/link";
 import TennisBallIcon from "@/components/TennisBallIcon";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 import type { Locale, Messages } from "@/lib/i18n";
 import { localePath } from "@/lib/i18n";
 
@@ -11,6 +12,9 @@ const FOOTER_LINKS: { path: string; label: (m: Messages) => string }[] = [
   { path: "/about", label: (m) => m.nav.about },
 ];
 
+const linkClass =
+  "text-[var(--editorial-muted)] transition-colors hover:text-[var(--editorial-page-fg)] hover:underline";
+
 export default function SiteFooter({
   locale,
   messages,
@@ -19,25 +23,39 @@ export default function SiteFooter({
   messages: Messages;
 }) {
   return (
-    <footer className="border-t border-[#e7e7e2] bg-[#fbfbfa] text-[#111915]">
-      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 py-8 sm:flex-row sm:items-end sm:justify-between lg:px-12">
-        <div className="space-y-2">
-          <span className="flex items-center gap-2 text-base font-bold">
-            <TennisBallIcon size={16} />
-            playtennis.lt
-          </span>
-          <p className="max-w-md text-sm leading-6 text-[#747874]">{messages.discover.builtBy}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-[#747874]">
-          <span>{messages.footer.tagline}</span>
-          {FOOTER_LINKS.map((link) => (
-            <Link key={link.path} href={localePath(locale, link.path)} className="hover:text-[#111915] hover:underline">
-              {link.label(messages)}
-            </Link>
-          ))}
-          <Link href={localePath(locale, "/submit")} className="font-semibold text-[#111915] hover:underline">
-            {messages.nav.submit}
-          </Link>
+    <footer className="border-t border-[var(--editorial-border)] bg-[var(--editorial-page-bg)] text-[var(--editorial-page-fg)] transition-colors duration-250">
+      <div className="mx-auto w-full max-w-[1440px] px-4 py-10 lg:px-12">
+        <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-12">
+          <div className="flex min-w-0 items-start justify-between gap-4 lg:block lg:max-w-sm">
+            <div className="min-w-0 space-y-2">
+              <span className="flex items-center gap-2 text-base font-bold tracking-tight">
+                <TennisBallIcon size={16} />
+                playtennis.lt
+              </span>
+              <p className="text-sm leading-6 text-[var(--editorial-muted)]">{messages.discover.builtBy}</p>
+            </div>
+            <ThemeSwitcher paper compact />
+          </div>
+
+          <div className="min-w-0 flex-1 border-t border-[var(--editorial-border)] pt-6 lg:border-t-0 lg:pt-0">
+            <p className="text-sm leading-6 text-[var(--editorial-muted)]">{messages.footer.tagline}</p>
+            <nav
+              className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-sm sm:grid-cols-3 md:flex md:flex-wrap md:gap-x-6 md:gap-y-2"
+              aria-label="Footer"
+            >
+              {FOOTER_LINKS.map((link) => (
+                <Link key={link.path} href={localePath(locale, link.path)} className={linkClass}>
+                  {link.label(messages)}
+                </Link>
+              ))}
+              <Link
+                href={localePath(locale, "/submit")}
+                className="col-span-2 font-semibold text-[var(--editorial-page-fg)] hover:underline max-sm:pt-1 sm:col-span-1"
+              >
+                {messages.nav.submit}
+              </Link>
+            </nav>
+          </div>
         </div>
       </div>
     </footer>

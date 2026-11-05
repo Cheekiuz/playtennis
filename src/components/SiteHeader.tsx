@@ -46,8 +46,8 @@ export default function SiteHeader() {
     ? "px-3 pt-0.5 sm:px-4 lg:px-10"
     : "px-0 pt-0";
   const barClass = scrolled
-    ? "rounded-2xl border border-[#e7e7e2]/55 bg-[#fbfbfa]/68 shadow-[0_12px_40px_-16px_rgba(17,25,21,0.18)] backdrop-blur-lg"
-    : "rounded-none border-b border-[#e7e7e2]/50 bg-[#fbfbfa]/58 backdrop-blur-lg";
+    ? "rounded-2xl border border-[var(--editorial-border)] bg-[var(--editorial-header-bg-scrolled)] shadow-[var(--editorial-header-shadow)] backdrop-blur-lg"
+    : "rounded-none border-b border-[var(--editorial-border)] bg-[var(--editorial-header-bg)] backdrop-blur-lg";
   const rowClass = scrolled ? "lg:px-8" : "lg:px-12";
 
   return (
@@ -90,10 +90,9 @@ export default function SiteHeader() {
           <Link
             href={saved}
             aria-label={messages.nav.saved}
-            className="relative inline-flex h-11 items-center gap-2 rounded-full border border-[#e7e7e2] bg-white px-3 text-sm font-semibold text-[#111915]"
+            className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--editorial-border)] bg-[var(--editorial-surface)] text-[var(--editorial-page-fg)]"
           >
             <HeartIcon />
-            <span className="hidden sm:inline">{messages.nav.savedShort}</span>
             {savedCount > 0 ? (
               <span className="absolute -right-1 -top-1 min-w-5 rounded-full bg-[#0d2818] px-1 text-center text-[11px] font-bold text-[#c8ff00]">
                 {savedCount}
@@ -113,7 +112,7 @@ export default function SiteHeader() {
         </div>
 
         {menuOpen ? (
-        <nav id="site-menu" className="border-t border-[#e7e7e2]/80 bg-[#fbfbfa]/95 px-4 py-3 backdrop-blur-md md:hidden" aria-label="PlayTennis">
+        <nav id="site-menu" className="border-t border-[var(--editorial-border)] bg-[var(--editorial-header-bg-scrolled)] px-4 py-3 backdrop-blur-md md:hidden" aria-label="PlayTennis">
           <ul className="grid gap-1">
             <li>
               <Link
