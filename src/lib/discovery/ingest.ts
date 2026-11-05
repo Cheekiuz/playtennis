@@ -399,7 +399,7 @@ async function refreshExisting(
     registration_deadline: event.registrationDeadline,
     registration_url: event.registrationUrl,
     official_url: event.officialEventUrl,
-    public_registration: event.registrationStatus,
+    public_registration: registrationFor(event, isFacebookObservation(raw)),
     price_amount: event.priceAmount,
     price_currency: event.currency,
     source_confidence: event.sourceConfidence,
@@ -466,6 +466,15 @@ async function flagReview(supabase: ReturnType<typeof createServerSupabaseClient
   if (updated.error && /review_status|schema cache/i.test(updated.error.message)) return;
 }
 
+function isFacebookObservation(raw: RawObservation, sourceKind?: string): boolean {
+  return Boolean(raw.registrySourceType?.startsWith("FACEBOOK")) || sourceKind === "FACEBOOK";
+}
+
+/** Facebook events link straight to the organiser's post, so registration is shown as open unless the event says otherwise. */
+function registrationFor(event: ReturnType<typeof normalizeObservation>, facebook: boolean): ReturnType<typeof normalizeObservation>["registrationStatus"] {
+  return facebook && event.registrationStatus === "UNKNOWN" ? "OPEN" : event.registrationStatus;
+}
+
 async function createTournament(
   supabase: ReturnType<typeof createServerSupabaseClient>,
   event: ReturnType<typeof normalizeObservation>,
@@ -483,7 +492,8 @@ async function createTournament(
   const quality = scoreQuality(event);
   const now = new Date().toISOString();
   const section = resolveCatalogSection(raw, country);
-  const isFacebook = raw.registrySourceType?.startsWith("FACEBOOK") || sourceKind === "FACEBOOK";
+  const isFacebook = isFacebookObservation(raw, sourceKind);
+  const registration = registrationFor(event, isFacebook);
   const row = {
     slug,
     name: event.title,
@@ -493,7 +503,7 @@ async function createTournament(
     ends_on: event.endDate,
     timezone: event.timezone || (country === "lv" ? "Europe/Riga" : country === "lt" ? "Europe/Vilnius" : "UTC"),
     registration_deadline: event.registrationDeadline,
-    registration_status: event.registrationStatus === "OPEN" ? "open" : event.registrationStatus === "CLOSED" ? "closed" : "unknown",
+    registration_status: registration === "OPEN" ? "open" : registration === "CLOSED" ? "closed" : "unknown",
     registration_url: event.registrationUrl,
     official_url: event.officialEventUrl,
     source_id: sourceId,
@@ -506,8 +516,8 @@ async function createTournament(
     event_format: "MULTIPLE",
     duration_type: event.startDate === event.endDate ? "ONE_DAY" : "WEEKEND",
     play_audience: "OPEN_AMATEURS",
-    public_registration: event.registrationStatus,
-    source_kind: raw.registrySourceType?.startsWith("FACEBOOK") ? "FACEBOOK" : sourceKind,
+    public_registration: registration,
+    source_kind: isFacebook ? "FACEBOOK" : sourceKind,
     discovery_stage: raw.discoveryStage ?? (publish ? "PUBLISHED" : "VALIDATED"),
     start_time: raw.startTime ?? null,
     end_time: raw.endTime ?? null,

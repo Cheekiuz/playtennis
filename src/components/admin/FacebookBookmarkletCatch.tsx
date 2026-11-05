@@ -13,6 +13,8 @@ type Payload = {
   description?: string;
   url?: string;
   dateCandidates?: { date: string; sources: string[]; text?: string }[];
+  helperVersion?: string;
+  freshRead?: boolean;
 };
 
 type Status =
@@ -20,6 +22,17 @@ type Status =
   | { kind: "review"; payload: Payload }
   | { kind: "done"; ok: boolean; title: string; created: number; updated: number; errors: string[]; startDate: string }
   | { kind: "error"; message: string };
+
+const MIN_HELPER_VERSION = "1.6.1";
+
+function versionLessThan(version: string, min: string): boolean {
+  const a = version.split(".").map(Number);
+  const b = min.split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    if ((a[i] ?? 0) !== (b[i] ?? 0)) return (a[i] ?? 0) < (b[i] ?? 0);
+  }
+  return false;
+}
 
 function readPayloadFromHash(): { payload: Payload | null; error: string | null } {
   const hash = window.location.hash.replace(/^#/, "");
@@ -119,9 +132,25 @@ export default function FacebookBookmarkletCatch() {
             The start date was read from Facebook. Check it against the event page and fix it if it is wrong, then
             import.
           </p>
-          {candidates.length > 1 ? (
+          {!status.payload.helperVersion || versionLessThan(status.payload.helperVersion, MIN_HELPER_VERSION) ? (
+            <p className="rounded-lg border border-red-300 bg-red-50 p-3 text-xs font-semibold text-[#111915]">
+              Your Tampermonkey script is outdated ({status.payload.helperVersion ?? "older than 1.6"}). Open{" "}
+              <a href="/playtennis-facebook.user.js" className="underline">
+                /playtennis-facebook.user.js
+              </a>{" "}
+              and click Update or Reinstall, then save the event again. Dates from the old script are often wrong.
+            </p>
+          ) : (
+            <p className="text-xs text-foreground/60">
+              Helper v{status.payload.helperVersion}.{" "}
+              {status.payload.freshRead
+                ? "Date read from the event's own data."
+                : "Could not load the event's own data, so the date comes from the visible page text. Check it."}
+            </p>
+          )}
+          {candidates.length > 0 ? (
             <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-[#111915]">
-              <p className="font-semibold">Facebook showed more than one date. Pick the right one:</p>
+              <p className="font-semibold">{candidates.length > 1 ? "Facebook showed more than one date. Pick the right one:" : "Date found:"}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 {candidates.map((candidate) => (
                   <button

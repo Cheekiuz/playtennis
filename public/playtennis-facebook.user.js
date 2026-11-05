@@ -1,7 +1,9 @@
 // ==UserScript==
 // @name         PlayTennis: Save Facebook event
 // @namespace    https://www.playtennis.lt
-// @version      1.6.0
+// @version      1.6.1
+// @updateURL    https://www.playtennis.lt/playtennis-facebook.user.js
+// @downloadURL  https://www.playtennis.lt/playtennis-facebook.user.js
 // @description  Reads the Facebook event date from a fresh copy of the event page and sends it to PlayTennis
 // @author       PlayTennis
 // @match        https://www.facebook.com/*
@@ -16,7 +18,7 @@
   const CATCH_URL = "https://www.playtennis.lt/admin/facebook-catch";
   const BUTTON_ID = "playtennis-save-event-btn";
   const BADGE_ID = "playtennis-helper-badge";
-  const VERSION = "1.6.0";
+  const VERSION = "1.6.1";
   const TZ = "Europe/Vilnius";
 
   const MONTHS = {
@@ -390,6 +392,8 @@
         description: desc || "",
         url,
         dateCandidates: candidates.slice(0, 5),
+        helperVersion: VERSION,
+        freshRead: Boolean(fresh),
       };
       const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
         .replace(/\+/g, "-")
