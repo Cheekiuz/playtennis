@@ -16,6 +16,7 @@ export default function SiteHeader() {
   const modals = useSiteModals();
   const [savedCount, setSavedCount] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const home = localePath(locale, "/");
   const tournaments = localePath(locale, "/tournaments");
   const saved = localePath(locale, "/saved");
@@ -32,11 +33,27 @@ export default function SiteHeader() {
     };
   }, []);
 
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const tournamentsActive = pathname.startsWith(tournaments) || onHome;
 
+  const shellClass = scrolled
+    ? "px-3 pt-0.5 sm:px-4 lg:px-10"
+    : "px-0 pt-0";
+  const barClass = scrolled
+    ? "rounded-2xl border border-[#e7e7e2]/55 bg-[#fbfbfa]/68 shadow-[0_12px_40px_-16px_rgba(17,25,21,0.18)] backdrop-blur-lg"
+    : "rounded-none border-b border-[#e7e7e2]/50 bg-[#fbfbfa]/58 backdrop-blur-lg";
+  const rowClass = scrolled ? "lg:px-8" : "lg:px-12";
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-[#e7e7e2] bg-[#fbfbfa]/95 backdrop-blur">
-      <div className="flex h-16 w-full items-center gap-4 px-3 sm:gap-6 sm:px-4 lg:gap-8 lg:px-5">
+    <div className={`sticky top-0 z-40 w-full transition-[padding] duration-300 ease-out ${shellClass}`}>
+      <header className={`mx-auto w-full max-w-[1440px] overflow-hidden transition-all duration-300 ease-out ${barClass}`}>
+        <div className={`mx-auto flex h-16 w-full items-center gap-4 px-4 transition-[padding] duration-300 ease-out sm:gap-8 lg:gap-12 ${rowClass}`}>
         <div className="flex min-w-0 shrink-0 items-center gap-2 sm:gap-3">
           <Link href={home} aria-label="PlayTennis.lt" className="flex items-center gap-2 text-lg font-bold tracking-tight text-[#111915]">
             <TennisBallIcon size={22} priority />
@@ -93,10 +110,10 @@ export default function SiteHeader() {
             {menuOpen ? messages.nav.close : messages.nav.menu}
           </button>
         </div>
-      </div>
+        </div>
 
-      {menuOpen ? (
-        <nav id="site-menu" className="border-t border-[#e7e7e2] bg-[#fbfbfa] px-4 py-3 md:hidden" aria-label="PlayTennis">
+        {menuOpen ? (
+        <nav id="site-menu" className="border-t border-[#e7e7e2]/80 bg-[#fbfbfa]/95 px-4 py-3 backdrop-blur-md md:hidden" aria-label="PlayTennis">
           <ul className="grid gap-1">
             <li>
               <Link
@@ -121,8 +138,9 @@ export default function SiteHeader() {
             </li>
           </ul>
         </nav>
-      ) : null}
-    </header>
+        ) : null}
+      </header>
+    </div>
   );
 }
 
